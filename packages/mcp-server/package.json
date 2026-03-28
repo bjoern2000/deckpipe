@@ -10,6 +10,7 @@
   "dependencies": {
     "@deckpipe/shared": "*",
     "@modelcontextprotocol/sdk": "^1.8.0",
+    "zod": "^3.24.3",
     "dotenv": "^16.4.7"
   },
   "devDependencies": {

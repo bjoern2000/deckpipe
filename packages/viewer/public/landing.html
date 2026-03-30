@@ -60,13 +60,13 @@
     .tagline {
       margin-top: 12px;
       font-size: 0.95rem;
-      color: #aaa;
+      color: #ccc;
     }
 
     .value-prop {
       margin-top: 48px;
       font-size: 0.875rem;
-      color: #aaa;
+      color: #ccc;
       border-left: 2px solid #333;
       padding-left: 16px;
     }
@@ -78,7 +78,7 @@
     h2 {
       font-size: 0.8rem;
       font-weight: 600;
-      color: #666;
+      color: #999;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       margin-top: 56px;
@@ -93,7 +93,7 @@
     .steps li {
       counter-increment: step;
       font-size: 0.875rem;
-      color: #aaa;
+      color: #ccc;
       padding: 12px 0;
       border-bottom: 1px solid #1a1a1a;
       position: relative;
@@ -204,14 +204,16 @@
     }
 
     a {
-      color: #888;
+      color: #ccc;
       text-decoration: none;
       border-bottom: 1px solid #333;
+      transition: background 0.15s, color 0.15s;
     }
 
     a:hover {
-      color: #ccc;
-      border-color: #666;
+      background: #ccc;
+      color: #0a0a0a;
+      border-color: #ccc;
     }
   </style>
 </head>
@@ -222,10 +224,10 @@
 
     <div class="section">
       <h2>Demo</h2>
-      <p style="font-size: 0.8rem; color: #555; margin-bottom: 12px;">Prompt</p>
+      <p style="font-size: 0.8rem; color: #999; margin-bottom: 12px;">Prompt</p>
       <div class="pre-wrapper"><pre style="white-space: pre-wrap;">Create a deck about the Apollo 11 moon landing. Search the web for historic NASA photos and use them as full-bleed images. Include a timeline of the mission, stats on the Saturn V rocket, and a famous quote from Neil Armstrong. Use heading font "Libre Baskerville" and accent color "#1e3a5f".</pre><button class="copy-btn" onclick="copyCode(this, 'Create a deck about the Apollo 11 moon landing. Search the web for historic NASA photos and use them as full-bleed images. Include a timeline of the mission, stats on the Saturn V rocket, and a famous quote from Neil Armstrong. Use heading font &quot;Libre Baskerville&quot; and accent color &quot;#1e3a5f&quot;.')" title="Copy to clipboard"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div>
-      <p style="font-size: 0.8rem; color: #555; margin-top: 20px; margin-bottom: 12px;">Result</p>
-      <p style="font-size: 0.875rem;"><a href="https://deckpipe.com/d/dk_YjAXnN8v/apollo-11-humanity-s-giant-leap" target="_blank">Apollo 11: Humanity's Giant Leap</a></p>
+      <p style="font-size: 0.8rem; color: #999; margin-top: 20px; margin-bottom: 12px;">Result</p>
+      <p style="font-size: 0.875rem;">&#9654; <a href="https://deckpipe.com/d/dk_YjAXnN8v/apollo-11-humanity-s-giant-leap" target="_blank">Apollo 11: Humanity's Giant Leap</a></p>
     </div>
 
     <div class="section">
@@ -234,7 +236,7 @@
 <div class="pre-wrapper"><pre><span class="comment"># Claude Code</span>
 claude mcp add deckpipe -- npx deckpipe-mcp</pre><button class="copy-btn" onclick="copyCode(this, 'claude mcp add deckpipe -- npx deckpipe-mcp')" title="Copy to clipboard"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div>
 
-      <p style="font-size: 0.875rem; color: #aaa; margin-top: 24px; margin-bottom: 8px;">Or add manually:</p>
+      <p style="font-size: 0.875rem; color: #ccc; margin-top: 24px; margin-bottom: 8px;">Or add manually:</p>
 
 <div class="pre-wrapper"><pre>{
   <span class="key">"mcpServers"</span>: {

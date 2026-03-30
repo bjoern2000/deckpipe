@@ -54,12 +54,27 @@ async function detectFocalPoint(buffer: Buffer): Promise<{ x: number; y: number 
   }
 }
 
+async function fetchWithRetry(url: string, retries = 3): Promise<Response | null> {
+  for (let i = 0; i < retries; i++) {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(15000),
+      headers: { 'User-Agent': 'deckpipe/1.0 (https://deckpipe.com)' },
+    });
+    if (response.status === 429) {
+      const delay = Math.min(parseInt(response.headers.get('retry-after') || '2', 10), 10) * 1000;
+      await new Promise(r => setTimeout(r, delay));
+      continue;
+    }
+    if (!response.ok) return null;
+    return response;
+  }
+  return null;
+}
+
 export async function rehostExternalImage(imageUrl: string): Promise<{ url: string; focus: { x: number; y: number } } | null> {
   try {
-    const response = await fetch(imageUrl, {
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!response.ok) return null;
+    const response = await fetchWithRetry(imageUrl);
+    if (!response) return null;
 
     const contentType = response.headers.get('content-type')?.split(';')[0] || '';
     if (!ALLOWED_TYPES.includes(contentType)) return null;

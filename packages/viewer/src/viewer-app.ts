@@ -307,7 +307,7 @@ export class ViewerApp extends LitElement {
       const fonts = [this.deck.heading_font, this.deck.body_font].filter(Boolean) as string[];
       const uniqueFonts = [...new Set(fonts)];
       for (const font of uniqueFonts) {
-        const fontUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font)}:wght@300;400;500;600;700&display=swap`;
+        const fontUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font)}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap`;
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = fontUrl;

@@ -74,7 +74,7 @@ export class SlideImageGallery extends SlideBase {
     return html`
       <div class="gallery-item">
         <div class="image-wrap">
-          <img src="${src}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocuses[i])}" />
+          <img src="${src}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocuses[i])}" @error=${this.onImgError} />
         </div>
         ${title ? html`<div class="item-title">${title}</div>` : nothing}
         ${caption ? html`<div class="item-caption">${caption}</div>` : nothing}

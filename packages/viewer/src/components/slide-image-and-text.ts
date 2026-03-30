@@ -56,8 +56,8 @@ export class SlideImageAndText extends SlideBase {
         <div class="image-area">
           ${this.imageUrl
             ? this.editable
-              ? this.wrapDeletable('image_url', html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />`, null)
-              : html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />`
+              ? this.wrapDeletable('image_url', html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`, null)
+              : html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`
             : ''}
         </div>
         <div class="text-area">

@@ -72,7 +72,7 @@ export class SlideQuote extends SlideBase {
             ? this.wrapDeletable('attribution', html`
                 <div class="attribution">
                   ${this.imageUrl
-                    ? this.wrapDeletable('image_url', html`<img class="avatar" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />`, null)
+                    ? this.wrapDeletable('image_url', html`<img class="avatar" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`, null)
                     : nothing}
                   <span contenteditable="true"
                     @blur=${(e: FocusEvent) => this.emitChange('attribution', (e.target as HTMLElement).textContent)}
@@ -81,7 +81,7 @@ export class SlideQuote extends SlideBase {
               `)
             : html`
               <div class="attribution">
-                ${this.imageUrl ? html`<img class="avatar" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />` : nothing}
+                ${this.imageUrl ? html`<img class="avatar" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />` : nothing}
                 <span>${this.attribution}</span>
               </div>
             `

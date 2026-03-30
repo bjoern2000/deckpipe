@@ -75,9 +75,9 @@ export class SlideTitleAndBullets extends SlideBase {
           ${hasImage
             ? this.editable
               ? this.wrapDeletable('image_url', html`
-                  <div class="image-area"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" /></div>
+                  <div class="image-area"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} /></div>
                 `, null)
-              : html`<div class="image-area"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" /></div>`
+              : html`<div class="image-area"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} /></div>`
             : ''}
         </div>
       </div>

@@ -111,13 +111,24 @@ function isExternalUrl(url: string): boolean {
 
 export async function rehostImagesInDeck(slides: unknown[]): Promise<unknown[]> {
   const result = JSON.parse(JSON.stringify(slides));
+  const cache = new Map<string, { url: string; focus: { x: number; y: number } }>();
+  let downloadCount = 0;
+
+  async function rehostWithDelay(imageUrl: string) {
+    if (cache.has(imageUrl)) return cache.get(imageUrl)!;
+    if (downloadCount > 0) await new Promise(r => setTimeout(r, 1500));
+    downloadCount++;
+    const rehosted = await rehostExternalImage(imageUrl);
+    if (rehosted) cache.set(imageUrl, rehosted);
+    return rehosted;
+  }
 
   for (const slide of result) {
     const content = (slide as { content: Record<string, unknown> }).content;
 
     // Handle single image_url
     if (content.image_url && typeof content.image_url === 'string' && isExternalUrl(content.image_url)) {
-      const rehosted = await rehostExternalImage(content.image_url);
+      const rehosted = await rehostWithDelay(content.image_url);
       if (rehosted) {
         content.image_url = rehosted.url;
         content.image_focus = rehosted.focus;
@@ -130,7 +141,7 @@ export async function rehostImagesInDeck(slides: unknown[]): Promise<unknown[]> 
       for (let i = 0; i < content.images.length; i++) {
         const imgUrl = content.images[i];
         if (typeof imgUrl === 'string' && isExternalUrl(imgUrl)) {
-          const rehosted = await rehostExternalImage(imgUrl);
+          const rehosted = await rehostWithDelay(imgUrl);
           if (rehosted) {
             content.images[i] = rehosted.url;
             focuses.push(rehosted.focus);

@@ -234,6 +234,9 @@ export class ViewerApp extends LitElement {
       this.deck = await res.json();
       this.loading = false;
 
+      // Set page title
+      document.title = `${this.deck.title} — deckpipe`;
+
       // Load custom Google Fonts if specified
       const fonts = [this.deck.heading_font, this.deck.body_font].filter(Boolean) as string[];
       const uniqueFonts = [...new Set(fonts)];

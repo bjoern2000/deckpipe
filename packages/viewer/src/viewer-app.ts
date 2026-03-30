@@ -117,6 +117,32 @@ export class ViewerApp extends LitElement {
       .thumbnail-panel { display: none; }
       .main-area { padding: 8px; }
     }
+
+    /* Mobile: stack all slides vertically */
+    :host(.mobile) {
+      height: auto;
+      min-height: 100vh;
+    }
+
+    .mobile-layout {
+      width: 100%;
+      padding: 0;
+    }
+
+    .mobile-layout .mobile-slide {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: white;
+      border-bottom: 1px solid #e5e5e5;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .mobile-layout .mobile-slide .slide-container {
+      width: 960px;
+      height: 540px;
+      transform-origin: top left;
+    }
   `;
 
   @state() private deck: Deck | null = null;
@@ -128,13 +154,19 @@ export class ViewerApp extends LitElement {
   @state() private saveStatus: 'idle' | 'saving' | 'saved' = 'idle';
   @state() private slideWidth = 960;
   @state() private slideHeight = 540;
+  @state() private isMobile = false;
 
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private mobileQuery: MediaQueryList | null = null;
 
   connectedCallback() {
     super.connectedCallback();
     this.printMode = new URLSearchParams(window.location.search).has('print');
+    this.mobileQuery = window.matchMedia('(max-width: 768px)');
+    this.isMobile = this.mobileQuery.matches;
+    this.classList.toggle('mobile', this.isMobile);
+    this.mobileQuery.addEventListener('change', this.onMobileChange);
     this.loadDeck();
     if (!this.printMode) {
       window.addEventListener('keydown', this.onKeyDown);
@@ -173,7 +205,13 @@ export class ViewerApp extends LitElement {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('hashchange', this.onHashChange);
     this.resizeObserver?.disconnect();
+    this.mobileQuery?.removeEventListener('change', this.onMobileChange);
   }
+
+  private onMobileChange = (e: MediaQueryListEvent) => {
+    this.isMobile = e.matches;
+    this.classList.toggle('mobile', this.isMobile);
+  };
 
   private readHash() {
     const match = window.location.hash.match(/slide=(\d+)/);
@@ -357,6 +395,7 @@ export class ViewerApp extends LitElement {
     if (!this.deck) return html`<div class="error">No deck data</div>`;
 
     if (this.printMode) return this.renderPrintMode();
+    if (this.isMobile) return this.renderMobileMode();
 
     const slide = this.deck.slides[this.currentIndex];
     const customVars = this.getCustomCssVars();
@@ -428,6 +467,24 @@ export class ViewerApp extends LitElement {
       vars.push(`--dp-accent:${this.deck.accent_color}`);
     }
     return vars.join(';');
+  }
+
+  private renderMobileMode() {
+    if (!this.deck) return html``;
+    const customVars = this.getCustomCssVars();
+    const vw = window.innerWidth;
+    const scale = vw / 960;
+    return html`
+      <div class="mobile-layout">
+        ${this.deck.slides.map(slide => html`
+          <div class="mobile-slide">
+            <div class="slide-container" style="transform:scale(${scale});${customVars}">
+              <slide-renderer .slide=${slide} .editable=${false}></slide-renderer>
+            </div>
+          </div>
+        `)}
+      </div>
+    `;
   }
 
   private renderPrintMode() {

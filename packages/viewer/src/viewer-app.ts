@@ -67,7 +67,7 @@ export class ViewerApp extends LitElement {
     }
 
     .deck-title {
-      font-family: "JetBrains Mono", monospace;
+      font-family: "Space Mono", monospace;
       font-size: 15px;
       font-weight: 700;
       color: #333;

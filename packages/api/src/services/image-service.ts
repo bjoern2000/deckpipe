@@ -54,30 +54,47 @@ async function detectFocalPoint(buffer: Buffer): Promise<{ x: number; y: number 
   }
 }
 
-async function fetchWithRetry(url: string, retries = 3): Promise<Response | null> {
+async function fetchWithRetry(url: string, retries = 5): Promise<Response | null> {
   for (let i = 0; i < retries; i++) {
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(15000),
-      headers: { 'User-Agent': 'deckpipe/1.0 (https://deckpipe.com)' },
-    });
-    if (response.status === 429) {
-      const delay = Math.min(parseInt(response.headers.get('retry-after') || '2', 10), 10) * 1000;
-      await new Promise(r => setTimeout(r, delay));
-      continue;
+    try {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(30000),
+        headers: { 'User-Agent': 'deckpipe/1.0 (https://deckpipe.com; image rehost)' },
+      });
+      if (response.status === 429) {
+        const retryAfter = parseInt(response.headers.get('retry-after') || '5', 10);
+        const delay = Math.min(retryAfter, 15) * 1000;
+        console.log(`[rehost] 429 for ${url.slice(0, 80)}... retry ${i + 1}/${retries}, waiting ${delay}ms`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      if (!response.ok) {
+        console.log(`[rehost] HTTP ${response.status} for ${url.slice(0, 80)}...`);
+        return null;
+      }
+      return response;
+    } catch (err) {
+      console.log(`[rehost] fetch error for ${url.slice(0, 80)}...: ${err}`);
+      if (i < retries - 1) await new Promise(r => setTimeout(r, 3000));
     }
-    if (!response.ok) return null;
-    return response;
   }
   return null;
 }
 
 export async function rehostExternalImage(imageUrl: string): Promise<{ url: string; focus: { x: number; y: number } } | null> {
   try {
+    console.log(`[rehost] downloading ${imageUrl.slice(0, 80)}...`);
     const response = await fetchWithRetry(imageUrl);
-    if (!response) return null;
+    if (!response) {
+      console.log(`[rehost] failed to fetch ${imageUrl.slice(0, 80)}...`);
+      return null;
+    }
 
     const contentType = response.headers.get('content-type')?.split(';')[0] || '';
-    if (!ALLOWED_TYPES.includes(contentType)) return null;
+    if (!ALLOWED_TYPES.includes(contentType)) {
+      console.log(`[rehost] rejected content-type: ${contentType} for ${imageUrl.slice(0, 80)}...`);
+      return null;
+    }
 
     const buffer = Buffer.from(await response.arrayBuffer());
     if (buffer.length > MAX_SIZE) return null;
@@ -116,7 +133,7 @@ export async function rehostImagesInDeck(slides: unknown[]): Promise<unknown[]> 
 
   async function rehostWithDelay(imageUrl: string) {
     if (cache.has(imageUrl)) return cache.get(imageUrl)!;
-    if (downloadCount > 0) await new Promise(r => setTimeout(r, 1500));
+    if (downloadCount > 0) await new Promise(r => setTimeout(r, 3000));
     downloadCount++;
     const rehosted = await rehostExternalImage(imageUrl);
     if (rehosted) cache.set(imageUrl, rehosted);

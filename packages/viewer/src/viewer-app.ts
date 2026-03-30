@@ -10,7 +10,8 @@ import './components/image-drop-zone.js';
 interface Deck {
   deck_id: string;
   title: string;
-  custom_font?: string | null;
+  heading_font?: string | null;
+  body_font?: string | null;
   accent_color?: string | null;
   slides: Array<{ layout: string; content: Record<string, unknown> }>;
   created_at: string;
@@ -216,9 +217,11 @@ export class ViewerApp extends LitElement {
       this.deck = await res.json();
       this.loading = false;
 
-      // Load custom Google Font if specified
-      if (this.deck.custom_font) {
-        const fontUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(this.deck.custom_font)}:wght@300;400;500;600;700&display=swap`;
+      // Load custom Google Fonts if specified
+      const fonts = [this.deck.heading_font, this.deck.body_font].filter(Boolean) as string[];
+      const uniqueFonts = [...new Set(fonts)];
+      for (const font of uniqueFonts) {
+        const fontUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font)}:wght@300;400;500;600;700&display=swap`;
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = fontUrl;
@@ -345,7 +348,8 @@ export class ViewerApp extends LitElement {
           <thumbnail-strip
             .slides=${this.deck.slides}
             .currentIndex=${this.currentIndex}
-            .customFont=${this.deck.custom_font ?? ''}
+            .headingFont=${this.deck.heading_font ?? ''}
+            .bodyFont=${this.deck.body_font ?? ''}
             .accentColor=${this.deck.accent_color ?? ''}
             @thumbnail-click=${this.onThumbnailClick}
           ></thumbnail-strip>
@@ -386,9 +390,11 @@ export class ViewerApp extends LitElement {
 
   private getCustomCssVars(): string {
     const vars: string[] = [];
-    if (this.deck?.custom_font) {
-      const font = `'${this.deck.custom_font}', sans-serif`;
-      vars.push(`--dp-font-heading:${font};--dp-font-body:${font}`);
+    if (this.deck?.heading_font) {
+      vars.push(`--dp-font-heading:'${this.deck.heading_font}', sans-serif`);
+    }
+    if (this.deck?.body_font) {
+      vars.push(`--dp-font-body:'${this.deck.body_font}', sans-serif`);
     }
     if (this.deck?.accent_color) {
       vars.push(`--dp-accent:${this.deck.accent_color}`);

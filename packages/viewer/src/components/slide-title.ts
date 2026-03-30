@@ -34,6 +34,7 @@ export class SlideTitle extends SlideBase {
   @property() title = '';
   @property() subtitle = '';
   @property({ attribute: 'image-url' }) imageUrl = '';
+  @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
   render() {
@@ -45,6 +46,7 @@ export class SlideTitle extends SlideBase {
             ?contenteditable=${this.editable}
             @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
           >${this.title}</h1>
+          ${this.renderKeyTakeaway(this.keyTakeaway)}
           ${this.subtitle ? html`
             <p class="subtitle"
               ?contenteditable=${this.editable}

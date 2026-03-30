@@ -37,6 +37,7 @@ export class SlideImageAndText extends SlideBase {
   @property() title = '';
   @property() body = '';
   @property({ attribute: 'image-url' }) imageUrl = '';
+  @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
   render() {
@@ -50,6 +51,7 @@ export class SlideImageAndText extends SlideBase {
             ?contenteditable=${this.editable}
             @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
           >${this.title}</h1>
+          ${this.renderKeyTakeaway(this.keyTakeaway)}
           <p class="body-text"
             ?contenteditable=${this.editable}
             @blur=${(e: FocusEvent) => this.emitChange('body', (e.target as HTMLElement).textContent)}

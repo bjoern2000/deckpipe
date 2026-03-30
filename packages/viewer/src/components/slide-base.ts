@@ -1,4 +1,4 @@
-import { LitElement, css } from 'lit';
+import { LitElement, css, html, nothing } from 'lit';
 
 export class SlideBase extends LitElement {
   static baseStyles = css`
@@ -65,6 +65,17 @@ export class SlideBase extends LitElement {
       border-radius: 4px;
     }
 
+    .key-takeaway {
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 0.95em;
+      line-height: 1.5;
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin: 0 0 16px 0;
+      font-family: var(--dp-font-body, 'DM Sans', sans-serif);
+    }
+
     [contenteditable="true"] {
       outline: none;
       cursor: text;
@@ -115,6 +126,11 @@ export class SlideBase extends LitElement {
       }
     }
     slideEl.style.fontSize = `${lo}em`;
+  }
+
+  protected renderKeyTakeaway(keyTakeaway: string | undefined) {
+    if (!keyTakeaway) return nothing;
+    return html`<div class="key-takeaway">${keyTakeaway}</div>`;
   }
 
   protected emitChange(field: string, value: unknown) {

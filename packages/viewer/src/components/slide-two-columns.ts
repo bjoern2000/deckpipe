@@ -35,6 +35,7 @@ export class SlideTwoColumns extends SlideBase {
   @property({ type: Object }) left: { heading: string; body: string } = { heading: '', body: '' };
   @property({ type: Object }) right: { heading: string; body: string } = { heading: '', body: '' };
   @property({ attribute: 'image-url' }) imageUrl = '';
+  @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
   render() {
@@ -44,6 +45,7 @@ export class SlideTwoColumns extends SlideBase {
           ?contenteditable=${this.editable}
           @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
         >${this.title}</h1>
+        ${this.renderKeyTakeaway(this.keyTakeaway)}
         <div class="columns">
           <div class="column">
             <h2

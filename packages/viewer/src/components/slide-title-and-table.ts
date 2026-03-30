@@ -43,6 +43,7 @@ export class SlideTitleAndTable extends SlideBase {
 
   @property() title = '';
   @property({ type: Object }) table: TableData = { headers: [], rows: [] };
+  @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
   render() {
@@ -53,6 +54,7 @@ export class SlideTitleAndTable extends SlideBase {
           ?contenteditable=${this.editable}
           @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
         >${this.title}</h1>
+        ${this.renderKeyTakeaway(this.keyTakeaway)}
         <table>
           <thead>
             <tr>

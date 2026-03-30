@@ -48,7 +48,8 @@ export class ThumbnailStrip extends LitElement {
 
   @property({ type: Array }) slides: Array<{ layout: string; content: Record<string, unknown> }> = [];
   @property({ type: Number }) currentIndex = 0;
-  @property() customFont = '';
+  @property() headingFont = '';
+  @property() bodyFont = '';
   @property() accentColor = '';
 
   private getScale(el: HTMLElement): number {
@@ -69,9 +70,11 @@ export class ThumbnailStrip extends LitElement {
 
   private getCustomVars(): string {
     const vars: string[] = [];
-    if (this.customFont) {
-      const font = `'${this.customFont}', sans-serif`;
-      vars.push(`--dp-font-heading:${font};--dp-font-body:${font}`);
+    if (this.headingFont) {
+      vars.push(`--dp-font-heading:'${this.headingFont}', sans-serif`);
+    }
+    if (this.bodyFont) {
+      vars.push(`--dp-font-body:'${this.bodyFont}', sans-serif`);
     }
     if (this.accentColor) {
       vars.push(`--dp-accent:${this.accentColor}`);

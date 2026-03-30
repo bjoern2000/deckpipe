@@ -7,6 +7,10 @@ import './slide-title-and-table.js';
 import './slide-two-columns.js';
 import './slide-section-break.js';
 import './slide-image-and-text.js';
+import './slide-image-gallery.js';
+import './slide-stats.js';
+import './slide-quote.js';
+import './slide-full-image.js';
 
 interface SlideData {
   layout: string;
@@ -36,6 +40,7 @@ export class SlideRenderer extends LitElement {
           .title=${c.title || ''}
           .subtitle=${c.subtitle || ''}
           image-url=${c.image_url || ''}
+          key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-title>`;
 
@@ -44,6 +49,7 @@ export class SlideRenderer extends LitElement {
           .title=${c.title || ''}
           .body=${c.body || ''}
           image-url=${c.image_url || ''}
+          key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-title-and-body>`;
 
@@ -52,6 +58,7 @@ export class SlideRenderer extends LitElement {
           .title=${c.title || ''}
           .bullets=${(c.bullets as string[]) || []}
           image-url=${c.image_url || ''}
+          key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-title-and-bullets>`;
 
@@ -59,6 +66,7 @@ export class SlideRenderer extends LitElement {
         return html`<slide-title-and-table
           .title=${c.title || ''}
           .table=${c.table || { headers: [], rows: [] }}
+          key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-title-and-table>`;
 
@@ -68,12 +76,14 @@ export class SlideRenderer extends LitElement {
           .left=${(c.left as { heading: string; body: string }) || { heading: '', body: '' }}
           .right=${(c.right as { heading: string; body: string }) || { heading: '', body: '' }}
           image-url=${c.image_url || ''}
+          key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-two-columns>`;
 
       case 'section_break':
         return html`<slide-section-break
           .title=${c.title || ''}
+          key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-section-break>`;
 
@@ -82,8 +92,44 @@ export class SlideRenderer extends LitElement {
           .title=${c.title || ''}
           .body=${c.body || ''}
           image-url=${c.image_url || ''}
+          key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-image-and-text>`;
+
+      case 'image_gallery':
+        return html`<slide-image-gallery
+          .title=${c.title || ''}
+          .caption=${c.caption || ''}
+          .images=${(c.images as string[]) || []}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-image-gallery>`;
+
+      case 'stats':
+        return html`<slide-stats
+          .title=${c.title || ''}
+          .metrics=${(c.metrics as Array<{value: string, label: string}>) || []}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-stats>`;
+
+      case 'quote':
+        return html`<slide-quote
+          .quote=${c.quote || ''}
+          .attribution=${c.attribution || ''}
+          image-url=${c.image_url || ''}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-quote>`;
+
+      case 'full_image':
+        return html`<slide-full-image
+          image-url=${c.image_url || ''}
+          .title=${c.title || ''}
+          .subtitle=${c.subtitle || ''}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-full-image>`;
 
       default:
         return html`<div style="padding:48px;color:#c00">Unknown layout: ${layout}</div>`;

@@ -11,15 +11,15 @@ export const decksRouter = Router();
 // POST /v1/decks — Create a new deck
 decksRouter.post('/', createDeckLimiter, validate(CreateDeckSchema), async (req, res, next) => {
   try {
-    const { title, custom_font, accent_color, slides } = req.body;
+    const { title, heading_font, body_font, accent_color, slides } = req.body;
     const deckId = generateDeckId();
 
     // Re-host external images
     const processedSlides = await rehostImagesInDeck(slides);
 
     await query(
-      'INSERT INTO decks (deck_id, title, custom_font, accent_color, slides) VALUES ($1, $2, $3, $4, $5)',
-      [deckId, title, custom_font ?? null, accent_color ?? null, JSON.stringify(processedSlides)]
+      'INSERT INTO decks (deck_id, title, heading_font, body_font, accent_color, slides) VALUES ($1, $2, $3, $4, $5, $6)',
+      [deckId, title, heading_font ?? null, body_font ?? null, accent_color ?? null, JSON.stringify(processedSlides)]
     );
 
     const result = await query('SELECT created_at FROM decks WHERE deck_id = $1', [deckId]);
@@ -47,7 +47,8 @@ decksRouter.get('/:id', getDeckLimiter, async (req, res, next) => {
     res.json({
       deck_id: deck.deck_id,
       title: deck.title,
-      custom_font: deck.custom_font ?? null,
+      heading_font: deck.heading_font ?? null,
+      body_font: deck.body_font ?? null,
       accent_color: deck.accent_color ?? null,
       slides: deck.slides,
       created_at: deck.created_at,
@@ -67,11 +68,12 @@ decksRouter.patch('/:id', updateDeckLimiter, validate(UpdateDeckSchema), async (
     }
 
     const deck = existing.rows[0];
-    const { title, custom_font, accent_color, slides } = req.body;
+    const { title, heading_font, body_font, accent_color, slides } = req.body;
 
     // Apply updates
     const newTitle = title ?? deck.title;
-    const newCustomFont = custom_font !== undefined ? custom_font : deck.custom_font;
+    const newHeadingFont = heading_font !== undefined ? heading_font : deck.heading_font;
+    const newBodyFont = body_font !== undefined ? body_font : deck.body_font;
     const newAccentColor = accent_color !== undefined ? accent_color : deck.accent_color;
     let newSlides = deck.slides;
 
@@ -90,8 +92,8 @@ decksRouter.patch('/:id', updateDeckLimiter, validate(UpdateDeckSchema), async (
     }
 
     await query(
-      'UPDATE decks SET title = $1, custom_font = $2, accent_color = $3, slides = $4, updated_at = NOW() WHERE deck_id = $5',
-      [newTitle, newCustomFont ?? null, newAccentColor ?? null, JSON.stringify(newSlides), req.params.id]
+      'UPDATE decks SET title = $1, heading_font = $2, body_font = $3, accent_color = $4, slides = $5, updated_at = NOW() WHERE deck_id = $6',
+      [newTitle, newHeadingFont ?? null, newBodyFont ?? null, newAccentColor ?? null, JSON.stringify(newSlides), req.params.id]
     );
 
     const result = await query('SELECT * FROM decks WHERE deck_id = $1', [req.params.id]);
@@ -100,7 +102,8 @@ decksRouter.patch('/:id', updateDeckLimiter, validate(UpdateDeckSchema), async (
     res.json({
       deck_id: updated.deck_id,
       title: updated.title,
-      custom_font: updated.custom_font ?? null,
+      heading_font: updated.heading_font ?? null,
+      body_font: updated.body_font ?? null,
       accent_color: updated.accent_color ?? null,
       slides: updated.slides,
       created_at: updated.created_at,

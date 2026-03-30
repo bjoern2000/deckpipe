@@ -36,6 +36,7 @@ export class SlideTitleAndBullets extends SlideBase {
   @property() title = '';
   @property({ type: Array }) bullets: string[] = [];
   @property({ attribute: 'image-url' }) imageUrl = '';
+  @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
   render() {
@@ -46,6 +47,7 @@ export class SlideTitleAndBullets extends SlideBase {
           ?contenteditable=${this.editable}
           @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
         >${this.title}</h1>
+        ${this.renderKeyTakeaway(this.keyTakeaway)}
         <div class="body-area">
           <ul>
             ${this.bullets.map((b, i) => html`

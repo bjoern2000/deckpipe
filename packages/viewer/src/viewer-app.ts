@@ -144,6 +144,9 @@ export class ViewerApp extends LitElement {
     }
 
     .mobile-layout .mobile-slide .slide-container {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 960px;
       height: 540px;
       transform-origin: top left;

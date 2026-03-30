@@ -1,6 +1,7 @@
 import { html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { SlideBase } from './slide-base.js';
+import { mdInline } from '../utils/markdown.js';
 
 @customElement('slide-title')
 export class SlideTitle extends SlideBase {
@@ -18,6 +19,8 @@ export class SlideTitle extends SlideBase {
         color: var(--dp-text-body, #666);
         margin-top: 8px;
       }
+      .subtitle a { color: var(--dp-accent, #7c3aed); text-decoration: underline; }
+      .subtitle code { background: #f1f5f9; padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
       .bg-image {
         position: absolute;
         inset: 0;
@@ -58,7 +61,7 @@ export class SlideTitle extends SlideBase {
                   @blur=${(e: FocusEvent) => this.emitChange('subtitle', (e.target as HTMLElement).textContent)}
                 >${this.subtitle}</p>
               `)
-            : html`<p class="subtitle">${this.subtitle}</p>`
+            : html`<p class="subtitle">${mdInline(this.subtitle)}</p>`
           : ''}
         </div>
       </div>

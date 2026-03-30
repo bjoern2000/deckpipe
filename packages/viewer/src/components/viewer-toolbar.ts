@@ -19,6 +19,7 @@ export class ViewerToolbar extends LitElement {
 
     button {
       font-family: "Space Mono", monospace;
+      font-weight: 400;
       background: none;
       border: 1px solid #ddd;
       border-radius: 6px;

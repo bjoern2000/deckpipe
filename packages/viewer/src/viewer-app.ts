@@ -127,14 +127,14 @@ export class ViewerApp extends LitElement {
 
     .mobile-layout {
       width: 100%;
-      padding: 12px;
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 12px;
+      padding: 12px 0;
     }
 
     .mobile-layout .mobile-slide {
-      width: 100%;
       overflow: hidden;
       border-radius: 8px;
       box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
@@ -486,7 +486,7 @@ export class ViewerApp extends LitElement {
       <div class="mobile-layout">
         ${this.deck.slides.map(slide => html`
           <div class="mobile-slide">
-            <div class="slide-container" style="zoom:calc((100vw - 24px) / 960);${customVars}">
+            <div class="slide-container" style="zoom:${(window.innerWidth * 0.95) / 960};${customVars}">
               <slide-renderer .slide=${slide} .editable=${false}></slide-renderer>
             </div>
           </div>

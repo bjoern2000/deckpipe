@@ -207,13 +207,13 @@ mcpRouter.post('/', async (req, res) => {
     const mcpServer = new McpServer({ name: 'deckpipe', version: '0.1.2' });
     registerTools(mcpServer);
     await mcpServer.connect(transport);
+    await transport.handleRequest(req, res);
 
+    // Session ID is set by handleRequest during initialize
     if (transport.sessionId) {
       console.log(`[mcp] new session ${transport.sessionId}`);
       transports.set(transport.sessionId, transport);
     }
-
-    await transport.handleRequest(req, res);
     console.log(`[mcp] POST handled, response sent: ${res.headersSent}`);
   } catch (err) {
     console.error(`[mcp] POST error:`, err);

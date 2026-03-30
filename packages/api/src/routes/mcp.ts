@@ -14,7 +14,7 @@ Keep slide copy short and scannable — use shorthand phrases, not full sentence
 
 MARKDOWN: All text content fields support markdown rendering. Use **bold**, *italic*, \`code\`, [links](url), and lists (1. ordered, - unordered) in body, subtitle, bullets, table cells, and key_takeaway fields. Body text fields support full block markdown including numbered and bulleted lists.
 
-Layouts: "title", "title_and_body", "title_and_bullets", "title_and_table", "two_columns", "section_break", "image_and_text", "image_gallery", "stats", "quote", "full_image".
+Layouts: "title", "title_and_body", "title_and_bullets", "title_and_table", "two_columns", "section_break", "image_and_text", "image_gallery", "stats", "quote", "full_image", "timeline", "comparison", "code", "callout", "icons_and_text", "team", "embed", "pros_and_cons", "agenda", "closing", "swot", "quadrant".
 
 Content fields per layout (all layouts support optional key_takeaway):
 - title: { title, subtitle?, image_url? }
@@ -28,6 +28,18 @@ Content fields per layout (all layouts support optional key_takeaway):
 - stats: { title?, metrics[]: { value, label } (2-4 items) }
 - quote: { quote, attribution?, image_url? }
 - full_image: { image_url (required), title?, subtitle? }
+- timeline: { title?, events[]: { label, title, description? } (3-6 items) }
+- comparison: { title?, left: { heading, bullets[] }, right: { heading, bullets[] }, verdict? }
+- code: { title?, code (required), language?, caption? }
+- callout: { title?, value (required), label?, body? }
+- icons_and_text: { title?, items[]: { icon, heading, description? } (3-6 items) }
+- team: { title?, members[]: { name, role, bio?, image_url? } (1-6 items) }
+- embed: { title?, url (required), caption?, aspect_ratio?: "16:9"|"4:3"|"1:1" }
+- pros_and_cons: { title?, pros_heading?, cons_heading?, pros[], cons[] }
+- agenda: { title?, items[]: { topic, duration?, description? } (1-10 items) }
+- closing: { heading?, subheading?, contact_lines?[], image_url? }
+- swot: { title?, strengths[], weaknesses[], opportunities[], threats[] (1-5 items each) }
+- quadrant: { title?, x_label?, y_label?, quadrant_labels?[4], items[]: { label, x: 0-1, y: 0-1 } (1-12 items) }
 
 Optionally set heading_font and body_font (any Google Font name) and accent_color (hex like "#ff6600") to customize the look.
 Use upload_image first to get hosted URLs for any images.`,
@@ -37,7 +49,7 @@ Use upload_image first to get hosted URLs for any images.`,
       body_font: z.string().optional().describe('Google Font for body text (e.g. "Inter"). Default: DM Sans.'),
       accent_color: z.string().optional().describe('Hex color (e.g. "#ff6600"). Overrides default purple accent.'),
       slides: z.array(z.object({
-        layout: z.enum(['title', 'title_and_body', 'title_and_bullets', 'title_and_table', 'two_columns', 'section_break', 'image_and_text', 'image_gallery', 'stats', 'quote', 'full_image']),
+        layout: z.enum(['title', 'title_and_body', 'title_and_bullets', 'title_and_table', 'two_columns', 'section_break', 'image_and_text', 'image_gallery', 'stats', 'quote', 'full_image', 'timeline', 'comparison', 'code', 'callout', 'icons_and_text', 'team', 'embed', 'pros_and_cons', 'agenda', 'closing', 'swot', 'quadrant']),
         content: z.record(z.unknown()).describe('Content fields (vary by layout). All layouts support optional key_takeaway.'),
       })).describe('Array of slides'),
     },
@@ -159,6 +171,18 @@ Accepts PNG, JPG, WebP up to 10MB. Upload first, then use the returned URL when 
         { name: 'stats', fields: 'metrics[]: { value, label } (2-4 items, required), title?, key_takeaway?' },
         { name: 'quote', fields: 'quote (required), attribution?, image_url?, key_takeaway?' },
         { name: 'full_image', fields: 'image_url (required), title?, subtitle?, key_takeaway?' },
+        { name: 'timeline', fields: 'events[]: { label, title, description? } (3-6 items, required), title?, key_takeaway?' },
+        { name: 'comparison', fields: 'left: { heading, bullets[], image_url? }, right: { heading, bullets[], image_url? } (required), title?, verdict?, key_takeaway?' },
+        { name: 'code', fields: 'code (required), title?, language?, caption?, key_takeaway?' },
+        { name: 'callout', fields: 'value (required), title?, label?, body?, key_takeaway?' },
+        { name: 'icons_and_text', fields: 'items[]: { icon, heading, description? } (3-6 items, required), title?, key_takeaway?' },
+        { name: 'team', fields: 'members[]: { name, role, bio?, image_url? } (1-6 items, required), title?, key_takeaway?' },
+        { name: 'embed', fields: 'url (required), title?, caption?, aspect_ratio? ("16:9"|"4:3"|"1:1"), key_takeaway?' },
+        { name: 'pros_and_cons', fields: 'pros[] (required), cons[] (required), title?, pros_heading?, cons_heading?, key_takeaway?' },
+        { name: 'agenda', fields: 'items[]: { topic, duration?, description? } (1-10 items, required), title?, key_takeaway?' },
+        { name: 'closing', fields: 'heading?, subheading?, contact_lines?[], image_url?, key_takeaway?' },
+        { name: 'swot', fields: 'strengths[], weaknesses[], opportunities[], threats[] (1-5 items each, all required), title?, key_takeaway?' },
+        { name: 'quadrant', fields: 'items[]: { label, x: 0-1, y: 0-1 } (1-12 items, required), title?, x_label?, y_label?, quadrant_labels?[4], key_takeaway?' },
       ];
       const customization = {
         heading_font: 'Google Font for headings. Default: DM Sans.',

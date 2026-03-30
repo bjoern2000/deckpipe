@@ -11,6 +11,18 @@ import './slide-image-gallery.js';
 import './slide-stats.js';
 import './slide-quote.js';
 import './slide-full-image.js';
+import './slide-timeline.js';
+import './slide-comparison.js';
+import './slide-code.js';
+import './slide-callout.js';
+import './slide-icons-and-text.js';
+import './slide-team.js';
+import './slide-embed.js';
+import './slide-pros-and-cons.js';
+import './slide-agenda.js';
+import './slide-closing.js';
+import './slide-swot.js';
+import './slide-quadrant.js';
 
 interface SlideData {
   layout: string;
@@ -139,6 +151,122 @@ export class SlideRenderer extends LitElement {
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-full-image>`;
+
+      case 'timeline':
+        return html`<slide-timeline
+          .title=${c.title || ''}
+          .events=${(c.events as Array<{label: string, title: string, description?: string}>) || []}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-timeline>`;
+
+      case 'comparison':
+        return html`<slide-comparison
+          .title=${c.title || ''}
+          .left=${(c.left as {heading: string, bullets: string[], image_url?: string, image_focus?: {x: number, y: number}}) || {heading: '', bullets: []}}
+          .right=${(c.right as {heading: string, bullets: string[], image_url?: string, image_focus?: {x: number, y: number}}) || {heading: '', bullets: []}}
+          .verdict=${c.verdict || ''}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-comparison>`;
+
+      case 'code':
+        return html`<slide-code
+          .title=${c.title || ''}
+          .code=${c.code || ''}
+          .language=${c.language || ''}
+          .caption=${c.caption || ''}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-code>`;
+
+      case 'callout':
+        return html`<slide-callout
+          .title=${c.title || ''}
+          .value=${c.value || ''}
+          .label=${c.label || ''}
+          .body=${c.body || ''}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-callout>`;
+
+      case 'icons_and_text':
+        return html`<slide-icons-and-text
+          .title=${c.title || ''}
+          .items=${(c.items as Array<{icon: string, heading: string, description?: string}>) || []}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-icons-and-text>`;
+
+      case 'team':
+        return html`<slide-team
+          .title=${c.title || ''}
+          .members=${(c.members as Array<{name: string, role: string, bio?: string, image_url?: string, image_focus?: {x: number, y: number}}>) || []}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-team>`;
+
+      case 'embed':
+        return html`<slide-embed
+          .title=${c.title || ''}
+          .url=${c.url || ''}
+          .caption=${c.caption || ''}
+          aspect-ratio=${c.aspect_ratio || '16:9'}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-embed>`;
+
+      case 'pros_and_cons':
+        return html`<slide-pros-and-cons
+          .title=${c.title || ''}
+          pros-heading=${c.pros_heading || ''}
+          cons-heading=${c.cons_heading || ''}
+          .pros=${(c.pros as string[]) || []}
+          .cons=${(c.cons as string[]) || []}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-pros-and-cons>`;
+
+      case 'agenda':
+        return html`<slide-agenda
+          .title=${c.title || ''}
+          .items=${(c.items as Array<{topic: string, duration?: string, description?: string}>) || []}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-agenda>`;
+
+      case 'closing':
+        return html`<slide-closing
+          .heading=${c.heading || ''}
+          .subheading=${c.subheading || ''}
+          .contactLines=${(c.contact_lines as string[]) || []}
+          image-url=${c.image_url || ''}
+          .imageFocus=${c.image_focus || null}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-closing>`;
+
+      case 'swot':
+        return html`<slide-swot
+          .title=${c.title || ''}
+          .strengths=${(c.strengths as string[]) || []}
+          .weaknesses=${(c.weaknesses as string[]) || []}
+          .opportunities=${(c.opportunities as string[]) || []}
+          .threats=${(c.threats as string[]) || []}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-swot>`;
+
+      case 'quadrant':
+        return html`<slide-quadrant
+          .title=${c.title || ''}
+          x-label=${c.x_label || ''}
+          y-label=${c.y_label || ''}
+          .quadrantLabels=${(c.quadrant_labels as string[]) || []}
+          .items=${(c.items as Array<{label: string, x: number, y: number}>) || []}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-quadrant>`;
 
       default:
         return html`<div style="padding:48px;color:#c00">Unknown layout: ${layout}</div>`;

@@ -124,6 +124,149 @@ const FullImageContentSchema = z.object({
   subtitle: z.string().optional(),
 });
 
+// --- Timeline ---
+const TimelineEventSchema = z.object({
+  label: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().optional(),
+});
+
+const TimelineContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  events: z.array(TimelineEventSchema).min(3).max(6),
+});
+
+// --- Comparison ---
+const ComparisonSideSchema = z.object({
+  heading: z.string().min(1),
+  bullets: z.array(z.string()).min(1).max(6),
+  image_url: z.string().url().optional(),
+  image_focus: FocalPointSchema.optional(),
+});
+
+const ComparisonContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  left: ComparisonSideSchema,
+  right: ComparisonSideSchema,
+  verdict: z.string().optional(),
+});
+
+// --- Code ---
+const CodeContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  code: z.string().min(1),
+  language: z.string().optional(),
+  caption: z.string().optional(),
+});
+
+// --- Callout ---
+const CalloutContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  value: z.string().min(1),
+  label: z.string().optional(),
+  body: z.string().optional(),
+});
+
+// --- Icons and Text ---
+const IconItemSchema = z.object({
+  icon: z.string().min(1),
+  heading: z.string().min(1),
+  description: z.string().optional(),
+});
+
+const IconsAndTextContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  items: z.array(IconItemSchema).min(3).max(6),
+});
+
+// --- Team ---
+const TeamMemberSchema = z.object({
+  name: z.string().min(1),
+  role: z.string().min(1),
+  bio: z.string().optional(),
+  image_url: z.string().url().optional(),
+  image_focus: FocalPointSchema.optional(),
+});
+
+const TeamContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  members: z.array(TeamMemberSchema).min(1).max(6),
+});
+
+// --- Embed ---
+const EmbedContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  url: z.string().url(),
+  caption: z.string().optional(),
+  aspect_ratio: z.enum(['16:9', '4:3', '1:1']).optional(),
+});
+
+// --- Pros and Cons ---
+const ProsAndConsContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  pros_heading: z.string().optional(),
+  cons_heading: z.string().optional(),
+  pros: z.array(z.string()).min(1).max(8),
+  cons: z.array(z.string()).min(1).max(8),
+});
+
+// --- Agenda ---
+const AgendaItemSchema = z.object({
+  topic: z.string().min(1),
+  duration: z.string().optional(),
+  description: z.string().optional(),
+});
+
+const AgendaContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  items: z.array(AgendaItemSchema).min(1).max(10),
+});
+
+// --- Closing ---
+const ClosingContentSchema = z.object({
+  ...BaseContentFields,
+  heading: z.string().optional(),
+  subheading: z.string().optional(),
+  contact_lines: z.array(z.string()).max(5).optional(),
+  image_url: z.string().url().optional(),
+  image_focus: FocalPointSchema.optional(),
+});
+
+// --- SWOT ---
+const SwotContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  strengths: z.array(z.string()).min(1).max(5),
+  weaknesses: z.array(z.string()).min(1).max(5),
+  opportunities: z.array(z.string()).min(1).max(5),
+  threats: z.array(z.string()).min(1).max(5),
+});
+
+// --- Quadrant ---
+const QuadrantItemSchema = z.object({
+  label: z.string().min(1),
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+});
+
+const QuadrantContentSchema = z.object({
+  ...BaseContentFields,
+  title: z.string().optional(),
+  x_label: z.string().optional(),
+  y_label: z.string().optional(),
+  quadrant_labels: z.array(z.string()).length(4).optional(),
+  items: z.array(QuadrantItemSchema).min(1).max(12),
+});
+
 // --- Slide (discriminated union on layout) ---
 export const SlideSchema = z.discriminatedUnion('layout', [
   z.object({ layout: z.literal('title'), content: TitleContentSchema }),
@@ -137,6 +280,18 @@ export const SlideSchema = z.discriminatedUnion('layout', [
   z.object({ layout: z.literal('stats'), content: StatsContentSchema }),
   z.object({ layout: z.literal('quote'), content: QuoteContentSchema }),
   z.object({ layout: z.literal('full_image'), content: FullImageContentSchema }),
+  z.object({ layout: z.literal('timeline'), content: TimelineContentSchema }),
+  z.object({ layout: z.literal('comparison'), content: ComparisonContentSchema }),
+  z.object({ layout: z.literal('code'), content: CodeContentSchema }),
+  z.object({ layout: z.literal('callout'), content: CalloutContentSchema }),
+  z.object({ layout: z.literal('icons_and_text'), content: IconsAndTextContentSchema }),
+  z.object({ layout: z.literal('team'), content: TeamContentSchema }),
+  z.object({ layout: z.literal('embed'), content: EmbedContentSchema }),
+  z.object({ layout: z.literal('pros_and_cons'), content: ProsAndConsContentSchema }),
+  z.object({ layout: z.literal('agenda'), content: AgendaContentSchema }),
+  z.object({ layout: z.literal('closing'), content: ClosingContentSchema }),
+  z.object({ layout: z.literal('swot'), content: SwotContentSchema }),
+  z.object({ layout: z.literal('quadrant'), content: QuadrantContentSchema }),
 ]);
 export type Slide = z.infer<typeof SlideSchema>;
 
@@ -144,6 +299,9 @@ export const LayoutNames = [
   'title', 'title_and_body', 'title_and_bullets', 'title_and_table',
   'two_columns', 'section_break', 'image_and_text',
   'image_gallery', 'stats', 'quote', 'full_image',
+  'timeline', 'comparison', 'code', 'callout',
+  'icons_and_text', 'team', 'embed', 'pros_and_cons',
+  'agenda', 'closing', 'swot', 'quadrant',
 ] as const;
 export type Layout = typeof LayoutNames[number];
 

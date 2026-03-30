@@ -12,9 +12,14 @@ export class SlideImageGallery extends SlideBase {
         display: flex;
         gap: 16px;
         flex: 1;
-        align-items: stretch;
       }
       .gallery-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .gallery-item .image-wrap {
         flex: 1;
         overflow: hidden;
         border-radius: 6px;
@@ -24,11 +29,11 @@ export class SlideImageGallery extends SlideBase {
         height: 100%;
         object-fit: cover;
       }
-      .caption {
+      .gallery-item .item-caption {
         text-align: center;
         color: var(--dp-text-body, #64748b);
-        font-size: 0.85em;
-        margin-top: 12px;
+        font-size: 0.75em;
+        margin-top: 8px;
       }
     `,
   ];
@@ -40,7 +45,13 @@ export class SlideImageGallery extends SlideBase {
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
+  private get captions(): string[] {
+    if (!this.caption) return [];
+    return this.caption.split(/\s*[•·|]\s*/).map(s => s.trim()).filter(Boolean);
+  }
+
   render() {
+    const caps = this.captions;
     return html`
       <div class="slide">
         ${this.title
@@ -57,7 +68,10 @@ export class SlideImageGallery extends SlideBase {
           <div class="gallery">
             ${this.images.map((src, i) => html`
               <div class="gallery-item">
-                <img src="${src}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocuses[i])}" />
+                <div class="image-wrap">
+                  <img src="${src}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocuses[i])}" />
+                </div>
+                ${caps[i] ? html`<div class="item-caption">${caps[i]}</div>` : nothing}
               </div>
             `)}
           </div>
@@ -65,20 +79,14 @@ export class SlideImageGallery extends SlideBase {
           <div class="gallery">
             ${this.images.map((src, i) => html`
               <div class="gallery-item">
-                <img src="${src}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocuses[i])}" />
+                <div class="image-wrap">
+                  <img src="${src}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocuses[i])}" />
+                </div>
+                ${caps[i] ? html`<div class="item-caption">${caps[i]}</div>` : nothing}
               </div>
             `)}
           </div>
         `}
-        ${this.caption || this.editable
-          ? this.editable
-            ? this.wrapDeletable('caption', html`
-                <div class="caption" contenteditable="true"
-                  @blur=${(e: FocusEvent) => this.emitChange('caption', (e.target as HTMLElement).textContent)}
-                >${this.caption}</div>
-              `)
-            : html`<div class="caption">${this.caption}</div>`
-          : nothing}
       </div>
     `;
   }

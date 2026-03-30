@@ -177,15 +177,24 @@ export const mcpRouter = Router();
 mcpRouter.post('/', async (req, res) => {
   try {
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
-    console.log(`[mcp] POST session=${sessionId || 'new'}`);
+    console.log(`[mcp] POST session=${sessionId || 'new'}, active sessions: ${transports.size}`);
 
     if (sessionId && transports.has(sessionId)) {
+      console.log(`[mcp] reusing existing session ${sessionId}`);
       const transport = transports.get(sessionId)!;
       await transport.handleRequest(req, res);
       return;
     }
 
+    // If client sent a stale session ID, reject so it reconnects
+    if (sessionId) {
+      console.log(`[mcp] stale session ${sessionId}, asking client to reconnect`);
+      res.status(404).json({ error: 'Session not found. Please reconnect.' });
+      return;
+    }
+
     // New session
+    console.log(`[mcp] creating new session`);
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
     });
@@ -198,12 +207,14 @@ mcpRouter.post('/', async (req, res) => {
     const mcpServer = new McpServer({ name: 'deckpipe', version: '0.1.2' });
     registerTools(mcpServer);
     await mcpServer.connect(transport);
-    await transport.handleRequest(req, res);
 
     if (transport.sessionId) {
       console.log(`[mcp] new session ${transport.sessionId}`);
       transports.set(transport.sessionId, transport);
     }
+
+    await transport.handleRequest(req, res);
+    console.log(`[mcp] POST handled, response sent: ${res.headersSent}`);
   } catch (err) {
     console.error(`[mcp] POST error:`, err);
     if (!res.headersSent) res.status(500).json({ error: 'MCP server error' });
@@ -211,21 +222,34 @@ mcpRouter.post('/', async (req, res) => {
 });
 
 mcpRouter.get('/', async (req, res) => {
-  const sessionId = req.headers['mcp-session-id'] as string | undefined;
-  if (sessionId && transports.has(sessionId)) {
-    const transport = transports.get(sessionId)!;
-    await transport.handleRequest(req, res);
-    return;
+  try {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    console.log(`[mcp] GET session=${sessionId || 'none'}`);
+    if (sessionId && transports.has(sessionId)) {
+      const transport = transports.get(sessionId)!;
+      await transport.handleRequest(req, res);
+      return;
+    }
+    res.status(404).json({ error: 'Session not found' });
+  } catch (err) {
+    console.error(`[mcp] GET error:`, err);
+    if (!res.headersSent) res.status(500).json({ error: 'MCP server error' });
   }
-  res.status(400).json({ error: 'Session ID required' });
 });
 
 mcpRouter.delete('/', async (req, res) => {
-  const sessionId = req.headers['mcp-session-id'] as string | undefined;
-  if (sessionId && transports.has(sessionId)) {
-    const transport = transports.get(sessionId)!;
-    await transport.handleRequest(req, res);
-    return;
+  try {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    console.log(`[mcp] DELETE session=${sessionId || 'none'}`);
+    if (sessionId && transports.has(sessionId)) {
+      const transport = transports.get(sessionId)!;
+      await transport.handleRequest(req, res);
+      return;
+    }
+    res.status(404).json({ error: 'Session not found' });
+  } catch (err) {
+    console.error(`[mcp] DELETE error:`, err);
+    if (!res.headersSent) res.status(500).json({ error: 'MCP server error' });
   }
-  res.status(404).json({ error: 'Session not found' });
 });
+

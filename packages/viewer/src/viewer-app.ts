@@ -169,6 +169,7 @@ export class ViewerApp extends LitElement {
     this.mobileQuery = window.matchMedia('(max-width: 768px)');
     this.isMobile = this.mobileQuery.matches;
     this.classList.toggle('mobile', this.isMobile);
+    this.setBodyScroll(this.isMobile);
     this.mobileQuery.addEventListener('change', this.onMobileChange);
     this.loadDeck();
     if (!this.printMode && !this.isMobile) {
@@ -214,7 +215,14 @@ export class ViewerApp extends LitElement {
   private onMobileChange = (e: MediaQueryListEvent) => {
     this.isMobile = e.matches;
     this.classList.toggle('mobile', this.isMobile);
+    this.setBodyScroll(this.isMobile);
   };
+
+  private setBodyScroll(mobile: boolean) {
+    const overflow = mobile ? 'auto' : 'hidden';
+    document.documentElement.style.overflow = overflow;
+    document.body.style.overflow = overflow;
+  }
 
   private readHash() {
     const match = window.location.hash.match(/slide=(\d+)/);

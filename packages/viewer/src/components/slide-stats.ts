@@ -10,14 +10,15 @@ export class SlideStats extends SlideBase {
       .metrics {
         display: grid;
         grid-template-columns: repeat(var(--metric-count, 4), 1fr);
-        grid-template-rows: 1fr auto;
-        gap: 0 32px;
+        grid-template-rows: auto auto;
+        gap: 12px 32px;
         flex: 1;
+        align-content: center;
         text-align: center;
       }
       .metric-value {
         font-family: var(--dp-font-heading, 'DM Sans', sans-serif);
-        font-size: 3em;
+        font-size: 2.4em;
         font-weight: 700;
         color: var(--dp-accent, #7c3aed);
         line-height: 1.1;
@@ -26,9 +27,8 @@ export class SlideStats extends SlideBase {
         justify-content: center;
       }
       .metric-label {
-        font-size: 1em;
+        font-size: 0.9em;
         color: var(--dp-text-body, #64748b);
-        padding-top: 8px;
       }
     `,
   ];

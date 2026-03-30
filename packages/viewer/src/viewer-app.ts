@@ -173,7 +173,7 @@ export class ViewerApp extends LitElement {
     this.classList.toggle('mobile', this.isMobile);
     this.mobileQuery.addEventListener('change', this.onMobileChange);
     this.loadDeck();
-    if (!this.printMode) {
+    if (!this.printMode && !this.isMobile) {
       window.addEventListener('keydown', this.onKeyDown);
       window.addEventListener('hashchange', this.onHashChange);
       this.readHash();
@@ -477,7 +477,7 @@ export class ViewerApp extends LitElement {
   private renderMobileMode() {
     if (!this.deck) return html``;
     const customVars = this.getCustomCssVars();
-    const vw = window.innerWidth;
+    const vw = window.innerWidth - 24; // account for mobile-layout padding
     const scale = vw / 960;
     return html`
       <div class="mobile-layout">

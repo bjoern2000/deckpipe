@@ -1,6 +1,7 @@
 import { html, css, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { SlideBase } from './slide-base.js';
+import { focalPointToObjectPosition } from '../utils/focal-point.js';
 
 @customElement('slide-image-gallery')
 export class SlideImageGallery extends SlideBase {
@@ -35,6 +36,7 @@ export class SlideImageGallery extends SlideBase {
   @property() title = '';
   @property() caption = '';
   @property({ type: Array }) images: string[] = [];
+  @property({ type: Array }) imageFocuses: Array<{ x: number; y: number }> = [];
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -53,17 +55,17 @@ export class SlideImageGallery extends SlideBase {
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this.editable ? this.wrapDeletable('images', html`
           <div class="gallery">
-            ${this.images.map(src => html`
+            ${this.images.map((src, i) => html`
               <div class="gallery-item">
-                <img src="${src}" alt="" />
+                <img src="${src}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocuses[i])}" />
               </div>
             `)}
           </div>
         `, []) : html`
           <div class="gallery">
-            ${this.images.map(src => html`
+            ${this.images.map((src, i) => html`
               <div class="gallery-item">
-                <img src="${src}" alt="" />
+                <img src="${src}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocuses[i])}" />
               </div>
             `)}
           </div>

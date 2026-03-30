@@ -2,6 +2,7 @@ import { html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { SlideBase } from './slide-base.js';
 import { mdInline } from '../utils/markdown.js';
+import { focalPointToObjectPosition } from '../utils/focal-point.js';
 
 @customElement('slide-title')
 export class SlideTitle extends SlideBase {
@@ -37,6 +38,7 @@ export class SlideTitle extends SlideBase {
   @property() title = '';
   @property() subtitle = '';
   @property({ attribute: 'image-url' }) imageUrl = '';
+  @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -45,8 +47,8 @@ export class SlideTitle extends SlideBase {
       <div class="slide">
         ${this.imageUrl
           ? this.editable
-            ? this.wrapDeletable('image_url', html`<img class="bg-image" src="${this.imageUrl}" alt="" />`, null)
-            : html`<img class="bg-image" src="${this.imageUrl}" alt="" />`
+            ? this.wrapDeletable('image_url', html`<img class="bg-image" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />`, null)
+            : html`<img class="bg-image" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />`
           : ''}
         <div class="content">
           ${this.editable ? this.wrapDeletable('title', html`

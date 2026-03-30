@@ -2,6 +2,7 @@ import { html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { SlideBase } from './slide-base.js';
 import { md } from '../utils/markdown.js';
+import { focalPointToObjectPosition } from '../utils/focal-point.js';
 
 @customElement('slide-image-and-text')
 export class SlideImageAndText extends SlideBase {
@@ -45,6 +46,7 @@ export class SlideImageAndText extends SlideBase {
   @property() title = '';
   @property() body = '';
   @property({ attribute: 'image-url' }) imageUrl = '';
+  @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -54,8 +56,8 @@ export class SlideImageAndText extends SlideBase {
         <div class="image-area">
           ${this.imageUrl
             ? this.editable
-              ? this.wrapDeletable('image_url', html`<img src="${this.imageUrl}" alt="" />`, null)
-              : html`<img src="${this.imageUrl}" alt="" />`
+              ? this.wrapDeletable('image_url', html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />`, null)
+              : html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />`
             : ''}
         </div>
         <div class="text-area">

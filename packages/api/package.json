@@ -16,7 +16,9 @@
     "express-rate-limit": "^7.5.0",
     "multer": "^1.4.5-lts.1",
     "pg": "^8.13.3",
-    "puppeteer": "^24.4.0"
+    "puppeteer": "^24.4.0",
+    "sharp": "^0.32.6",
+    "smartcrop-sharp": "^2.0.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

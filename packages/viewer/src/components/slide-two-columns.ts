@@ -2,6 +2,7 @@ import { html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { SlideBase } from './slide-base.js';
 import { md } from '../utils/markdown.js';
+import { focalPointToObjectPosition } from '../utils/focal-point.js';
 
 @customElement('slide-two-columns')
 export class SlideTwoColumns extends SlideBase {
@@ -43,6 +44,7 @@ export class SlideTwoColumns extends SlideBase {
   @property({ type: Object }) left: { heading: string; body: string } = { heading: '', body: '' };
   @property({ type: Object }) right: { heading: string; body: string } = { heading: '', body: '' };
   @property({ attribute: 'image-url' }) imageUrl = '';
+  @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -90,9 +92,9 @@ export class SlideTwoColumns extends SlideBase {
         ${this.imageUrl
           ? this.editable
             ? this.wrapDeletable('image_url', html`
-                <div class="bottom-image"><img src="${this.imageUrl}" alt="" /></div>
+                <div class="bottom-image"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" /></div>
               `, null)
-            : html`<div class="bottom-image"><img src="${this.imageUrl}" alt="" /></div>`
+            : html`<div class="bottom-image"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" /></div>`
           : ''}
       </div>
     `;

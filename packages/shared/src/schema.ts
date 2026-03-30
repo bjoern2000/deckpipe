@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+// --- Focal point for smart image cropping ---
+const FocalPointSchema = z.object({
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+});
+export type FocalPoint = z.infer<typeof FocalPointSchema>;
+
 // --- Base content fields (shared across all layouts) ---
 const BaseContentFields = {
   key_takeaway: z.string().optional(),
@@ -22,6 +29,7 @@ const TitleContentSchema = z.object({
   title: z.string().min(1),
   subtitle: z.string().optional(),
   image_url: z.string().url().optional(),
+  image_focus: FocalPointSchema.optional(),
 });
 
 const TitleAndBodyContentSchema = z.object({
@@ -29,6 +37,7 @@ const TitleAndBodyContentSchema = z.object({
   title: z.string().min(1),
   body: z.string().min(1),
   image_url: z.string().url().optional(),
+  image_focus: FocalPointSchema.optional(),
   table: TableSchema.optional(),
 });
 
@@ -37,6 +46,7 @@ const TitleAndBulletsContentSchema = z.object({
   title: z.string().min(1),
   bullets: z.array(z.string()).min(1),
   image_url: z.string().url().optional(),
+  image_focus: FocalPointSchema.optional(),
 });
 
 const TitleAndTableContentSchema = z.object({
@@ -56,6 +66,7 @@ const TwoColumnsContentSchema = z.object({
   left: ColumnSchema,
   right: ColumnSchema,
   image_url: z.string().url().optional(),
+  image_focus: FocalPointSchema.optional(),
 });
 
 const SectionBreakContentSchema = z.object({
@@ -68,6 +79,7 @@ const ImageAndTextContentSchema = z.object({
   title: z.string().min(1),
   body: z.string().min(1),
   image_url: z.string().url(),
+  image_focus: FocalPointSchema.optional(),
 });
 
 // --- New layout content schemas ---
@@ -76,6 +88,7 @@ const ImageGalleryContentSchema = z.object({
   title: z.string().optional(),
   caption: z.string().optional(),
   images: z.array(z.string().url()).min(2).max(5),
+  image_focuses: z.array(FocalPointSchema).optional(),
 });
 
 const MetricSchema = z.object({
@@ -94,11 +107,13 @@ const QuoteContentSchema = z.object({
   quote: z.string().min(1),
   attribution: z.string().optional(),
   image_url: z.string().url().optional(),
+  image_focus: FocalPointSchema.optional(),
 });
 
 const FullImageContentSchema = z.object({
   ...BaseContentFields,
   image_url: z.string().url(),
+  image_focus: FocalPointSchema.optional(),
   title: z.string().optional(),
   subtitle: z.string().optional(),
 });

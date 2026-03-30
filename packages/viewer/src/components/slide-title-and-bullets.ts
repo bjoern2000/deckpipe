@@ -2,6 +2,7 @@ import { html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { SlideBase } from './slide-base.js';
 import { mdInline } from '../utils/markdown.js';
+import { focalPointToObjectPosition } from '../utils/focal-point.js';
 
 @customElement('slide-title-and-bullets')
 export class SlideTitleAndBullets extends SlideBase {
@@ -39,6 +40,7 @@ export class SlideTitleAndBullets extends SlideBase {
   @property() title = '';
   @property({ type: Array }) bullets: string[] = [];
   @property({ attribute: 'image-url' }) imageUrl = '';
+  @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -73,9 +75,9 @@ export class SlideTitleAndBullets extends SlideBase {
           ${hasImage
             ? this.editable
               ? this.wrapDeletable('image_url', html`
-                  <div class="image-area"><img src="${this.imageUrl}" alt="" /></div>
+                  <div class="image-area"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" /></div>
                 `, null)
-              : html`<div class="image-area"><img src="${this.imageUrl}" alt="" /></div>`
+              : html`<div class="image-area"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" /></div>`
             : ''}
         </div>
       </div>

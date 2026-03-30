@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import sharp from 'sharp';
+import smartcrop from 'smartcrop-sharp';
 import { generateImageId } from '@deckpipe/shared';
 import { config } from '../config.js';
 import { query } from '../db/client.js';
@@ -37,7 +39,22 @@ export async function saveUploadedImage(file: Express.Multer.File) {
   };
 }
 
-export async function rehostExternalImage(imageUrl: string): Promise<string | null> {
+async function detectFocalPoint(buffer: Buffer): Promise<{ x: number; y: number }> {
+  try {
+    const metadata = await sharp(buffer).metadata();
+    const width = metadata.width || 1;
+    const height = metadata.height || 1;
+    const result = await smartcrop.crop(buffer, { width: 100, height: 100 });
+    const crop = result.topCrop;
+    const x = Math.min(1, Math.max(0, (crop.x + crop.width / 2) / width));
+    const y = Math.min(1, Math.max(0, (crop.y + crop.height / 2) / height));
+    return { x: Math.round(x * 1000) / 1000, y: Math.round(y * 1000) / 1000 };
+  } catch {
+    return { x: 0.5, y: 0.5 };
+  }
+}
+
+export async function rehostExternalImage(imageUrl: string): Promise<{ url: string; focus: { x: number; y: number } } | null> {
   try {
     const response = await fetch(imageUrl, {
       signal: AbortSignal.timeout(10000),
@@ -62,7 +79,12 @@ export async function rehostExternalImage(imageUrl: string): Promise<string | nu
       [imageId, imageUrl, contentType, buffer.length]
     );
 
-    return `${config.apiUrl}/v1/images/${filename}`;
+    const focus = await detectFocalPoint(buffer);
+
+    return {
+      url: `${config.apiUrl}/v1/images/${filename}`,
+      focus,
+    };
   } catch {
     return null;
   }
@@ -77,11 +99,34 @@ export async function rehostImagesInDeck(slides: unknown[]): Promise<unknown[]> 
 
   for (const slide of result) {
     const content = (slide as { content: Record<string, unknown> }).content;
+
+    // Handle single image_url
     if (content.image_url && typeof content.image_url === 'string' && isExternalUrl(content.image_url)) {
-      const newUrl = await rehostExternalImage(content.image_url);
-      if (newUrl) {
-        content.image_url = newUrl;
+      const rehosted = await rehostExternalImage(content.image_url);
+      if (rehosted) {
+        content.image_url = rehosted.url;
+        content.image_focus = rehosted.focus;
       }
+    }
+
+    // Handle images array (image_gallery layout)
+    if (Array.isArray(content.images)) {
+      const focuses: Array<{ x: number; y: number }> = [];
+      for (let i = 0; i < content.images.length; i++) {
+        const imgUrl = content.images[i];
+        if (typeof imgUrl === 'string' && isExternalUrl(imgUrl)) {
+          const rehosted = await rehostExternalImage(imgUrl);
+          if (rehosted) {
+            content.images[i] = rehosted.url;
+            focuses.push(rehosted.focus);
+          } else {
+            focuses.push({ x: 0.5, y: 0.5 });
+          }
+        } else {
+          focuses.push({ x: 0.5, y: 0.5 });
+        }
+      }
+      content.image_focuses = focuses;
     }
   }
 

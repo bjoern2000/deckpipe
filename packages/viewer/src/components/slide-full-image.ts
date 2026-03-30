@@ -1,6 +1,7 @@
 import { html, css, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { SlideBase } from './slide-base.js';
+import { focalPointToObjectPosition } from '../utils/focal-point.js';
 
 @customElement('slide-full-image')
 export class SlideFullImage extends SlideBase {
@@ -50,6 +51,7 @@ export class SlideFullImage extends SlideBase {
   ];
 
   @property({ attribute: 'image-url' }) imageUrl = '';
+  @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
   @property() title = '';
   @property() subtitle = '';
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
@@ -60,8 +62,8 @@ export class SlideFullImage extends SlideBase {
       <div class="slide">
         ${this.imageUrl
           ? this.editable
-            ? this.wrapDeletable('image_url', html`<img class="bg" src="${this.imageUrl}" alt="" />`, null)
-            : html`<img class="bg" src="${this.imageUrl}" alt="" />`
+            ? this.wrapDeletable('image_url', html`<img class="bg" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />`, null)
+            : html`<img class="bg" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />`
           : nothing}
         <div class="overlay"></div>
         <div class="content">

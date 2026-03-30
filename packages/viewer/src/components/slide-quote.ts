@@ -2,6 +2,7 @@ import { html, css, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { SlideBase } from './slide-base.js';
 import { mdInline } from '../utils/markdown.js';
+import { focalPointToObjectPosition } from '../utils/focal-point.js';
 
 @customElement('slide-quote')
 export class SlideQuote extends SlideBase {
@@ -53,6 +54,7 @@ export class SlideQuote extends SlideBase {
   @property() quote = '';
   @property() attribution = '';
   @property({ attribute: 'image-url' }) imageUrl = '';
+  @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -70,7 +72,7 @@ export class SlideQuote extends SlideBase {
             ? this.wrapDeletable('attribution', html`
                 <div class="attribution">
                   ${this.imageUrl
-                    ? this.wrapDeletable('image_url', html`<img class="avatar" src="${this.imageUrl}" alt="" />`, null)
+                    ? this.wrapDeletable('image_url', html`<img class="avatar" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />`, null)
                     : nothing}
                   <span contenteditable="true"
                     @blur=${(e: FocusEvent) => this.emitChange('attribution', (e.target as HTMLElement).textContent)}
@@ -79,7 +81,7 @@ export class SlideQuote extends SlideBase {
               `)
             : html`
               <div class="attribution">
-                ${this.imageUrl ? html`<img class="avatar" src="${this.imageUrl}" alt="" />` : nothing}
+                ${this.imageUrl ? html`<img class="avatar" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" />` : nothing}
                 <span>${this.attribution}</span>
               </div>
             `

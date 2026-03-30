@@ -64,6 +64,7 @@ export function createApp() {
           }
 
           const ogTags = [
+            `<meta name="robots" content="noindex, nofollow" />`,
             `<meta property="og:title" content="${escapeHtml(deck.title)}" />`,
             `<meta property="og:description" content="${escapeHtml(description)}" />`,
             `<meta property="og:url" content="${escapeHtml(deckUrl)}" />`,

@@ -127,10 +127,10 @@ export class ViewerApp extends LitElement {
 
     .mobile-layout {
       width: 100%;
-      padding: 12px;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 0;
     }
 
     .mobile-layout .mobile-slide {
@@ -139,8 +139,6 @@ export class ViewerApp extends LitElement {
       background: white;
       overflow: hidden;
       position: relative;
-      border-radius: 8px;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
     }
 
     .mobile-layout .mobile-slide .slide-container {
@@ -477,7 +475,7 @@ export class ViewerApp extends LitElement {
   private renderMobileMode() {
     if (!this.deck) return html``;
     const customVars = this.getCustomCssVars();
-    const vw = window.innerWidth - 24; // account for mobile-layout padding
+    const vw = window.innerWidth;
     const scale = vw / 960;
     return html`
       <div class="mobile-layout">

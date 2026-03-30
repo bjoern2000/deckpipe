@@ -486,6 +486,18 @@ export class ViewerApp extends LitElement {
     `;
   }
 
+  private darkenHex(hex: string, minLuminance = 0.18): string {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    // Relative luminance (WCAG)
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    if (lum <= minLuminance) return hex;
+    const scale = minLuminance / lum;
+    const clamp = (v: number) => Math.round(Math.min(255, Math.max(0, v * scale * 255)));
+    return `#${clamp(r).toString(16).padStart(2, '0')}${clamp(g).toString(16).padStart(2, '0')}${clamp(b).toString(16).padStart(2, '0')}`;
+  }
+
   private getCustomCssVars(): string {
     const vars: string[] = [];
     if (this.deck?.heading_font) {
@@ -496,6 +508,7 @@ export class ViewerApp extends LitElement {
     }
     if (this.deck?.accent_color) {
       vars.push(`--dp-accent:${this.deck.accent_color}`);
+      vars.push(`--dp-text-title:${this.darkenHex(this.deck.accent_color)}`);
     }
     return vars.join(';');
   }

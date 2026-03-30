@@ -67,7 +67,7 @@ export class ViewerApp extends LitElement {
     }
 
     .deck-title {
-      font-family: "Inconsolata", monospace;
+      font-family: var(--dp-font-heading, 'DM Sans', sans-serif);
       font-size: 17px;
       font-weight: 700;
       color: #333;
@@ -449,7 +449,7 @@ export class ViewerApp extends LitElement {
             @nav-prev=${this.prevSlide}
             @nav-next=${this.nextSlide}
           ></nav-arrows>
-          <div class="top-bar" style="max-width:${this.slideWidth}px">
+          <div class="top-bar" style="max-width:${this.slideWidth}px;${customVars}">
             <span class="deck-title">${this.deck.title}</span>
             <viewer-toolbar
               .editMode=${this.editMode}

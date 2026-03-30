@@ -28,7 +28,7 @@ export class SlideBase extends LitElement {
       font-family: var(--dp-font-heading, 'DM Sans', sans-serif);
       font-weight: 700;
       color: var(--dp-text-title, #0f172a);
-      margin: 0 0 16px 0;
+      margin: 0 0 32px 0;
       font-size: 2.2em;
       line-height: 1.2;
     }
@@ -73,7 +73,7 @@ export class SlideBase extends LitElement {
       line-height: 1.5;
       padding: 10px 16px;
       border-radius: 8px;
-      margin: 0 0 16px 0;
+      margin: 0 0 32px 0;
       font-family: var(--dp-font-body, 'DM Sans', sans-serif);
     }
 

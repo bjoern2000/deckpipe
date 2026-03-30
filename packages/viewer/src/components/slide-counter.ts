@@ -5,6 +5,7 @@ import { customElement, property } from 'lit/decorators.js';
 export class SlideCounter extends LitElement {
   static styles = css`
     :host {
+      font-family: "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", monospace;
       font-size: 13px;
       color: #999;
     }

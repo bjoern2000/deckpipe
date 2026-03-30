@@ -8,6 +8,7 @@ export class ViewerToolbar extends LitElement {
       display: flex;
       align-items: center;
       gap: 8px;
+      font-family: "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", monospace;
     }
 
     .actions {
@@ -17,6 +18,7 @@ export class ViewerToolbar extends LitElement {
     }
 
     button {
+      font-family: "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", monospace;
       background: none;
       border: 1px solid #ddd;
       border-radius: 6px;

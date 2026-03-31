@@ -27,12 +27,21 @@ export class SlideQuote extends SlideBase {
       }
       blockquote::before {
         content: '\u201C';
-        font-size: 3em;
+        font-size: 2.5em;
         color: var(--dp-accent, #7c3aed);
-        position: absolute;
-        top: -20px;
-        left: -30px;
         opacity: 0.3;
+        line-height: 0;
+        vertical-align: -0.25em;
+        margin-right: 0.05em;
+      }
+      blockquote::after {
+        content: '\u201D';
+        font-size: 2.5em;
+        color: var(--dp-accent, #7c3aed);
+        opacity: 0.3;
+        line-height: 0;
+        vertical-align: -0.25em;
+        margin-left: 0.05em;
       }
       .attribution {
         display: flex;

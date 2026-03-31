@@ -74,7 +74,7 @@ export class SlideQuote extends SlideBase {
           <blockquote contenteditable="true"
             @blur=${(e: FocusEvent) => this.emitChange('quote', (e.target as HTMLElement).textContent)}
           >${this.quote}</blockquote>
-        `) : html`<blockquote>${mdInline(this.quote)}</blockquote>`}
+        `) : html`<blockquote>${mdInline(this.quote.trimEnd())}</blockquote>`}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this.attribution || this.editable
           ? this.editable

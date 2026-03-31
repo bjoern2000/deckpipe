@@ -129,6 +129,7 @@ const TimelineEventSchema = z.object({
   label: z.string().min(1),
   title: z.string().min(1),
   description: z.string().optional(),
+  position: z.number().min(0).max(1).optional(),
 });
 
 const TimelineContentSchema = z.object({

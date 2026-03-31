@@ -155,7 +155,7 @@ export class SlideRenderer extends LitElement {
       case 'timeline':
         return html`<slide-timeline
           .title=${c.title || ''}
-          .events=${(c.events as Array<{label: string, title: string, description?: string}>) || []}
+          .events=${(c.events as Array<{label: string, title: string, description?: string, position?: number}>) || []}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-timeline>`;

@@ -9,55 +9,56 @@ export class SlideTimeline extends SlideBase {
     SlideBase.baseStyles,
     css`
       .timeline {
-        display: grid;
-        grid-template-columns: repeat(var(--event-count, 4), 1fr);
-        gap: 0;
         flex: 1;
-        align-content: center;
-      }
-      .event {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: 0 12px;
         position: relative;
       }
-      .dot-row {
-        position: relative;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        padding: 8px 0;
-      }
-      .dot-row::before {
-        content: '';
+      .timeline-line {
         position: absolute;
         top: 50%;
-        left: 0;
-        right: 0;
+        left: 6%;
+        right: 6%;
         height: 3px;
         margin-top: -1.5px;
         background: var(--dp-accent, #7c3aed);
         opacity: 0.25;
       }
-      .event:first-child .dot-row::before { left: 50%; }
-      .event:last-child .dot-row::before { right: 50%; }
+      .event {
+        position: absolute;
+        transform: translateX(-50%);
+        text-align: center;
+      }
       .dot {
+        position: absolute;
+        top: 50%;
+        left: 50%;
         width: 18px;
         height: 18px;
+        margin-top: -9px;
+        margin-left: -9px;
         border-radius: 50%;
         background: var(--dp-accent, #7c3aed);
         flex-shrink: 0;
-        z-index: 1;
-        position: relative;
+      }
+      .event-content {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: max-content;
+      }
+      .event-content.below {
+        top: calc(50% + 20px);
+      }
+      .event-content.above {
+        bottom: calc(50% + 20px);
       }
       .event-label {
         font-family: var(--dp-font-heading, 'DM Sans', sans-serif);
         font-size: 0.75em;
         font-weight: 700;
         color: var(--dp-accent, #7c3aed);
-        margin-top: 12px;
         text-transform: uppercase;
         letter-spacing: 0.03em;
       }
@@ -66,22 +67,37 @@ export class SlideTimeline extends SlideBase {
         font-size: 0.95em;
         font-weight: 600;
         color: var(--dp-text-title, #0f172a);
-        margin-top: 6px;
+        margin-top: 4px;
       }
       .event-description {
         font-size: 0.8em;
         color: var(--dp-text-body, #64748b);
-        margin-top: 4px;
+        margin-top: 2px;
       }
     `,
   ];
 
   @property() title = '';
-  @property({ type: Array }) events: Array<{ label: string; title: string; description?: string }> = [];
+  @property({ type: Array }) events: Array<{ label: string; title: string; description?: string; position?: number }> = [];
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
+  private getPositions(): number[] {
+    const n = this.events.length;
+    if (n <= 1) return [0.5];
+    return this.events.map((e, i) => e.position ?? i / (n - 1));
+  }
+
+  private getLeft(pos: number): number {
+    const PAD = 6;
+    return PAD + pos * (100 - 2 * PAD);
+  }
+
   render() {
+    const positions = this.getPositions();
+    const n = this.events.length;
+    const eventWidth = `${Math.floor(80 / n)}%`;
+
     return html`
       <div class="slide">
         ${this.title
@@ -95,47 +111,53 @@ export class SlideTimeline extends SlideBase {
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this.editable ? this.wrapDeletable('events', html`
-          <div class="timeline" style="--event-count:${this.events.length}">
+          <div class="timeline">
+            <div class="timeline-line"></div>
             ${this.events.map((ev, i) => html`
-              <div class="event">
-                <div class="dot-row"><div class="dot"></div></div>
-                <div class="event-label" contenteditable="true"
-                  @blur=${(e: FocusEvent) => {
-                    const newEvents = this.events.map((evt, idx) =>
-                      idx === i ? { ...evt, label: (e.target as HTMLElement).textContent || '' } : evt
-                    );
-                    this.emitChange('events', newEvents);
-                  }}
-                >${ev.label}</div>
-                <div class="event-title" contenteditable="true"
-                  @blur=${(e: FocusEvent) => {
-                    const newEvents = this.events.map((evt, idx) =>
-                      idx === i ? { ...evt, title: (e.target as HTMLElement).textContent || '' } : evt
-                    );
-                    this.emitChange('events', newEvents);
-                  }}
-                >${ev.title}</div>
-                ${ev.description ? html`
-                  <div class="event-description" contenteditable="true"
+              <div class="event" style="left:${this.getLeft(positions[i])}%;width:${eventWidth};top:0;bottom:0">
+                <div class="dot"></div>
+                <div class="event-content ${i % 2 === 0 ? 'below' : 'above'}">
+                  <div class="event-label" contenteditable="true"
                     @blur=${(e: FocusEvent) => {
                       const newEvents = this.events.map((evt, idx) =>
-                        idx === i ? { ...evt, description: (e.target as HTMLElement).textContent || '' } : evt
+                        idx === i ? { ...evt, label: (e.target as HTMLElement).textContent || '' } : evt
                       );
                       this.emitChange('events', newEvents);
                     }}
-                  >${ev.description}</div>
-                ` : nothing}
+                  >${ev.label}</div>
+                  <div class="event-title" contenteditable="true"
+                    @blur=${(e: FocusEvent) => {
+                      const newEvents = this.events.map((evt, idx) =>
+                        idx === i ? { ...evt, title: (e.target as HTMLElement).textContent || '' } : evt
+                      );
+                      this.emitChange('events', newEvents);
+                    }}
+                  >${ev.title}</div>
+                  ${ev.description ? html`
+                    <div class="event-description" contenteditable="true"
+                      @blur=${(e: FocusEvent) => {
+                        const newEvents = this.events.map((evt, idx) =>
+                          idx === i ? { ...evt, description: (e.target as HTMLElement).textContent || '' } : evt
+                        );
+                        this.emitChange('events', newEvents);
+                      }}
+                    >${ev.description}</div>
+                  ` : nothing}
+                </div>
               </div>
             `)}
           </div>
         `, []) : html`
-          <div class="timeline" style="--event-count:${this.events.length}">
-            ${this.events.map(ev => html`
-              <div class="event">
-                <div class="dot-row"><div class="dot"></div></div>
-                <div class="event-label">${ev.label}</div>
-                <div class="event-title">${mdInline(ev.title)}</div>
-                ${ev.description ? html`<div class="event-description">${mdInline(ev.description)}</div>` : nothing}
+          <div class="timeline">
+            <div class="timeline-line"></div>
+            ${this.events.map((ev, i) => html`
+              <div class="event" style="left:${this.getLeft(positions[i])}%;width:${eventWidth};top:0;bottom:0">
+                <div class="dot"></div>
+                <div class="event-content ${i % 2 === 0 ? 'below' : 'above'}">
+                  <div class="event-label">${ev.label}</div>
+                  <div class="event-title">${mdInline(ev.title)}</div>
+                  ${ev.description ? html`<div class="event-description">${mdInline(ev.description)}</div>` : nothing}
+                </div>
               </div>
             `)}
           </div>

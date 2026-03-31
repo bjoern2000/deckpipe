@@ -260,6 +260,8 @@ export class SlideRenderer extends LitElement {
       case 'quadrant':
         return html`<slide-quadrant
           .title=${c.title || ''}
+          .body=${c.body || ''}
+          .bullets=${(c.bullets as string[]) || []}
           x-label=${c.x_label || ''}
           y-label=${c.y_label || ''}
           .quadrantLabels=${(c.quadrant_labels as string[]) || []}

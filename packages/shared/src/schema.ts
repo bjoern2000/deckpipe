@@ -262,6 +262,8 @@ const QuadrantItemSchema = z.object({
 const QuadrantContentSchema = z.object({
   ...BaseContentFields,
   title: z.string().optional(),
+  body: z.string().optional(),
+  bullets: z.array(z.string()).max(6).optional(),
   x_label: z.string().optional(),
   y_label: z.string().optional(),
   quadrant_labels: z.array(z.string()).length(4).optional(),
@@ -302,7 +304,7 @@ export const LayoutNames = [
   'image_gallery', 'stats', 'quote', 'full_image',
   'timeline', 'comparison', 'code', 'callout',
   'icons_and_text', 'team', 'embed', 'pros_and_cons',
-  'agenda', 'closing', 'swot', 'quadrant',
+  'agenda', 'swot', 'quadrant', 'closing',
 ] as const;
 export type Layout = typeof LayoutNames[number];
 

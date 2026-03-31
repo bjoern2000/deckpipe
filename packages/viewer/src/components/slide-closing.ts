@@ -23,7 +23,17 @@ export class SlideClosing extends SlideBase {
         opacity: 0.12;
         z-index: 0;
       }
-      .content { position: relative; z-index: 1; }
+      .content {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+      }
+      .spacer { flex: 1; }
       .heading {
         font-family: var(--dp-font-heading, 'DM Sans', sans-serif);
         font-size: 3em;
@@ -39,7 +49,7 @@ export class SlideClosing extends SlideBase {
       .contact-lines {
         list-style: none;
         padding: 0;
-        margin: 24px 0 0 0;
+        margin: 0;
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -72,6 +82,7 @@ export class SlideClosing extends SlideBase {
             : html`<img class="bg-image" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`
           : nothing}
         <div class="content">
+          <div class="spacer"></div>
           ${this.heading || this.editable
             ? this.editable
               ? this.wrapDeletable('heading', html`
@@ -91,6 +102,7 @@ export class SlideClosing extends SlideBase {
                 `)
               : html`<p class="subheading">${mdInline(this.subheading)}</p>`
             : nothing}
+          <div class="spacer"></div>
           ${this.contactLines.length
             ? this.editable
               ? this.wrapDeletable('contact_lines', html`

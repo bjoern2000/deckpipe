@@ -8,24 +8,25 @@ export class SlideEmbed extends SlideBase {
   static styles = [
     SlideBase.baseStyles,
     css`
-      .embed-wrapper {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
+      .slide {
+        padding: 0;
         align-items: center;
         justify-content: center;
-        min-height: 0;
+      }
+      .embed-wrapper {
+        width: 90%;
+        height: 90%;
+        display: flex;
+        flex-direction: column;
       }
       .embed-container {
         width: 100%;
+        flex: 1;
         position: relative;
         border-radius: 8px;
         overflow: hidden;
         background: #f1f5f9;
       }
-      .embed-container.ratio-16-9 { aspect-ratio: 16/9; }
-      .embed-container.ratio-4-3 { aspect-ratio: 4/3; }
-      .embed-container.ratio-1-1 { aspect-ratio: 1/1; }
       iframe {
         width: 100%;
         height: 100%;
@@ -80,16 +81,6 @@ export class SlideEmbed extends SlideBase {
   render() {
     return html`
       <div class="slide">
-        ${this.title
-          ? this.editable
-            ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
-                  @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
-                >${this.title}</h1>
-              `)
-            : html`<h1>${this.title}</h1>`
-          : nothing}
-        ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this._isPrint()
           ? html`
             <div class="print-placeholder">
@@ -99,7 +90,7 @@ export class SlideEmbed extends SlideBase {
           `
           : html`
             <div class="embed-wrapper">
-              <div class="embed-container ${this._ratioClass()}">
+              <div class="embed-container">
                 <iframe src="${this.url}"
                   sandbox="allow-scripts allow-same-origin allow-popups"
                   loading="lazy"

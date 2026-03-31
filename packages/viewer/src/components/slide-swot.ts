@@ -112,10 +112,10 @@ export class SlideSwot extends SlideBase {
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         <div class="grid">
-          ${this._renderQuadrant('Strengths', 'strengths', this.strengths)}
-          ${this._renderQuadrant('Weaknesses', 'weaknesses', this.weaknesses)}
-          ${this._renderQuadrant('Opportunities', 'opportunities', this.opportunities)}
-          ${this._renderQuadrant('Threats', 'threats', this.threats)}
+          ${this._renderQuadrant('\u{1F4AA} Strengths', 'strengths', this.strengths)}
+          ${this._renderQuadrant('\u{26A0}\uFE0F Weaknesses', 'weaknesses', this.weaknesses)}
+          ${this._renderQuadrant('\u{1F680} Opportunities', 'opportunities', this.opportunities)}
+          ${this._renderQuadrant('\u{1F6E1}\uFE0F Threats', 'threats', this.threats)}
         </div>
       </div>
     `;

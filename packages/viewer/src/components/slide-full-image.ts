@@ -37,6 +37,7 @@ export class SlideFullImage extends SlideBase {
       h1 {
         color: #ffffff;
         text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        margin-bottom: 8px;
       }
       .subtitle {
         color: rgba(255,255,255,0.85);

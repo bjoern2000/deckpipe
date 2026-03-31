@@ -8,6 +8,10 @@ export default defineConfig({
         target: 'http://localhost:3010',
         changeOrigin: true,
       },
+      '/admin': {
+        target: 'http://localhost:3010',
+        changeOrigin: true,
+      },
     },
   },
   build: {

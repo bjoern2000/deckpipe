@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { decksRouter } from './routes/decks.js';
 import { imagesRouter } from './routes/images.js';
 import { mcpRouter } from './routes/mcp.js';
+import { adminRouter } from './routes/admin.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { basicAuth } from './middleware/basic-auth.js';
 import { query } from './db/client.js';
 import { config } from './config.js';
 
@@ -43,6 +45,9 @@ export function createApp() {
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  // Admin panel
+  app.use('/admin', basicAuth, adminRouter);
 
   // Serve viewer static files in production
   const viewerDist = path.resolve(__dirname, '../../viewer/dist');

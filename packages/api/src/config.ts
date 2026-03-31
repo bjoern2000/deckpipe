@@ -11,4 +11,6 @@ export const config = {
   apiUrl: process.env.API_URL || 'http://localhost:3010',
   viewerUrl: process.env.VIEWER_URL || 'http://localhost:5173',
   imageStoragePath: process.env.IMAGE_STORAGE_PATH || './data/images',
+  adminUsername: process.env.ADMIN_USERNAME || '',
+  adminPassword: process.env.ADMIN_PASSWORD || '',
 };

@@ -183,6 +183,7 @@ Accepts PNG, JPG, WebP up to 10MB. Upload first, then use the returned URL when 
         { name: 'swot', fields: 'strengths[], weaknesses[], opportunities[], threats[] (1-5 items each, all required), title?, key_takeaway?' },
         { name: 'quadrant', fields: 'items[]: { label, x: 0-1, y: 0-1 } (1-12 items, required), title?, body?, bullets?[], x_label?, y_label?, quadrant_labels?[4], key_takeaway?. Title/body/bullets on left, chart on right.' },
         { name: 'closing', fields: 'heading?, subheading?, contact_lines?[], image_url?, key_takeaway?. Accent-colored background with white text. Contact lines at bottom. Use as final slide.' },
+        { name: 'venn_diagram', fields: 'circles[]: { label, items?[] } (2-3 circles, required), overlaps?[]: { sets: number[], label } (max 4), title?, key_takeaway?. Renders overlapping circles with labeled intersections.' },
       ];
       const customization = {
         heading_font: 'Google Font for headings. Default: DM Sans.',

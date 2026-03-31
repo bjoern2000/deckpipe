@@ -13,6 +13,7 @@ export class SlideClosing extends SlideBase {
         align-items: center;
         justify-content: center;
         text-align: center;
+        background: var(--dp-accent, #7c3aed);
       }
       .bg-image {
         position: absolute;
@@ -38,12 +39,12 @@ export class SlideClosing extends SlideBase {
         font-family: var(--dp-font-heading, 'DM Sans', sans-serif);
         font-size: 3em;
         font-weight: 800;
-        color: var(--dp-text-title, #0f172a);
+        color: #ffffff;
         margin: 0;
       }
       .subheading {
         font-size: 1.2em;
-        color: var(--dp-text-body, #64748b);
+        color: rgba(255, 255, 255, 0.8);
         margin-top: 12px;
       }
       .contact-lines {
@@ -56,10 +57,10 @@ export class SlideClosing extends SlideBase {
       }
       .contact-lines li {
         font-size: 0.9em;
-        color: var(--dp-text-body, #64748b);
+        color: rgba(255, 255, 255, 0.7);
       }
       .contact-lines li a {
-        color: var(--dp-accent, #7c3aed);
+        color: #ffffff;
         text-decoration: underline;
       }
     `,

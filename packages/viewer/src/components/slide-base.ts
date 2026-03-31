@@ -160,36 +160,36 @@ export class SlideBase extends LitElement {
 
     /* --- Image prompt placeholder --- */
     .image-prompt-placeholder {
-      display: flex;
-      flex-direction: column;
+      display: inline-flex;
+      flex-direction: row;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      height: 100%;
-      min-height: 80px;
-      background: #f8fafc;
-      border: 2px dashed #cbd5e1;
-      border-radius: 8px;
-      padding: 16px;
+      gap: 6px;
+      background: #f1f5f9;
+      border: 1px dashed #cbd5e1;
+      border-radius: 6px;
+      padding: 5px 10px;
+      width: fit-content;
+      max-width: 100%;
       box-sizing: border-box;
     }
     .image-prompt-icon {
       color: #94a3b8;
       flex-shrink: 0;
+      width: 14px;
+      height: 14px;
     }
     .image-prompt-text {
-      font-size: 0.55em;
+      font-size: 0.42em;
       color: #94a3b8;
-      text-align: center;
-      line-height: 1.4;
-      max-width: 90%;
+      line-height: 1.3;
       font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
     }
     .image-prompt-hint {
-      font-size: 0.45em;
-      color: #cbd5e1;
-      font-weight: 400;
+      display: none;
     }
 
     /* --- Rich bullet: detail tooltip --- */
@@ -344,7 +344,7 @@ export class SlideBase extends LitElement {
     if (!imagePrompt) return nothing;
     return html`
       <div class="image-prompt-placeholder">
-        <svg class="image-prompt-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="image-prompt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
           <circle cx="8.5" cy="8.5" r="1.5"/>
           <polyline points="21 15 16 10 5 21"/>

@@ -64,6 +64,7 @@ export class SlideRenderer extends LitElement {
           .body=${c.body || ''}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          image-prompt=${c.image_prompt || ''}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-title-and-body>`;
@@ -74,6 +75,7 @@ export class SlideRenderer extends LitElement {
           .bullets=${(c.bullets as string[]) || []}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          image-prompt=${c.image_prompt || ''}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-title-and-bullets>`;
@@ -93,6 +95,7 @@ export class SlideRenderer extends LitElement {
           .right=${(c.right as { heading: string; body: string }) || { heading: '', body: '' }}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          image-prompt=${c.image_prompt || ''}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-two-columns>`;
@@ -110,6 +113,7 @@ export class SlideRenderer extends LitElement {
           .body=${c.body || ''}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          image-prompt=${c.image_prompt || ''}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-image-and-text>`;
@@ -147,6 +151,7 @@ export class SlideRenderer extends LitElement {
         return html`<slide-full-image
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          image-prompt=${c.image_prompt || ''}
           .title=${c.title || ''}
           .subtitle=${c.subtitle || ''}
           key-takeaway=${c.key_takeaway || ''}

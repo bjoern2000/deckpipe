@@ -158,6 +158,40 @@ export class SlideBase extends LitElement {
       line-height: 1.3;
     }
 
+    /* --- Image prompt placeholder --- */
+    .image-prompt-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      height: 100%;
+      min-height: 80px;
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .image-prompt-icon {
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+    .image-prompt-text {
+      font-size: 0.55em;
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.4;
+      max-width: 90%;
+      font-weight: 500;
+    }
+    .image-prompt-hint {
+      font-size: 0.45em;
+      color: #cbd5e1;
+      font-weight: 400;
+    }
+
     /* --- Rich bullet: detail tooltip --- */
     .bullet-content {
       display: inline;
@@ -304,6 +338,21 @@ export class SlideBase extends LitElement {
       `);
     }
     return html`<div class="key-takeaway">${mdInline(keyTakeaway)}</div>`;
+  }
+
+  protected renderImagePrompt(imagePrompt: string | undefined) {
+    if (!imagePrompt) return nothing;
+    return html`
+      <div class="image-prompt-placeholder">
+        <svg class="image-prompt-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <span class="image-prompt-text">${imagePrompt}</span>
+        <span class="image-prompt-hint">Drop image or use Edit mode</span>
+      </div>
+    `;
   }
 
   protected wrapDeletable(field: string, content: unknown, emptyValue: unknown = '') {

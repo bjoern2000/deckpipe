@@ -40,11 +40,12 @@ export class SlideTitleAndBullets extends SlideBase {
   @property({ type: Array }) bullets: BulletItem[] = [];
   @property({ attribute: 'image-url' }) imageUrl = '';
   @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
+  @property({ attribute: 'image-prompt' }) imagePrompt = '';
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
   render() {
-    const hasImage = !!this.imageUrl;
+    const hasImage = !!this.imageUrl || !!this.imagePrompt;
     const allSources = this.collectSources(this.bullets);
     return html`
       <div class="slide ${hasImage ? 'with-image' : ''}">
@@ -72,13 +73,15 @@ export class SlideTitleAndBullets extends SlideBase {
           `, []) : html`
             ${this.renderBulletList(this.bullets)}
           `}
-          ${hasImage
+          ${this.imageUrl
             ? this.editable
               ? this.wrapDeletable('image_url', html`
                   <div class="image-area"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} /></div>
                 `, null)
               : html`<div class="image-area"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} /></div>`
-            : ''}
+            : this.imagePrompt
+              ? html`<div class="image-area">${this.renderImagePrompt(this.imagePrompt)}</div>`
+              : ''}
         </div>
         ${this.editable ? '' : this.renderFootnotes(allSources)}
       </div>

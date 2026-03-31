@@ -10,6 +10,7 @@ export type FocalPoint = z.infer<typeof FocalPointSchema>;
 // --- Base content fields (shared across all layouts) ---
 const BaseContentFields = {
   key_takeaway: z.string().optional(),
+  image_prompt: z.string().optional(),
 };
 
 // --- Table ---
@@ -98,9 +99,9 @@ const ImageAndTextContentSchema = z.object({
   ...BaseContentFields,
   title: z.string().min(1),
   body: z.string().min(1),
-  image_url: z.string().url(),
+  image_url: z.string().url().optional(),
   image_focus: FocalPointSchema.optional(),
-});
+}).refine(d => d.image_url || d.image_prompt, { message: 'image_url or image_prompt is required', path: ['image_url'] });
 
 // --- New layout content schemas ---
 const ImageDetailSchema = z.object({
@@ -138,11 +139,11 @@ const QuoteContentSchema = z.object({
 
 const FullImageContentSchema = z.object({
   ...BaseContentFields,
-  image_url: z.string().url(),
+  image_url: z.string().url().optional(),
   image_focus: FocalPointSchema.optional(),
   title: z.string().optional(),
   subtitle: z.string().optional(),
-});
+}).refine(d => d.image_url || d.image_prompt, { message: 'image_url or image_prompt is required', path: ['image_url'] });
 
 // --- Timeline ---
 const TimelineEventSchema = z.object({

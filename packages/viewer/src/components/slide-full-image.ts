@@ -55,6 +55,7 @@ export class SlideFullImage extends SlideBase {
   @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
   @property() title = '';
   @property() subtitle = '';
+  @property({ attribute: 'image-prompt' }) imagePrompt = '';
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -65,7 +66,7 @@ export class SlideFullImage extends SlideBase {
           ? this.editable
             ? this.wrapDeletable('image_url', html`<img class="bg" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`, null)
             : html`<img class="bg" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`
-          : nothing}
+          : this.imagePrompt ? html`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:48px">${this.renderImagePrompt(this.imagePrompt)}</div>` : nothing}
         <div class="overlay"></div>
         <div class="content">
           ${this.title

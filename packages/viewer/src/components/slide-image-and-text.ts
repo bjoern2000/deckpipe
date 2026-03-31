@@ -47,6 +47,7 @@ export class SlideImageAndText extends SlideBase {
   @property() body = '';
   @property({ attribute: 'image-url' }) imageUrl = '';
   @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
+  @property({ attribute: 'image-prompt' }) imagePrompt = '';
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -58,7 +59,7 @@ export class SlideImageAndText extends SlideBase {
             ? this.editable
               ? this.wrapDeletable('image_url', html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`, null)
               : html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`
-            : ''}
+            : this.renderImagePrompt(this.imagePrompt)}
         </div>
         <div class="text-area">
           ${this.editable ? this.wrapDeletable('title', html`

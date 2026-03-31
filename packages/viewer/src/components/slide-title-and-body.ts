@@ -35,11 +35,12 @@ export class SlideTitleAndBody extends SlideBase {
   @property() body = '';
   @property({ attribute: 'image-url' }) imageUrl = '';
   @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
+  @property({ attribute: 'image-prompt' }) imagePrompt = '';
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
   render() {
-    const hasImage = !!this.imageUrl;
+    const hasImage = !!this.imageUrl || !!this.imagePrompt;
     return html`
       <div class="slide ${hasImage ? 'with-image' : ''}">
         <div class="text-area">
@@ -55,13 +56,15 @@ export class SlideTitleAndBody extends SlideBase {
             >${this.body}</p>
           `) : html`<div class="body-md">${md(this.body)}</div>`}
         </div>
-        ${hasImage
+        ${this.imageUrl
           ? this.editable
             ? this.wrapDeletable('image_url', html`
                 <div class="image-area"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} /></div>
               `, null)
             : html`<div class="image-area"><img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} /></div>`
-          : ''}
+          : this.imagePrompt
+            ? html`<div class="image-area">${this.renderImagePrompt(this.imagePrompt)}</div>`
+            : ''}
       </div>
     `;
   }

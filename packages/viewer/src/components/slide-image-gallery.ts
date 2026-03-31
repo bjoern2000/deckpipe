@@ -51,6 +51,7 @@ export class SlideImageGallery extends SlideBase {
   @property({ type: Array }) images: string[] = [];
   @property({ type: Array }) imageDetails: Array<{ title?: string; caption?: string }> = [];
   @property({ type: Array }) imageFocuses: Array<{ x: number; y: number }> = [];
+  @property({ attribute: 'image-prompt' }) imagePrompt = '';
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -95,15 +96,17 @@ export class SlideImageGallery extends SlideBase {
             : html`<h1>${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
-        ${this.editable ? this.wrapDeletable('images', html`
-          <div class="gallery">
-            ${this.images.map((src, i) => this.renderGalleryItem(src, i))}
-          </div>
-        `, []) : html`
-          <div class="gallery">
-            ${this.images.map((src, i) => this.renderGalleryItem(src, i))}
-          </div>
-        `}
+        ${this.images.length > 0
+          ? this.editable ? this.wrapDeletable('images', html`
+              <div class="gallery">
+                ${this.images.map((src, i) => this.renderGalleryItem(src, i))}
+              </div>
+            `, []) : html`
+              <div class="gallery">
+                ${this.images.map((src, i) => this.renderGalleryItem(src, i))}
+              </div>
+            `
+          : this.renderImagePrompt(this.imagePrompt)}
       </div>
     `;
   }

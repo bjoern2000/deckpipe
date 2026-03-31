@@ -113,10 +113,10 @@ const ImageGalleryContentSchema = z.object({
   ...BaseContentFields,
   title: z.string().optional(),
   caption: z.string().optional(),
-  images: z.array(z.string().url()).min(2).max(5),
+  images: z.array(z.string().url()).min(2).max(5).optional(),
   image_details: z.array(ImageDetailSchema).optional(),
   image_focuses: z.array(FocalPointSchema).optional(),
-});
+}).refine(d => (d.images && d.images.length > 0) || d.image_prompt, { message: 'images or image_prompt is required', path: ['images'] });
 
 const MetricSchema = z.object({
   value: z.string().min(1),

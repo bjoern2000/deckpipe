@@ -125,6 +125,7 @@ export class SlideRenderer extends LitElement {
           .images=${(c.images as string[]) || []}
           .imageDetails=${(c.image_details as Array<{title?: string, caption?: string}>) || []}
           .imageFocuses=${(c.image_focuses as Array<{x: number, y: number}>) || []}
+          image-prompt=${c.image_prompt || ''}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-image-gallery>`;

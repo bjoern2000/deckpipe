@@ -20,6 +20,11 @@ export class SlideImageAndText extends SlideBase {
         justify-content: center;
         overflow: hidden;
       }
+      .image-area.placeholder-only {
+        flex: 0 0 auto;
+        align-self: flex-start;
+        margin-top: 4px;
+      }
       .image-area img {
         width: 100%;
         height: 100%;
@@ -54,7 +59,7 @@ export class SlideImageAndText extends SlideBase {
   render() {
     return html`
       <div class="slide">
-        <div class="image-area">
+        <div class="image-area ${!this.imageUrl && this.imagePrompt ? 'placeholder-only' : ''}">
           ${this.imageUrl
             ? this.editable
               ? this.wrapDeletable('image_url', html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`, null)

@@ -12,14 +12,14 @@ export class SlideAgenda extends SlideBase {
         flex: 1;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        gap: 4px;
+        justify-content: flex-start;
+        gap: 0;
       }
       .agenda-item {
         display: flex;
         align-items: baseline;
-        gap: 20px;
-        padding: 12px 0;
+        gap: 16px;
+        padding: 8px 0;
         border-bottom: 1px solid color-mix(in srgb, var(--dp-text-body, #64748b) 12%, transparent);
       }
       .agenda-item:last-child {
@@ -27,19 +27,22 @@ export class SlideAgenda extends SlideBase {
       }
       .number {
         font-family: var(--dp-font-heading, 'DM Sans', sans-serif);
-        font-size: 1.5em;
+        font-size: 1.2em;
         font-weight: 800;
         color: var(--dp-accent, #7c3aed);
-        min-width: 36px;
+        min-width: 28px;
         text-align: right;
         opacity: 0.7;
       }
       .item-content {
         flex: 1;
       }
+      h1 {
+        margin-bottom: 16px;
+      }
       .topic {
         font-family: var(--dp-font-heading, 'DM Sans', sans-serif);
-        font-size: 1em;
+        font-size: 0.95em;
         font-weight: 600;
         color: var(--dp-text-title, #0f172a);
       }

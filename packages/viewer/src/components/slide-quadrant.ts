@@ -56,7 +56,7 @@ export class SlideQuadrant extends SlideBase {
       .plot-area {
         position: relative;
         aspect-ratio: 1;
-        max-height: 100%;
+        height: 100%;
       }
       /* Main axes with arrows */
       .axis-x {

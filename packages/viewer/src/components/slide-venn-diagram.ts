@@ -192,6 +192,37 @@ export class SlideVennDiagram extends SlideBase {
     };
   }
 
+  private getOverlapWidth(sets: number[]): number {
+    const geo = this.getCircleGeometry();
+    if (sets.length === 3) return 50;
+    const [a, b] = sets;
+    const dx = geo[b].cx - geo[a].cx;
+    const dy = geo[b].cy - geo[a].cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    // Overlap lens width = 2*r - dist, use ~60% as safe text zone
+    const lensWidth = (geo[a].r + geo[b].r) - dist;
+    return Math.max(40, lensWidth * 0.6);
+  }
+
+  private wrapText(text: string, maxWidth: number): string[] {
+    const charWidth = 4.5; // approx px per char at 9px font
+    const maxChars = Math.floor(maxWidth / charWidth);
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let line = '';
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (test.length > maxChars && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
   private getViewBox(): string {
     return this.circles.length === 2 ? '0 0 420 320' : '0 0 420 380';
   }
@@ -257,9 +288,15 @@ export class SlideVennDiagram extends SlideBase {
               })}
               ${(this.overlaps || []).map(overlap => {
                 const pos = this.getOverlapPos(overlap.sets);
+                const maxW = this.getOverlapWidth(overlap.sets);
+                const lines = this.wrapText(overlap.label, maxW);
+                const lineHeight = 11;
+                const startY = pos.y - ((lines.length - 1) * lineHeight) / 2;
                 return svg`
-                  <text class="overlap-label" x="${pos.x}" y="${pos.y}" text-anchor="middle" dominant-baseline="central">
-                    ${overlap.label}
+                  <text class="overlap-label" x="${pos.x}" text-anchor="middle">
+                    ${lines.map((line, i) => svg`
+                      <tspan x="${pos.x}" y="${startY + i * lineHeight}">${line}</tspan>
+                    `)}
                   </text>
                 `;
               })}

@@ -203,7 +203,7 @@ export class SlideVennDiagram extends SlideBase {
     return html`
       <div class="slide">
         ${!hasLeft && this.title ? html`<h1>${this.title}</h1>` : nothing}
-        ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
+        ${!hasLeft ? this.renderKeyTakeaway(this.keyTakeaway, this.editable) : nothing}
         <div class="layout">
           ${hasLeft ? html`
             <div class="left-panel">
@@ -216,6 +216,7 @@ export class SlideVennDiagram extends SlideBase {
                     `)
                   : html`<h1>${this.title}</h1>`
                 : nothing}
+              ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
               ${this.body
                 ? this.editable
                   ? this.wrapDeletable('body', html`

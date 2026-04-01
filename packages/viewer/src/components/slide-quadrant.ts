@@ -190,7 +190,6 @@ export class SlideQuadrant extends SlideBase {
 
     return html`
       <div class="slide">
-        ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         <div class="layout">
           ${hasLeft ? html`
             <div class="left-panel">
@@ -203,6 +202,7 @@ export class SlideQuadrant extends SlideBase {
                     `)
                   : html`<h1>${this.title}</h1>`
                 : nothing}
+              ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
               ${this.body
                 ? this.editable
                   ? this.wrapDeletable('body', html`

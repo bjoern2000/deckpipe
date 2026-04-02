@@ -291,7 +291,7 @@ export class SlideBase extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.shadowRoot?.addEventListener('mouseenter', (e: Event) => {
+    this.shadowRoot?.addEventListener('mouseover', (e: Event) => {
       const trigger = (e.target as HTMLElement).closest?.('.bullet-detail-trigger');
       if (!trigger) return;
       const tooltip = trigger.querySelector('.bullet-tooltip') as HTMLElement;

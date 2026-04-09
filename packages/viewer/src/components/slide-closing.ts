@@ -76,7 +76,7 @@ export class SlideClosing extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.imageUrl
           ? this.editable
             ? this.wrapDeletable('image_url', html`<img class="bg-image" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`, null)
@@ -87,21 +87,21 @@ export class SlideClosing extends SlideBase {
           ${this.heading || this.editable
             ? this.editable
               ? this.wrapDeletable('heading', html`
-                  <h1 class="heading" contenteditable="true"
+                  <h1 class="heading" data-content-path="heading" contenteditable="true"
                     @blur=${(e: FocusEvent) => this.emitChange('heading', (e.target as HTMLElement).textContent)}
                   >${this.heading || 'Thank You'}</h1>
                 `)
-              : html`<h1 class="heading">${this.heading}</h1>`
+              : html`<h1 class="heading" data-content-path="heading">${this.heading}</h1>`
             : nothing}
           ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
           ${this.subheading || this.editable
             ? this.editable
               ? this.wrapDeletable('subheading', html`
-                  <p class="subheading" contenteditable="true"
+                  <p class="subheading" data-content-path="subheading" contenteditable="true"
                     @blur=${(e: FocusEvent) => this.emitChange('subheading', (e.target as HTMLElement).textContent)}
                   >${this.subheading}</p>
                 `)
-              : html`<p class="subheading">${mdInline(this.subheading)}</p>`
+              : html`<p class="subheading" data-content-path="subheading">${mdInline(this.subheading)}</p>`
             : nothing}
           <div class="spacer"></div>
           ${this.contactLines.length
@@ -109,7 +109,7 @@ export class SlideClosing extends SlideBase {
               ? this.wrapDeletable('contact_lines', html`
                   <ul class="contact-lines">
                     ${this.contactLines.map((line, i) => html`
-                      <li contenteditable="true"
+                      <li data-content-path="contact_lines[${i}]" contenteditable="true"
                         @blur=${(e: FocusEvent) => {
                           const newLines = [...this.contactLines];
                           newLines[i] = (e.target as HTMLElement).textContent || '';
@@ -121,7 +121,7 @@ export class SlideClosing extends SlideBase {
                 `, [])
               : html`
                 <ul class="contact-lines">
-                  ${this.contactLines.map(line => html`<li>${mdInline(line)}</li>`)}
+                  ${this.contactLines.map((line, i) => html`<li data-content-path="contact_lines[${i}]">${mdInline(line)}</li>`)}
                 </ul>
               `
             : nothing}

@@ -189,28 +189,28 @@ export class SlideQuadrant extends SlideBase {
     const hasLeft = this.title || this.body || this.bullets.length || this.editable;
 
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         <div class="layout">
           ${hasLeft ? html`
             <div class="left-panel">
               ${this.title
                 ? this.editable
                   ? this.wrapDeletable('title', html`
-                      <h1 contenteditable="true"
+                      <h1 contenteditable="true" data-content-path="title"
                         @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                       >${this.title}</h1>
                     `)
-                  : html`<h1>${this.title}</h1>`
+                  : html`<h1 data-content-path="title">${this.title}</h1>`
                 : nothing}
               ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
               ${this.body
                 ? this.editable
                   ? this.wrapDeletable('body', html`
-                      <div class="body" contenteditable="true"
+                      <div class="body" data-content-path="body" contenteditable="true"
                         @blur=${(e: FocusEvent) => this.emitChange('body', (e.target as HTMLElement).textContent)}
                       >${this.body}</div>
                     `)
-                  : html`<div class="body">${md(this.body)}</div>`
+                  : html`<div class="body" data-content-path="body">${md(this.body)}</div>`
                 : nothing}
               ${this.bullets.length
                 ? this.editable
@@ -261,8 +261,8 @@ export class SlideQuadrant extends SlideBase {
                 <div class="quadrant-label ql-bl">${ql[2]}</div>
                 <div class="quadrant-label ql-br">${ql[3]}</div>
               ` : nothing}
-              ${this.items.map(item => html`
-                <div class="item" style="left:${item.x * 100}%;bottom:${item.y * 100}%">
+              ${this.items.map((item, i) => html`
+                <div class="item" data-content-path="items[${i}]" style="left:${item.x * 100}%;bottom:${item.y * 100}%">
                   <div class="item-dot"></div>
                   <div class="item-label">${item.label}</div>
                 </div>

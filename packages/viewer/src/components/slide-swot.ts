@@ -67,7 +67,7 @@ export class SlideSwot extends SlideBase {
   private _renderQuadrant(name: string, field: 'strengths' | 'weaknesses' | 'opportunities' | 'threats', items: BulletItem[]) {
     if (this.editable) {
       return html`
-        <div class="quadrant ${field}">
+        <div class="quadrant ${field}" data-content-path="${field}">
           <div class="quadrant-header">${name}</div>
           <div class="quadrant-body">
             ${this.wrapDeletable(field, html`
@@ -90,7 +90,7 @@ export class SlideSwot extends SlideBase {
       `;
     }
     return html`
-      <div class="quadrant ${field}">
+      <div class="quadrant ${field}" data-content-path="${field}">
         <div class="quadrant-header">${name}</div>
         <div class="quadrant-body">
           ${this.renderBulletList(items)}
@@ -107,15 +107,15 @@ export class SlideSwot extends SlideBase {
       ...this.collectSources(this.threats),
     ];
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.title
           ? this.editable
             ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
+                <h1 contenteditable="true" data-content-path="title"
                   @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                 >${this.title}</h1>
               `)
-            : html`<h1>${this.title}</h1>`
+            : html`<h1 data-content-path="title">${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         <div class="grid">

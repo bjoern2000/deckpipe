@@ -73,14 +73,14 @@ export class SlideProsAndCons extends SlideBase {
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
-  private _renderProsConsList(items: BulletItem[], icon: string, sourceOffset: number) {
+  private _renderProsConsList(items: BulletItem[], icon: string, sourceOffset: number, field: string) {
     let idx = sourceOffset;
-    return items.map(item => {
+    return items.map((item, itemIdx) => {
       const b = normalizeBullet(item);
       const sources = b.sources || [];
       const startIdx = idx;
       idx += sources.length;
-      return html`<li><span class="bullet-icon">${icon === '&#10003;' ? '\u2713' : '\u2717'}</span><span class="bullet-content">${mdInline(b.text)}${b.detail ? html`<span class="bullet-detail-trigger" tabindex="0" @mouseover=${this._positionTooltip}>i<span class="bullet-tooltip">${b.detail}</span></span>` : nothing}${sources.map((_, j) => html`<span class="source-sup">${startIdx + j + 1}</span>`)}</span></li>`;
+      return html`<li data-content-path="${field}[${itemIdx}]"><span class="bullet-icon">${icon === '&#10003;' ? '\u2713' : '\u2717'}</span><span class="bullet-content">${mdInline(b.text)}${b.detail ? html`<span class="bullet-detail-trigger" tabindex="0" @mouseover=${this._positionTooltip}>i<span class="bullet-tooltip">${b.detail}</span></span>` : nothing}${sources.map((_, j) => html`<span class="source-sup">${startIdx + j + 1}</span>`)}</span></li>`;
     });
   }
 
@@ -90,19 +90,19 @@ export class SlideProsAndCons extends SlideBase {
     const allSources = [...this.collectSources(this.pros), ...this.collectSources(this.cons)];
 
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.title
           ? this.editable
             ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
+                <h1 contenteditable="true" data-content-path="title"
                   @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                 >${this.title}</h1>
               `)
-            : html`<h1>${this.title}</h1>`
+            : html`<h1 data-content-path="title">${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         <div class="columns">
-          <div class="column pros-col">
+          <div class="column pros-col" data-content-path="pros">
             ${this.editable
               ? html`<div class="column-heading pros">
                   <span class="icon">&#10003;</span>
@@ -114,7 +114,7 @@ export class SlideProsAndCons extends SlideBase {
             ${this.editable ? this.wrapDeletable('pros', html`
               <ul>
                 ${this.pros.map((p, i) => html`
-                  <li>
+                  <li data-content-path="pros[${i}]">
                     <span class="bullet-icon">&#10003;</span>
                     <span contenteditable="true"
                       @blur=${(e: FocusEvent) => {
@@ -130,11 +130,11 @@ export class SlideProsAndCons extends SlideBase {
               </ul>
             `, []) : html`
               <ul>
-                ${this._renderProsConsList(this.pros, '&#10003;', 0)}
+                ${this._renderProsConsList(this.pros, '&#10003;', 0, 'pros')}
               </ul>
             `}
           </div>
-          <div class="column cons-col">
+          <div class="column cons-col" data-content-path="cons">
             ${this.editable
               ? html`<div class="column-heading cons">
                   <span class="icon">&#10007;</span>
@@ -146,7 +146,7 @@ export class SlideProsAndCons extends SlideBase {
             ${this.editable ? this.wrapDeletable('cons', html`
               <ul>
                 ${this.cons.map((c, i) => html`
-                  <li>
+                  <li data-content-path="cons[${i}]">
                     <span class="bullet-icon">&#10007;</span>
                     <span contenteditable="true"
                       @blur=${(e: FocusEvent) => {
@@ -162,7 +162,7 @@ export class SlideProsAndCons extends SlideBase {
               </ul>
             `, []) : html`
               <ul>
-                ${this._renderProsConsList(this.cons, '&#10007;', this.collectSources(this.pros).length)}
+                ${this._renderProsConsList(this.cons, '&#10007;', this.collectSources(this.pros).length, 'cons')}
               </ul>
             `}
           </div>

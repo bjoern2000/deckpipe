@@ -232,8 +232,8 @@ export class SlideVennDiagram extends SlideBase {
     const geo = this.getCircleGeometry();
 
     return html`
-      <div class="slide">
-        ${!hasLeft && this.title ? html`<h1>${this.title}</h1>` : nothing}
+      <div class="slide" data-content-path="slide">
+        ${!hasLeft && this.title ? html`<h1 data-content-path="title">${this.title}</h1>` : nothing}
         ${!hasLeft ? this.renderKeyTakeaway(this.keyTakeaway, this.editable) : nothing}
         <div class="layout">
           ${hasLeft ? html`
@@ -241,28 +241,28 @@ export class SlideVennDiagram extends SlideBase {
               ${this.title
                 ? this.editable
                   ? this.wrapDeletable('title', html`
-                      <h1 contenteditable="true"
+                      <h1 contenteditable="true" data-content-path="title"
                         @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                       >${this.title}</h1>
                     `)
-                  : html`<h1>${this.title}</h1>`
+                  : html`<h1 data-content-path="title">${this.title}</h1>`
                 : nothing}
               ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
               ${this.body
                 ? this.editable
                   ? this.wrapDeletable('body', html`
-                      <div class="body" contenteditable="true"
+                      <div class="body" data-content-path="body" contenteditable="true"
                         @blur=${(e: FocusEvent) => this.emitChange('body', (e.target as HTMLElement).textContent)}
                       >${this.body}</div>
                     `)
-                  : html`<div class="body">${md(this.body)}</div>`
+                  : html`<div class="body" data-content-path="body">${md(this.body)}</div>`
                 : nothing}
             </div>
           ` : nothing}
           <div class="diagram-wrapper">
             <svg viewBox="${this.getViewBox()}" xmlns="http://www.w3.org/2000/svg">
               ${geo.map((c, i) => svg`
-                <circle
+                <circle data-content-path="circles[${i}]"
                   cx="${c.cx}" cy="${c.cy}" r="${c.r}"
                   fill="${this.getCircleColor(i)}"
                   fill-opacity="0.25"

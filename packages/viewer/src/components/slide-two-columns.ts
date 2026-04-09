@@ -51,16 +51,16 @@ export class SlideTwoColumns extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.editable ? this.wrapDeletable('title', html`
-          <h1 contenteditable="true"
+          <h1 contenteditable="true" data-content-path="title"
             @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
           >${this.title}</h1>
-        `) : html`<h1>${this.title}</h1>`}
+        `) : html`<h1 data-content-path="title">${this.title}</h1>`}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         <div class="columns">
           ${this.editable ? this.wrapDeletable('left', html`
-            <div class="column">
+            <div class="column" data-content-path="left">
               <h2 contenteditable="true"
                 @blur=${(e: FocusEvent) => this.emitChange('left', { ...this.left, heading: (e.target as HTMLElement).textContent || '' })}
               >${this.left.heading}</h2>
@@ -69,13 +69,13 @@ export class SlideTwoColumns extends SlideBase {
               >${this.left.body}</p>
             </div>
           `, null) : html`
-            <div class="column">
+            <div class="column" data-content-path="left">
               <h2>${this.left.heading}</h2>
               <div class="body-md">${md(this.left.body)}</div>
             </div>
           `}
           ${this.editable ? this.wrapDeletable('right', html`
-            <div class="column">
+            <div class="column" data-content-path="right">
               <h2 contenteditable="true"
                 @blur=${(e: FocusEvent) => this.emitChange('right', { ...this.right, heading: (e.target as HTMLElement).textContent || '' })}
               >${this.right.heading}</h2>
@@ -84,7 +84,7 @@ export class SlideTwoColumns extends SlideBase {
               >${this.right.body}</p>
             </div>
           `, null) : html`
-            <div class="column">
+            <div class="column" data-content-path="right">
               <h2>${this.right.heading}</h2>
               <div class="body-md">${md(this.right.body)}</div>
             </div>

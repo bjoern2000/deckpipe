@@ -69,17 +69,17 @@ export class SlideQuote extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.editable ? this.wrapDeletable('quote', html`
-          <blockquote contenteditable="true"
+          <blockquote data-content-path="quote" contenteditable="true"
             @blur=${(e: FocusEvent) => this.emitChange('quote', (e.target as HTMLElement).textContent)}
           >${this.quote}</blockquote>
-        `) : html`<blockquote>${mdInline(this.quote.trimEnd())}</blockquote>`}
+        `) : html`<blockquote data-content-path="quote">${mdInline(this.quote.trimEnd())}</blockquote>`}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this.attribution || this.editable
           ? this.editable
             ? this.wrapDeletable('attribution', html`
-                <div class="attribution">
+                <div class="attribution" data-content-path="attribution">
                   ${this.imageUrl
                     ? this.wrapDeletable('image_url', html`<img class="avatar" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`, null)
                     : nothing}
@@ -89,7 +89,7 @@ export class SlideQuote extends SlideBase {
                 </div>
               `)
             : html`
-              <div class="attribution">
+              <div class="attribution" data-content-path="attribution">
                 ${this.imageUrl ? html`<img class="avatar" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />` : nothing}
                 <span>${this.attribution}</span>
               </div>

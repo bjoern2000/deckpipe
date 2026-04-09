@@ -366,13 +366,13 @@ export class SlideBase extends LitElement {
     if (!keyTakeaway) return nothing;
     if (editable) {
       return this.wrapDeletable('key_takeaway', html`
-        <div class="key-takeaway"
+        <div class="key-takeaway" data-content-path="key_takeaway"
           contenteditable="true"
           @blur=${(e: FocusEvent) => this.emitChange('key_takeaway', (e.target as HTMLElement).textContent)}
         >${keyTakeaway}</div>
       `);
     }
-    return html`<div class="key-takeaway">${mdInline(keyTakeaway)}</div>`;
+    return html`<div class="key-takeaway" data-content-path="key_takeaway">${mdInline(keyTakeaway)}</div>`;
   }
 
   protected renderImagePrompt(imagePrompt: string | undefined) {
@@ -443,14 +443,17 @@ export class SlideBase extends LitElement {
     img.replaceWith(placeholder);
   }
 
+  private _bulletIndex = 0;
+
   protected renderBulletItem(
     bullet: BulletItem,
     sourceStartIndex: number,
   ): { tmpl: TemplateResult; sourceCount: number } {
     const b = normalizeBullet(bullet);
     const sources = b.sources || [];
+    const idx = this._bulletIndex++;
     return {
-      tmpl: html`<li>
+      tmpl: html`<li data-content-path="bullets[${idx}]">
         <span class="bullet-content">${mdInline(b.text)}</span>${b.detail ? html`<span class="bullet-detail-trigger" tabindex="0" @mouseover=${this._positionTooltip}>i<span class="bullet-tooltip">${b.detail}</span></span>` : nothing}${sources.map((_, j) => html`<span class="source-sup">${sourceStartIndex + j + 1}</span>`)}
       </li>`,
       sourceCount: sources.length,
@@ -478,6 +481,7 @@ export class SlideBase extends LitElement {
   }
 
   protected renderBulletList(bullets: BulletItem[]): TemplateResult {
+    this._bulletIndex = 0;
     let sourceIndex = 0;
     const items: TemplateResult[] = [];
     for (const b of bullets) {

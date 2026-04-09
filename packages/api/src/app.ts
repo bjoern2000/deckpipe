@@ -4,6 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { decksRouter } from './routes/decks.js';
+import { commentsRouter } from './routes/comments.js';
 import { imagesRouter } from './routes/images.js';
 import { mcpRouter } from './routes/mcp.js';
 import { adminRouter } from './routes/admin.js';
@@ -39,6 +40,7 @@ export function createApp() {
 
   // Routes
   app.use('/v1/decks', decksRouter);
+  app.use('/v1/decks/:id/comments', commentsRouter);
   app.use('/v1/images', imagesRouter);
 
   // Health check

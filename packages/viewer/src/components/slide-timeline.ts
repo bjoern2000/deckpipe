@@ -101,22 +101,22 @@ export class SlideTimeline extends SlideBase {
     const eventWidth = `${colWidth}%`;
 
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.title
           ? this.editable
             ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
+                <h1 contenteditable="true" data-content-path="title"
                   @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                 >${this.title}</h1>
               `)
-            : html`<h1>${this.title}</h1>`
+            : html`<h1 data-content-path="title">${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this.editable ? this.wrapDeletable('events', html`
           <div class="timeline">
             <div class="timeline-line"></div>
             ${this.events.map((ev, i) => html`
-              <div class="event" style="left:${this.getLeft(positions[i]) - colWidth / 2}%;width:${eventWidth};top:0;bottom:0">
+              <div class="event" data-content-path="events[${i}]" style="left:${this.getLeft(positions[i]) - colWidth / 2}%;width:${eventWidth};top:0;bottom:0">
                 <div class="dot"></div>
                 <div class="event-content ${i % 2 === 0 ? 'below' : 'above'}">
                   <div class="event-label" contenteditable="true"
@@ -153,7 +153,7 @@ export class SlideTimeline extends SlideBase {
           <div class="timeline">
             <div class="timeline-line"></div>
             ${this.events.map((ev, i) => html`
-              <div class="event" style="left:${this.getLeft(positions[i]) - colWidth / 2}%;width:${eventWidth};top:0;bottom:0">
+              <div class="event" data-content-path="events[${i}]" style="left:${this.getLeft(positions[i]) - colWidth / 2}%;width:${eventWidth};top:0;bottom:0">
                 <div class="dot"></div>
                 <div class="event-content ${i % 2 === 0 ? 'below' : 'above'}">
                   <div class="event-label">${ev.label}</div>

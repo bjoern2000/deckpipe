@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import './slide-renderer.js';
+import { SLIDE_WIDTH } from '../constants.js';
 
 @customElement('thumbnail-strip')
 export class ThumbnailStrip extends LitElement {
@@ -56,7 +57,7 @@ export class ThumbnailStrip extends LitElement {
 
   private getScale(el: HTMLElement): number {
     // Scale the 960px inner to fit the thumbnail's actual width
-    return el.clientWidth / 960;
+    return el.clientWidth / SLIDE_WIDTH;
   }
 
   protected updated() {

@@ -53,42 +53,42 @@ export class SlideCallout extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.title
           ? this.editable
             ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
+                <h1 data-content-path="title" contenteditable="true"
                   @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                 >${this.title}</h1>
               `)
-            : html`<h1>${this.title}</h1>`
+            : html`<h1 data-content-path="title">${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         <div class="callout-content">
           ${this.label
             ? this.editable
               ? this.wrapDeletable('label', html`
-                  <div class="label" contenteditable="true"
+                  <div class="label" data-content-path="label" contenteditable="true"
                     @blur=${(e: FocusEvent) => this.emitChange('label', (e.target as HTMLElement).textContent)}
                   >${this.label}</div>
                 `)
-              : html`<div class="label">${this.label}</div>`
+              : html`<div class="label" data-content-path="label">${this.label}</div>`
             : nothing}
           ${this.editable
             ? this.wrapDeletable('value', html`
-                <div class="value" contenteditable="true"
+                <div class="value" data-content-path="value" contenteditable="true"
                   @blur=${(e: FocusEvent) => this.emitChange('value', (e.target as HTMLElement).textContent)}
                 >${this.value}</div>
               `)
-            : html`<div class="value">${this.value}</div>`}
+            : html`<div class="value" data-content-path="value">${this.value}</div>`}
           ${this.body
             ? this.editable
               ? this.wrapDeletable('body', html`
-                  <div class="body" contenteditable="true"
+                  <div class="body" data-content-path="body" contenteditable="true"
                     @blur=${(e: FocusEvent) => this.emitChange('body', (e.target as HTMLElement).textContent)}
                   >${this.body}</div>
                 `)
-              : html`<div class="body">${md(this.body)}</div>`
+              : html`<div class="body" data-content-path="body">${md(this.body)}</div>`
             : nothing}
         </div>
       </div>

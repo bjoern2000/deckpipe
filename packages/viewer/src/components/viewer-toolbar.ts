@@ -61,10 +61,36 @@ export class ViewerToolbar extends LitElement {
       font-size: 14px;
       color: #22c55e;
     }
+
+    .comment-btn-wrap {
+      position: relative;
+      display: flex;
+    }
+
+    .badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+      pointer-events: none;
+      font-family: system-ui, sans-serif;
+    }
   `;
 
   @property() title = '';
   @property({ type: Boolean }) editMode = false;
+  @property({ type: Boolean }) commentMode = false;
+  @property({ type: Number }) commentCount = 0;
   @property({ type: Boolean }) canEdit = false;
   @property() saveStatus: 'idle' | 'saving' | 'saved' = 'idle';
   @state() private shareConfirm = false;
@@ -82,6 +108,15 @@ export class ViewerToolbar extends LitElement {
           ${this.saveStatus === 'saving' ? 'Saving...' : this.saveStatus === 'saved' ? 'Saved' : ''}
         </span>
         ${this.shareConfirm ? html`<span class="share-feedback">Link copied</span>` : ''}
+        <div class="comment-btn-wrap">
+          <button
+            class="${this.commentMode ? 'active' : ''}"
+            @click=${() => this.dispatchEvent(new CustomEvent('toggle-comments', { bubbles: true, composed: true }))}
+            title="Toggle comments"
+          >${unsafeHTML(lucideIcon('message-square'))}
+          </button>
+          ${this.commentCount > 0 ? html`<span class="badge">${this.commentCount}</span>` : ''}
+        </div>
         <button @click=${() => this.dispatchEvent(new CustomEvent('start-presentation', { bubbles: true, composed: true }))} title="Present fullscreen">
           ${unsafeHTML(lucideIcon('play'))}
         </button>

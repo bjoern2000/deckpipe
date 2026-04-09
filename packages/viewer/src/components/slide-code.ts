@@ -143,15 +143,15 @@ export class SlideCode extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.title
           ? this.editable
             ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
+                <h1 data-content-path="title" contenteditable="true"
                   @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                 >${this.title}</h1>
               `)
-            : html`<h1>${this.title}</h1>`
+            : html`<h1 data-content-path="title">${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         <div class="code-container">
@@ -161,18 +161,18 @@ export class SlideCode extends SlideBase {
           </div>
           <div class="code-body">
             ${this.editable
-              ? html`<pre contenteditable="true" @blur=${(e: FocusEvent) => this.emitChange('code', (e.target as HTMLElement).textContent)}>${this.code}</pre>`
-              : html`<pre>${this.highlight(this.code, this.language)}</pre>`}
+              ? html`<pre data-content-path="code" contenteditable="true" @blur=${(e: FocusEvent) => this.emitChange('code', (e.target as HTMLElement).textContent)}>${this.code}</pre>`
+              : html`<pre data-content-path="code">${this.highlight(this.code, this.language)}</pre>`}
           </div>
         </div>
         ${this.caption
           ? this.editable
             ? this.wrapDeletable('caption', html`
-                <p class="caption" contenteditable="true"
+                <p class="caption" data-content-path="caption" contenteditable="true"
                   @blur=${(e: FocusEvent) => this.emitChange('caption', (e.target as HTMLElement).textContent)}
                 >${this.caption}</p>
               `)
-            : html`<p class="caption">${mdInline(this.caption)}</p>`
+            : html`<p class="caption" data-content-path="caption">${mdInline(this.caption)}</p>`
           : nothing}
       </div>
     `;

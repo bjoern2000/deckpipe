@@ -61,7 +61,7 @@ export class SlideFullImage extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.imageUrl
           ? this.editable
             ? this.wrapDeletable('image_url', html`<img class="bg" src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`, null)
@@ -72,21 +72,21 @@ export class SlideFullImage extends SlideBase {
           ${this.title
             ? this.editable
               ? this.wrapDeletable('title', html`
-                  <h1 contenteditable="true"
+                  <h1 data-content-path="title" contenteditable="true"
                     @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                   >${this.title}</h1>
                 `)
-              : html`<h1>${this.title}</h1>`
+              : html`<h1 data-content-path="title">${this.title}</h1>`
             : nothing}
           ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
           ${this.subtitle || this.editable
             ? this.editable
               ? this.wrapDeletable('subtitle', html`
-                  <p class="subtitle" contenteditable="true"
+                  <p class="subtitle" data-content-path="subtitle" contenteditable="true"
                     @blur=${(e: FocusEvent) => this.emitChange('subtitle', (e.target as HTMLElement).textContent)}
                   >${this.subtitle}</p>
                 `)
-              : html`<p class="subtitle">${this.subtitle}</p>`
+              : html`<p class="subtitle" data-content-path="subtitle">${this.subtitle}</p>`
             : nothing}
         </div>
       </div>

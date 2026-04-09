@@ -73,17 +73,17 @@ export class SlideAgenda extends SlideBase {
     const heading = this.title || 'Agenda';
 
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.editable ? this.wrapDeletable('title', html`
-          <h1 contenteditable="true"
+          <h1 contenteditable="true" data-content-path="title"
             @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
           >${heading}</h1>
-        `) : html`<h1>${heading}</h1>`}
+        `) : html`<h1 data-content-path="title">${heading}</h1>`}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this.editable ? this.wrapDeletable('items', html`
           <div class="items">
             ${this.items.map((item, i) => html`
-              <div class="agenda-item">
+              <div class="agenda-item" data-content-path="items[${i}]">
                 <div class="number">${i + 1}</div>
                 <div class="item-content">
                   <div class="topic" contenteditable="true"
@@ -121,7 +121,7 @@ export class SlideAgenda extends SlideBase {
         `, []) : html`
           <div class="items">
             ${this.items.map((item, i) => html`
-              <div class="agenda-item">
+              <div class="agenda-item" data-content-path="items[${i}]">
                 <div class="number">${i + 1}</div>
                 <div class="item-content">
                   <div class="topic">${mdInline(item.topic)}</div>

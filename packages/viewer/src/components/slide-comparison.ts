@@ -97,7 +97,7 @@ export class SlideComparison extends SlideBase {
     const data = this[side];
     if (this.editable) {
       return this.wrapDeletable(side, html`
-        <div class="side">
+        <div class="side" data-content-path="${side}">
           <h2 contenteditable="true"
             @blur=${(e: FocusEvent) => this.emitChange(side, { ...data, heading: (e.target as HTMLElement).textContent || '' })}
           >${data.heading}</h2>
@@ -119,7 +119,7 @@ export class SlideComparison extends SlideBase {
       `, null);
     }
     return html`
-      <div class="side">
+      <div class="side" data-content-path="${side}">
         <h2>${data.heading}</h2>
         ${this.renderBulletList(data.bullets)}
         ${data.image_url ? html`<img src="${data.image_url}" alt="" style="object-position:${focalPointToObjectPosition(data.image_focus || null)}" @error=${this.onImgError} />` : nothing}
@@ -130,15 +130,15 @@ export class SlideComparison extends SlideBase {
   render() {
     const allSources = [...this.collectSources(this.left.bullets), ...this.collectSources(this.right.bullets)];
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.title
           ? this.editable
             ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
+                <h1 contenteditable="true" data-content-path="title"
                   @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                 >${this.title}</h1>
               `)
-            : html`<h1>${this.title}</h1>`
+            : html`<h1 data-content-path="title">${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         <div class="columns">
@@ -149,11 +149,11 @@ export class SlideComparison extends SlideBase {
         ${this.verdict
           ? this.editable
             ? this.wrapDeletable('verdict', html`
-                <div class="verdict" contenteditable="true"
+                <div class="verdict" data-content-path="verdict" contenteditable="true"
                   @blur=${(e: FocusEvent) => this.emitChange('verdict', (e.target as HTMLElement).textContent)}
                 >${this.verdict}</div>
               `)
-            : html`<div class="verdict">${mdInline(this.verdict)}</div>`
+            : html`<div class="verdict" data-content-path="verdict">${mdInline(this.verdict)}</div>`
           : nothing}
         ${this.editable ? '' : this.renderFootnotes(allSources)}
       </div>

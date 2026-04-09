@@ -23,3 +23,7 @@ export const updateDeckLimiter = createLimiter(120);
 export const exportPdfLimiter = createLimiter(30);
 export const uploadImageLimiter = createLimiter(120);
 export const viewerLimiter = createLimiter(600);
+export const listCommentsLimiter = createLimiter(300);
+export const createCommentLimiter = createLimiter(120);
+export const replyCommentLimiter = createLimiter(120);
+export const updateCommentLimiter = createLimiter(120);

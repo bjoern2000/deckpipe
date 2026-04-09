@@ -448,3 +448,53 @@ export const ImageUploadResponseSchema = z.object({
   content_type: z.string(),
 });
 export type ImageUploadResponse = z.infer<typeof ImageUploadResponseSchema>;
+
+// --- Comments ---
+export const AuthorTypeSchema = z.enum(['human', 'agent']);
+export type AuthorType = z.infer<typeof AuthorTypeSchema>;
+
+export const CommentMessageSchema = z.object({
+  author_name: z.string().min(1),
+  author_type: AuthorTypeSchema,
+  body: z.string().min(1),
+  created_at: z.string(),
+});
+export type CommentMessage = z.infer<typeof CommentMessageSchema>;
+
+export const CommentSchema = z.object({
+  id: z.string(),
+  deck_id: z.string(),
+  slide_id: z.string(),
+  content_path: z.string().min(1),
+  status: z.enum(['open', 'resolved']),
+  messages: z.array(CommentMessageSchema),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+export type Comment = z.infer<typeof CommentSchema>;
+
+export const CreateCommentSchema = z.object({
+  slide_id: z.string().min(1),
+  content_path: z.string().min(1),
+  author_name: z.string().min(1).max(100),
+  author_type: AuthorTypeSchema.default('human'),
+  body: z.string().min(1),
+});
+export type CreateCommentInput = z.infer<typeof CreateCommentSchema>;
+
+export const CreateReplySchema = z.object({
+  author_name: z.string().min(1).max(100),
+  author_type: AuthorTypeSchema.default('human'),
+  body: z.string().min(1),
+});
+export type CreateReplyInput = z.infer<typeof CreateReplySchema>;
+
+export const UpdateCommentSchema = z.object({
+  status: z.enum(['open', 'resolved']),
+});
+export type UpdateCommentInput = z.infer<typeof UpdateCommentSchema>;
+
+export const ListCommentsQuerySchema = z.object({
+  status: z.enum(['open', 'resolved']).optional(),
+  slide_id: z.string().optional(),
+});

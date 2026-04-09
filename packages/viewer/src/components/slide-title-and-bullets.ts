@@ -48,18 +48,18 @@ export class SlideTitleAndBullets extends SlideBase {
     const hasImage = !!this.imageUrl || !!this.imagePrompt;
     const allSources = this.collectSources(this.bullets);
     return html`
-      <div class="slide ${hasImage ? 'with-image' : ''}">
+      <div class="slide ${hasImage ? 'with-image' : ''}" data-content-path="slide">
         ${this.editable ? this.wrapDeletable('title', html`
-          <h1 contenteditable="true"
+          <h1 data-content-path="title" contenteditable="true"
             @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
           >${this.title}</h1>
-        `) : html`<h1>${this.title}</h1>`}
+        `) : html`<h1 data-content-path="title">${this.title}</h1>`}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         <div class="body-area">
           ${this.editable ? this.wrapDeletable('bullets', html`
             <ul>
               ${this.bullets.map((b, i) => html`
-                <li contenteditable="true"
+                <li data-content-path="bullets[${i}]" contenteditable="true"
                   @blur=${(e: FocusEvent) => {
                     const newBullets = [...this.bullets];
                     const orig = normalizeBullet(this.bullets[i]);

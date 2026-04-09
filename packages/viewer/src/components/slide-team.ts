@@ -81,21 +81,21 @@ export class SlideTeam extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.title
           ? this.editable
             ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
+                <h1 contenteditable="true" data-content-path="title"
                   @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                 >${this.title}</h1>
               `)
-            : html`<h1>${this.title}</h1>`
+            : html`<h1 data-content-path="title">${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this.editable ? this.wrapDeletable('members', html`
           <div class="grid" style="--col-count:${this._colCount()}">
             ${this.members.map((m, i) => html`
-              <div class="member">
+              <div class="member" data-content-path="members[${i}]">
                 ${m.image_url
                   ? html`<img class="avatar" src="${m.image_url}" alt="" style="object-position:${focalPointToObjectPosition(m.image_focus || null)}" @error=${this.onImgError} />`
                   : html`<div class="initials">${this._getInitials(m.name)}</div>`}
@@ -130,8 +130,8 @@ export class SlideTeam extends SlideBase {
           </div>
         `, []) : html`
           <div class="grid" style="--col-count:${this._colCount()}">
-            ${this.members.map(m => html`
-              <div class="member">
+            ${this.members.map((m, i) => html`
+              <div class="member" data-content-path="members[${i}]">
                 ${m.image_url
                   ? html`<img class="avatar" src="${m.image_url}" alt="" style="object-position:${focalPointToObjectPosition(m.image_focus || null)}" @error=${this.onImgError} />`
                   : html`<div class="initials">${this._getInitials(m.name)}</div>`}

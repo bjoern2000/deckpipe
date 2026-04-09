@@ -80,7 +80,7 @@ export class SlideEmbed extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this._isPrint()
           ? html`
             <div class="print-placeholder">
@@ -100,11 +100,11 @@ export class SlideEmbed extends SlideBase {
               ${this.caption
                 ? this.editable
                   ? this.wrapDeletable('caption', html`
-                      <p class="caption" contenteditable="true"
+                      <p class="caption" data-content-path="caption" contenteditable="true"
                         @blur=${(e: FocusEvent) => this.emitChange('caption', (e.target as HTMLElement).textContent)}
                       >${this.caption}</p>
                     `)
-                  : html`<p class="caption">${mdInline(this.caption)}</p>`
+                  : html`<p class="caption" data-content-path="caption">${mdInline(this.caption)}</p>`
                 : nothing}
             </div>
           `}

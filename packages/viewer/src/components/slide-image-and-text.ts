@@ -53,7 +53,7 @@ export class SlideImageAndText extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.imageUrl ? html`
           <div class="image-area">
             ${this.editable
@@ -63,16 +63,16 @@ export class SlideImageAndText extends SlideBase {
         ` : nothing}
         <div class="text-area">
           ${this.editable ? this.wrapDeletable('title', html`
-            <h1 contenteditable="true"
+            <h1 data-content-path="title" contenteditable="true"
               @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
             >${this.title}</h1>
-          `) : html`<h1>${this.title}</h1>`}
+          `) : html`<h1 data-content-path="title">${this.title}</h1>`}
           ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
           ${this.editable ? this.wrapDeletable('body', html`
-            <p class="body-text" contenteditable="true"
+            <p class="body-text" data-content-path="body" contenteditable="true"
               @blur=${(e: FocusEvent) => this.emitChange('body', (e.target as HTMLElement).textContent)}
             >${this.body}</p>
-          `) : html`<div class="body-md">${md(this.body)}</div>`}
+          `) : html`<div class="body-md" data-content-path="body">${md(this.body)}</div>`}
         </div>
       </div>
     `;

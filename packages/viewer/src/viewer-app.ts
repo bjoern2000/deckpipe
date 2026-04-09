@@ -6,6 +6,10 @@ import './components/viewer-toolbar.js';
 import './components/nav-arrows.js';
 import './components/slide-counter.js';
 import './components/image-drop-zone.js';
+import './components/comment-layer.js';
+import './components/comment-thread.js';
+import { fetchComments, createComment, addReply, updateComment, type Comment } from './utils/comment-api.js';
+import { SLIDE_WIDTH, SLIDE_HEIGHT } from './constants.js';
 
 interface Deck {
   deck_id: string;
@@ -13,7 +17,8 @@ interface Deck {
   heading_font?: string | null;
   body_font?: string | null;
   accent_color?: string | null;
-  slides: Array<{ layout: string; content: Record<string, unknown> }>;
+  agent_name?: string | null;
+  slides: Array<{ layout: string; slide_id?: string; content: Record<string, unknown> }>;
   edit_key?: string;
   created_at: string;
   updated_at: string;
@@ -132,6 +137,12 @@ export class ViewerApp extends LitElement {
       box-shadow: none;
     }
 
+    .floating-thread {
+      position: fixed;
+      z-index: 1000;
+      pointer-events: auto;
+    }
+
     @media (max-width: 768px) {
       .thumbnail-panel { display: none; }
       .main-area { padding: 8px; }
@@ -201,10 +212,15 @@ export class ViewerApp extends LitElement {
   @state() private editMode = false;
   @state() private printMode = false;
   @state() private saveStatus: 'idle' | 'saving' | 'saved' = 'idle';
-  @state() private slideWidth = 960;
-  @state() private slideHeight = 540;
+  @state() private slideWidth = SLIDE_WIDTH;
+  @state() private slideHeight = SLIDE_HEIGHT;
   @state() private isMobile = false;
   @state() private presenterMode = false;
+  @state() private commentMode = false;
+  @state() private comments: Comment[] = [];
+  @state() private threadComment: Comment | null = null;
+  @state() private threadContentPath: string | null = null;
+  @state() private threadPos: { x: number; y: number } | null = null;
 
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private resizeObserver: ResizeObserver | null = null;
@@ -293,6 +309,7 @@ export class ViewerApp extends LitElement {
   private enterPresenterMode() {
     this.presenterMode = true;
     this.editMode = false;
+    this.commentMode = false;
     // Disconnect existing observer so it re-attaches to new .main-area
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
@@ -338,8 +355,18 @@ export class ViewerApp extends LitElement {
       this.nextSlide();
     } else if (e.key === 'Escape' && this.presenterMode) {
       this.exitPresenterMode();
+    } else if (e.key === 'c' && !this.presenterMode && !this.isInputFocused()) {
+      this.onToggleComments();
     }
   };
+
+  private isInputFocused(): boolean {
+    let el = document.activeElement;
+    while (el?.shadowRoot?.activeElement) {
+      el = el.shadowRoot.activeElement;
+    }
+    return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || (el as HTMLElement)?.isContentEditable === true;
+  }
 
   private getDeckId(): string | null {
     const match = window.location.pathname.match(/\/d\/([^/]+)/);
@@ -410,6 +437,7 @@ export class ViewerApp extends LitElement {
   private nextSlide() {
     if (this.deck && this.currentIndex < this.deck.slides.length - 1) {
       this.currentIndex++;
+      this.closeThread();
       window.location.hash = `slide=${this.currentIndex + 1}`;
     }
   }
@@ -417,6 +445,7 @@ export class ViewerApp extends LitElement {
   private prevSlide() {
     if (this.currentIndex > 0) {
       this.currentIndex--;
+      this.closeThread();
       window.location.hash = `slide=${this.currentIndex + 1}`;
     }
   }
@@ -429,11 +458,149 @@ export class ViewerApp extends LitElement {
   private onToggleEdit() {
     if (!this.canEdit) return;
     this.editMode = !this.editMode;
+    if (this.editMode) this.commentMode = false;
   }
 
   private onShare() {
     const url = this.getShareUrl();
     navigator.clipboard.writeText(url);
+  }
+
+  private async onToggleComments() {
+    this.commentMode = !this.commentMode;
+    if (this.commentMode) {
+      this.editMode = false;
+      await this.loadComments();
+    } else {
+      this.closeThread();
+    }
+  }
+
+  private async loadComments() {
+    if (!this.deck) return;
+    try {
+      this.comments = await fetchComments(this.deck.deck_id);
+    } catch {
+      console.error('[deckpipe] Failed to load comments');
+    }
+  }
+
+  private async onCommentCreated(e: CustomEvent<{ slide_id: string; content_path: string; body: string; author_name: string }>) {
+    if (!this.deck) return;
+    try {
+      const comment = await createComment(this.deck.deck_id, {
+        slide_id: e.detail.slide_id,
+        content_path: e.detail.content_path,
+        author_name: e.detail.author_name,
+        author_type: 'human',
+        body: e.detail.body,
+      });
+      this.comments = [...this.comments, comment];
+    } catch {
+      console.error('[deckpipe] Failed to create comment');
+    }
+  }
+
+  private async onReplyAdded(e: CustomEvent<{ comment_id: string; body: string; author_name: string }>) {
+    if (!this.deck) return;
+    try {
+      const updated = await addReply(this.deck.deck_id, e.detail.comment_id, {
+        author_name: e.detail.author_name,
+        author_type: 'human',
+        body: e.detail.body,
+      });
+      this.comments = this.comments.map(c => c.id === updated.id ? updated : c);
+    } catch {
+      console.error('[deckpipe] Failed to add reply');
+    }
+  }
+
+  private onCommentElementClick(e: CustomEvent<{ contentPath: string; commentId: string | null; screenRect: { top: number; left: number; width: number; height: number } | null }>) {
+    const { contentPath, commentId, screenRect } = e.detail;
+
+    if (commentId) {
+      this.threadComment = this.comments.find(c => c.id === commentId) ?? null;
+      this.threadContentPath = null;
+    } else {
+      this.threadComment = null;
+      this.threadContentPath = contentPath;
+    }
+
+    if (screenRect) {
+      // Position as if a pin (24px, translated 50%/-50%) were at the element's top-right
+      // Pin center = (right, top), so pin bottom-right = (right + 12, top + 12) in screen px
+      // Scale the 12px pin offset from native to screen space
+      const scaleFactor = this.slideWidth / SLIDE_WIDTH;
+      const pinOffset = 12 * scaleFactor;
+      this.positionThread(screenRect.left + screenRect.width + pinOffset, screenRect.top + pinOffset);
+    }
+  }
+
+  private onCommentPinClick(e: CustomEvent<{ contentPath: string; commentId: string; pinRect: { top: number; left: number; width: number; height: number } }>) {
+    const { commentId, pinRect } = e.detail;
+    this.threadComment = this.comments.find(c => c.id === commentId) ?? null;
+    this.threadContentPath = null;
+    // Top-left of thread at bottom-right of pin
+    this.positionThread(pinRect.left + pinRect.width, pinRect.top + pinRect.height);
+  }
+
+  private positionThread(anchorRight: number, anchorTop: number) {
+    let x = anchorRight + 4;
+    let y = anchorTop;
+    if (x + 320 > window.innerWidth) {
+      x = anchorRight - 324;
+    }
+    y = Math.max(8, Math.min(y, window.innerHeight - 420));
+    x = Math.max(8, x);
+    this.threadPos = { x, y };
+  }
+
+  private onCommentClickEmpty() {
+    this.threadComment = null;
+    this.threadContentPath = null;
+    this.threadPos = null;
+  }
+
+  private closeThread() {
+    this.threadComment = null;
+    this.threadContentPath = null;
+    this.threadPos = null;
+  }
+
+  // --- Drag support for floating thread ---
+  private dragOffset: { x: number; y: number } | null = null;
+
+  private onThreadDragStart = (e: CustomEvent<{ clientX: number; clientY: number }>) => {
+    if (!this.threadPos) return;
+    this.dragOffset = { x: e.detail.clientX - this.threadPos.x, y: e.detail.clientY - this.threadPos.y };
+    window.addEventListener('mousemove', this.onThreadDragMove);
+    window.addEventListener('mouseup', this.onThreadDragEnd);
+  };
+
+  private onThreadDragMove = (e: MouseEvent) => {
+    if (!this.dragOffset) return;
+    this.threadPos = {
+      x: e.clientX - this.dragOffset.x,
+      y: e.clientY - this.dragOffset.y,
+    };
+  };
+
+  private onThreadDragEnd = () => {
+    this.dragOffset = null;
+    window.removeEventListener('mousemove', this.onThreadDragMove);
+    window.removeEventListener('mouseup', this.onThreadDragEnd);
+  };
+
+  private async onCommentStatusChanged(e: CustomEvent<{ comment_id: string; status: 'open' | 'resolved' }>) {
+    if (!this.deck) return;
+    try {
+      const updated = await updateComment(this.deck.deck_id, e.detail.comment_id, {
+        status: e.detail.status,
+      });
+      this.comments = this.comments.map(c => c.id === updated.id ? updated : c);
+    } catch {
+      console.error('[deckpipe] Failed to update comment');
+    }
   }
 
   private onSlideContentChanged(e: CustomEvent<{ field: string; value: unknown }>) {
@@ -509,7 +676,7 @@ export class ViewerApp extends LitElement {
 
     const slide = this.deck.slides[this.currentIndex];
     const customVars = this.getCustomCssVars();
-    const scaleFactor = this.slideWidth / 960;
+    const scaleFactor = this.slideWidth / SLIDE_WIDTH;
 
     return html`
       <div class="viewer-layout">
@@ -534,9 +701,12 @@ export class ViewerApp extends LitElement {
             <span class="deck-title">${this.deck.title}</span>
             <viewer-toolbar
               .editMode=${this.editMode}
+              .commentMode=${this.commentMode}
+              .commentCount=${this.comments.filter(c => c.status === 'open').length}
               .canEdit=${this.canEdit}
               .saveStatus=${this.saveStatus}
               @toggle-edit=${this.onToggleEdit}
+              @toggle-comments=${this.onToggleComments}
               @share-deck=${this.onShare}
               @start-presentation=${() => this.enterPresenterMode()}
             ></viewer-toolbar>
@@ -555,6 +725,16 @@ export class ViewerApp extends LitElement {
                   @image-removed=${this.onImageRemoved}
                 ></image-drop-zone>
               ` : ''}
+              <comment-layer
+                .deckId=${this.deck!.deck_id}
+                .slideId=${slide.slide_id ?? ''}
+                .comments=${this.comments.filter(c => c.slide_id === slide.slide_id)}
+                .commentMode=${this.commentMode}
+                .activeContentPath=${this.threadPos ? (this.threadComment?.content_path ?? this.threadContentPath) : null}
+                @comment-element-click=${this.onCommentElementClick}
+                @comment-pin-click=${this.onCommentPinClick}
+                @comment-click-empty=${this.onCommentClickEmpty}
+              ></comment-layer>
             </div>
           </div>
           <div class="bottom-bar" style="max-width:${this.slideWidth}px">
@@ -565,6 +745,26 @@ export class ViewerApp extends LitElement {
           </div>
         </div>
       </div>
+      ${this.threadPos && (this.threadComment || this.threadContentPath) ? html`
+        <div class="floating-thread"
+          style="left:${this.threadPos.x}px;top:${this.threadPos.y}px"
+        >
+          <comment-thread
+            .comment=${this.threadComment}
+            .contentPath=${this.threadContentPath ?? ''}
+            @comment-created=${(e: CustomEvent) => {
+              this.onCommentCreated(new CustomEvent('comment-created', {
+                detail: { ...e.detail, slide_id: this.deck!.slides[this.currentIndex].slide_id },
+              }));
+              this.closeThread();
+            }}
+            @reply-added=${this.onReplyAdded}
+            @comment-status-changed=${this.onCommentStatusChanged}
+            @popover-close=${() => this.closeThread()}
+            @drag-start=${this.onThreadDragStart}
+          ></comment-thread>
+        </div>
+      ` : ''}
     `;
   }
 
@@ -599,7 +799,7 @@ export class ViewerApp extends LitElement {
     if (!this.deck) return html``;
     const slide = this.deck.slides[this.currentIndex];
     const customVars = this.getCustomCssVars();
-    const scaleFactor = this.slideWidth / 960;
+    const scaleFactor = this.slideWidth / SLIDE_WIDTH;
 
     return html`
       <div class="presenter-layout main-area">
@@ -622,7 +822,7 @@ export class ViewerApp extends LitElement {
       <div class="mobile-layout">
         ${this.deck.slides.map(slide => html`
           <div class="mobile-slide">
-            <div class="slide-container" style="zoom:${(window.innerWidth * 0.95) / 960};${customVars}">
+            <div class="slide-container" style="zoom:${(window.innerWidth * 0.95) / SLIDE_WIDTH};${customVars}">
               <slide-renderer .slide=${slide} .editable=${false}></slide-renderer>
             </div>
           </div>

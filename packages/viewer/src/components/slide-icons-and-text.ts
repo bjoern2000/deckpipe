@@ -65,21 +65,21 @@ export class SlideIconsAndText extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.title
           ? this.editable
             ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
+                <h1 contenteditable="true" data-content-path="title"
                   @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                 >${this.title}</h1>
               `)
-            : html`<h1>${this.title}</h1>`
+            : html`<h1 data-content-path="title">${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this.editable ? this.wrapDeletable('items', html`
           <div class="grid">
             ${this.items.map((item, i) => html`
-              <div class="item">
+              <div class="item" data-content-path="items[${i}]">
                 <div class="icon-circle" contenteditable="true"
                   @blur=${(e: FocusEvent) => {
                     const newItems = this.items.map((it, idx) =>
@@ -111,8 +111,8 @@ export class SlideIconsAndText extends SlideBase {
           </div>
         `, []) : html`
           <div class="grid">
-            ${this.items.map(item => html`
-              <div class="item">
+            ${this.items.map((item, i) => html`
+              <div class="item" data-content-path="items[${i}]">
                 <div class="icon-circle">${this.renderIcon(item.icon)}</div>
                 <div class="item-heading">${item.heading}</div>
                 ${item.description ? html`<div class="item-description">${mdInline(item.description)}</div>` : nothing}

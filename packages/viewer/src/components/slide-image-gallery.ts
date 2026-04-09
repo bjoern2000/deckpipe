@@ -73,7 +73,7 @@ export class SlideImageGallery extends SlideBase {
     const title = this.itemTitle(i);
     const caption = this.itemCaption(i);
     return html`
-      <div class="gallery-item">
+      <div class="gallery-item" data-content-path="images[${i}]">
         <div class="image-wrap">
           <img src="${src}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocuses[i])}" @error=${this.onImgError} />
         </div>
@@ -85,15 +85,15 @@ export class SlideImageGallery extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.title
           ? this.editable
             ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
+                <h1 contenteditable="true" data-content-path="title"
                   @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                 >${this.title}</h1>
               `)
-            : html`<h1>${this.title}</h1>`
+            : html`<h1 data-content-path="title">${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this.images.length > 0

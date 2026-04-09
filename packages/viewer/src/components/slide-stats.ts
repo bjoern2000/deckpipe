@@ -40,21 +40,21 @@ export class SlideStats extends SlideBase {
 
   render() {
     return html`
-      <div class="slide">
+      <div class="slide" data-content-path="slide">
         ${this.title
           ? this.editable
             ? this.wrapDeletable('title', html`
-                <h1 contenteditable="true"
+                <h1 contenteditable="true" data-content-path="title"
                   @blur=${(e: FocusEvent) => this.emitChange('title', (e.target as HTMLElement).textContent)}
                 >${this.title}</h1>
               `)
-            : html`<h1>${this.title}</h1>`
+            : html`<h1 data-content-path="title">${this.title}</h1>`
           : nothing}
         ${this.renderKeyTakeaway(this.keyTakeaway, this.editable)}
         ${this.editable ? this.wrapDeletable('metrics', html`
           <div class="metrics" style="--metric-count:${this.metrics.length}">
             ${this.metrics.map((m, i) => html`
-              <div class="metric-value" contenteditable="true"
+              <div class="metric-value" data-content-path="metrics[${i}].value" contenteditable="true"
                 @blur=${(e: FocusEvent) => {
                   const newMetrics = this.metrics.map((met, idx) =>
                     idx === i
@@ -66,7 +66,7 @@ export class SlideStats extends SlideBase {
               >${m.value}</div>
             `)}
             ${this.metrics.map((m, i) => html`
-              <div class="metric-label" contenteditable="true"
+              <div class="metric-label" data-content-path="metrics[${i}].label" contenteditable="true"
                 @blur=${(e: FocusEvent) => {
                   const newMetrics = this.metrics.map((met, idx) =>
                     idx === i
@@ -80,11 +80,11 @@ export class SlideStats extends SlideBase {
           </div>
         `, []) : html`
           <div class="metrics" style="--metric-count:${this.metrics.length}">
-            ${this.metrics.map(m => html`
-              <div class="metric-value">${m.value}</div>
+            ${this.metrics.map((m, i) => html`
+              <div class="metric-value" data-content-path="metrics[${i}].value">${m.value}</div>
             `)}
-            ${this.metrics.map(m => html`
-              <div class="metric-label">${m.label}</div>
+            ${this.metrics.map((m, i) => html`
+              <div class="metric-label" data-content-path="metrics[${i}].label">${m.label}</div>
             `)}
           </div>
         `}

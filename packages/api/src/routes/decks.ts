@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { CreateDeckSchema, UpdateDeckSchema, generateDeckId, generateEditKey, slugify, ApiError, type SlideOperation } from '@deckpipe/shared';
+import { CreateDeckSchema, UpdateDeckSchema, generateDeckId, generateSlideId, generateEditKey, slugify, ApiError, type SlideOperation } from '@deckpipe/shared';
 import { validate } from '../middleware/validate.js';
 import { createDeckLimiter, getDeckLimiter, updateDeckLimiter, exportPdfLimiter } from '../middleware/rate-limiter.js';
 import { query } from '../db/client.js';
@@ -44,18 +44,22 @@ function convertPlaceholderUrls(slides: any[]): any[] {
   });
 }
 
+function ensureSlideIds(slides: any[]): any[] {
+  return slides.map(s => s.slide_id ? s : { ...s, slide_id: generateSlideId() });
+}
+
 // POST /v1/decks — Create a new deck
 decksRouter.post('/', createDeckLimiter, validate(CreateDeckSchema), async (req, res, next) => {
   try {
-    const { title, heading_font, body_font, accent_color, slides: rawSlides } = req.body;
-    const slides = convertPlaceholderUrls(rawSlides);
+    const { title, heading_font, body_font, accent_color, agent_name, slides: rawSlides } = req.body;
+    const slides = ensureSlideIds(convertPlaceholderUrls(rawSlides));
     const deckId = generateDeckId();
     const editKey = generateEditKey();
     const slug = slugify(title);
 
     await query(
-      'INSERT INTO decks (deck_id, title, heading_font, body_font, accent_color, slides, edit_key) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [deckId, title, heading_font ?? null, body_font ?? null, accent_color ?? null, JSON.stringify(slides), editKey]
+      'INSERT INTO decks (deck_id, title, heading_font, body_font, accent_color, agent_name, slides, edit_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      [deckId, title, heading_font ?? null, body_font ?? null, accent_color ?? null, agent_name ?? null, JSON.stringify(slides), editKey]
     );
 
     const result = await query('SELECT created_at FROM decks WHERE deck_id = $1', [deckId]);
@@ -82,13 +86,38 @@ decksRouter.get('/:id', getDeckLimiter, async (req, res, next) => {
     }
 
     const deck = result.rows[0];
+
+    // Embed open comments into each slide
+    const commentsResult = await query(
+      'SELECT * FROM comments WHERE deck_id = $1 AND status = $2 ORDER BY created_at ASC',
+      [req.params.id, 'open']
+    );
+    const commentsBySlide = new Map<string, any[]>();
+    for (const row of commentsResult.rows) {
+      const list = commentsBySlide.get(row.slide_id) || [];
+      list.push({
+        id: row.id,
+        content_path: row.content_path,
+        status: row.status,
+        messages: row.messages,
+        created_at: row.created_at,
+      });
+      commentsBySlide.set(row.slide_id, list);
+    }
+
+    const slides = deck.slides.map((slide: any) => ({
+      ...slide,
+      comments: commentsBySlide.get(slide.slide_id) || [],
+    }));
+
     res.json({
       deck_id: deck.deck_id,
       title: deck.title,
       heading_font: deck.heading_font ?? null,
       body_font: deck.body_font ?? null,
       accent_color: deck.accent_color ?? null,
-      slides: deck.slides,
+      agent_name: deck.agent_name ?? null,
+      slides,
       edit_key: deck.edit_key,
       created_at: deck.created_at,
       updated_at: deck.updated_at,
@@ -112,7 +141,7 @@ function applySlideOperations(slides: any[], operations: SlideOperation[]): any[
         if (op.index > result.length) {
           throw new ApiError('validation_error', `Insert index ${op.index} out of range (0-${result.length})`, `slide_operations`);
         }
-        result.splice(op.index, 0, op.slide);
+        result.splice(op.index, 0, { ...op.slide, slide_id: generateSlideId() });
         break;
       case 'move': {
         if (op.from >= result.length) {
@@ -129,7 +158,7 @@ function applySlideOperations(slides: any[], operations: SlideOperation[]): any[
         if (op.index >= result.length) {
           throw new ApiError('validation_error', `Replace index ${op.index} out of range (0-${result.length - 1})`, `slide_operations`);
         }
-        result[op.index] = op.slide;
+        result[op.index] = { ...op.slide, slide_id: result[op.index].slide_id };
         break;
     }
   }
@@ -152,7 +181,7 @@ decksRouter.patch('/:id', updateDeckLimiter, validate(UpdateDeckSchema), async (
     const newHeadingFont = heading_font !== undefined ? heading_font : deck.heading_font;
     const newBodyFont = body_font !== undefined ? body_font : deck.body_font;
     const newAccentColor = accent_color !== undefined ? accent_color : deck.accent_color;
-    let newSlides = deck.slides;
+    let newSlides = ensureSlideIds(deck.slides);
 
     // Step 1: Apply structural slide operations (sequential, order matters)
     if (slide_operations && slide_operations.length > 0) {
@@ -198,6 +227,7 @@ decksRouter.patch('/:id', updateDeckLimiter, validate(UpdateDeckSchema), async (
       heading_font: updated.heading_font ?? null,
       body_font: updated.body_font ?? null,
       accent_color: updated.accent_color ?? null,
+      agent_name: updated.agent_name ?? null,
       slides: updated.slides,
       created_at: updated.created_at,
       updated_at: updated.updated_at,

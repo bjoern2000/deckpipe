@@ -15,6 +15,6 @@ export class SlideCounter extends LitElement {
   @property({ type: Number }) total = 1;
 
   render() {
-    return html`${this.current} / ${this.total}`;
+    return html`${this.current}/${this.total}`;
   }
 }

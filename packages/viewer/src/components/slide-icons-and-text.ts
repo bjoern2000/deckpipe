@@ -1,7 +1,9 @@
 import { html, css, nothing } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { customElement, property } from 'lit/decorators.js';
 import { SlideBase } from './slide-base.js';
 import { mdInline } from '../utils/markdown.js';
+import { lucideIcon } from '../utils/lucide.js';
 
 @customElement('slide-icons-and-text')
 export class SlideIconsAndText extends SlideBase {
@@ -31,6 +33,11 @@ export class SlideIconsAndText extends SlideBase {
         justify-content: center;
         font-size: 1.6em;
         margin-bottom: 12px;
+        color: var(--dp-accent, #7c3aed);
+      }
+      .icon-circle svg {
+        width: 28px;
+        height: 28px;
       }
       .item-heading {
         font-family: var(--dp-font-heading, 'DM Sans', sans-serif);
@@ -50,6 +57,11 @@ export class SlideIconsAndText extends SlideBase {
   @property({ type: Array }) items: Array<{ icon: string; heading: string; description?: string }> = [];
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
+
+  private renderIcon(icon: string) {
+    const svg = lucideIcon(icon);
+    return svg ? unsafeHTML(svg) : icon;
+  }
 
   render() {
     return html`
@@ -75,7 +87,7 @@ export class SlideIconsAndText extends SlideBase {
                     );
                     this.emitChange('items', newItems);
                   }}
-                >${item.icon}</div>
+                >${this.renderIcon(item.icon)}</div>
                 <div class="item-heading" contenteditable="true"
                   @blur=${(e: FocusEvent) => {
                     const newItems = this.items.map((it, idx) =>
@@ -101,7 +113,7 @@ export class SlideIconsAndText extends SlideBase {
           <div class="grid">
             ${this.items.map(item => html`
               <div class="item">
-                <div class="icon-circle">${item.icon}</div>
+                <div class="icon-circle">${this.renderIcon(item.icon)}</div>
                 <div class="item-heading">${item.heading}</div>
                 ${item.description ? html`<div class="item-description">${mdInline(item.description)}</div>` : nothing}
               </div>

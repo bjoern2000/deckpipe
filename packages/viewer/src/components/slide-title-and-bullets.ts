@@ -15,6 +15,8 @@ export class SlideTitleAndBullets extends SlideBase {
         display: flex;
         flex: 1;
         gap: 32px;
+        min-height: 0;
+        overflow: hidden;
       }
       ul {
         flex: 1;
@@ -32,6 +34,12 @@ export class SlideTitleAndBullets extends SlideBase {
         display: flex;
         align-items: center;
         justify-content: center;
+        min-height: 0;
+      }
+      .image-area img {
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 4px;
       }
     `,
   ];

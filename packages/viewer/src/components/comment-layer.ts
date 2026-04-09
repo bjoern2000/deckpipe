@@ -245,9 +245,12 @@ export class CommentLayer extends LitElement {
         c => c.content_path === comment.content_path && (this.showResolved || c.status === 'open'),
       ).length;
 
+      // For "slide" level comments, inset the pin so it's fully visible
+      const isSlide = comment.content_path === 'slide';
+      const pinPad = isSlide ? 28 : 0;
       pins.push({
-        top: rect.top,
-        right: SLIDE_WIDTH - (rect.left + rect.width),
+        top: rect.top + pinPad,
+        right: SLIDE_WIDTH - (rect.left + rect.width) + pinPad,
         commentId: comment.id,
         contentPath: comment.content_path,
         count,
@@ -288,7 +291,7 @@ export class CommentLayer extends LitElement {
 
         ${pins.map(pin => html`
           <div class="pin ${this.comments.find(c => c.id === pin.commentId)?.status === 'resolved' ? 'resolved' : ''}"
-            style="top:${pin.top}px;right:${pin.right}px;transform:translate(50%,-50%)"
+            style="top:${pin.top - 12}px;right:${pin.right - 12}px"
             @click=${(e: Event) => this.onPinClick(e, pin.commentId!)}
           >${pin.count}</div>
         `)}

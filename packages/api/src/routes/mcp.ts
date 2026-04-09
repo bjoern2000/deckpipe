@@ -101,19 +101,23 @@ WORKFLOW: Always call get_deck first when iterating on a deck. Read the comments
 
   server.tool(
     'update_deck',
-    `Update a deck's title, fonts, accent color, slide content, or slide structure. NEVER recreate a deck to make changes — always use this tool.
+    `Update a deck. NEVER recreate a deck — always use this tool. This tool has TWO separate parameters for two different purposes:
 
-CONTENT EDITS: Use "slides" array for partial content updates by index. Only the fields you include are merged; everything else is preserved.
+1. "slide_operations" — STRUCTURAL changes (adding, removing, reordering slides). This is the ONLY way to add new slides.
+2. "slides" — CONTENT edits to existing slides (partial merge by index). This does NOT add slides — it only updates content of slides that already exist.
 
-STRUCTURAL CHANGES: Use "slide_operations" to insert, delete, move, or replace slides. You CAN add new slides — use { "op": "insert", "index": N, "slide": { "layout": "...", "content": {...} } }. Operations execute sequentially before content edits.
+IMPORTANT: To add a new slide, you MUST use slide_operations with op "insert", NOT the slides array. The slides array only merges content into existing slide indices.
 
-Slide operations (executed in order):
-- Insert new slide: { "op": "insert", "index": 1, "slide": { "layout": "title_and_body", "content": { "title": "New", "body": "Text" } } }
-- Delete slide: { "op": "delete", "index": 2 }
-- Move slide: { "op": "move", "from": 0, "to": 3 }
-- Replace slide entirely: { "op": "replace", "index": 4, "slide": { "layout": "stats", "content": { "metrics": [{ "value": "99%", "label": "Uptime" }] } } }
+slide_operations examples (executed in order):
+- ADD a new slide: { "op": "insert", "index": 5, "slide": { "layout": "title_and_bullets", "content": { "title": "New Slide", "bullets": ["Point 1", "Point 2"] } } }
+- Remove a slide: { "op": "delete", "index": 2 }
+- Reorder: { "op": "move", "from": 0, "to": 3 }
+- Replace entirely: { "op": "replace", "index": 4, "slide": { "layout": "stats", "content": { "metrics": [{ "value": "99%", "label": "Uptime" }] } } }
 
-Content edits in "slides" use indices relative to the post-operations array. All text fields support markdown.`,
+slides (content edit) examples — only for updating EXISTING slides:
+- Update title of slide 0: { "index": 0, "content": { "title": "New Title" } }
+
+slide_operations run first, then slides content edits apply to the post-operations array. All text fields support markdown.`,
     {
       deck_id: z.string().describe('Deck ID to update'),
       title: z.string().optional().describe('New deck title'),

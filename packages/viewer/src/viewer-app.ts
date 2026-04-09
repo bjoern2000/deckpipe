@@ -163,6 +163,35 @@ export class ViewerApp extends LitElement {
       width: 960px;
       height: 540px;
     }
+
+    /* Presenter mode */
+    .presenter-layout {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .presenter-counter {
+      position: absolute;
+      bottom: 24px;
+      right: 32px;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 14px;
+      font-family: 'Inconsolata', monospace;
+      transition: opacity 0.3s;
+    }
+
+    :host(.cursor-hidden) {
+      cursor: none;
+    }
+
+    :host(.cursor-hidden) .presenter-counter {
+      opacity: 0;
+    }
   `;
 
   @state() private deck: Deck | null = null;
@@ -175,10 +204,12 @@ export class ViewerApp extends LitElement {
   @state() private slideWidth = 960;
   @state() private slideHeight = 540;
   @state() private isMobile = false;
+  @state() private presenterMode = false;
 
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private mobileQuery: MediaQueryList | null = null;
+  private cursorTimeout: ReturnType<typeof setTimeout> | null = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -188,6 +219,7 @@ export class ViewerApp extends LitElement {
     this.classList.toggle('mobile', this.isMobile);
     this.setBodyScroll(this.isMobile);
     this.mobileQuery.addEventListener('change', this.onMobileChange);
+    document.addEventListener('fullscreenchange', this.onFullscreenChange);
     this.loadDeck();
     if (!this.printMode && !this.isMobile) {
       window.addEventListener('keydown', this.onKeyDown);
@@ -228,6 +260,7 @@ export class ViewerApp extends LitElement {
     window.removeEventListener('hashchange', this.onHashChange);
     this.resizeObserver?.disconnect();
     this.mobileQuery?.removeEventListener('change', this.onMobileChange);
+    document.removeEventListener('fullscreenchange', this.onFullscreenChange);
   }
 
   private onMobileChange = (e: MediaQueryListEvent) => {
@@ -251,6 +284,48 @@ export class ViewerApp extends LitElement {
 
   private onHashChange = () => this.readHash();
 
+  private onFullscreenChange = () => {
+    if (!document.fullscreenElement && this.presenterMode) {
+      this.exitPresenterMode();
+    }
+  };
+
+  private enterPresenterMode() {
+    this.presenterMode = true;
+    this.editMode = false;
+    // Disconnect existing observer so it re-attaches to new .main-area
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
+    document.documentElement.requestFullscreen().catch(() => {});
+    window.addEventListener('mousemove', this.onMouseMovePresenter);
+    this.resetCursorTimeout();
+  }
+
+  private exitPresenterMode() {
+    this.presenterMode = false;
+    if (this.cursorTimeout) clearTimeout(this.cursorTimeout);
+    this.classList.remove('cursor-hidden');
+    window.removeEventListener('mousemove', this.onMouseMovePresenter);
+    // Disconnect observer so it re-attaches to normal .main-area
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+  }
+
+  private onMouseMovePresenter = () => {
+    this.classList.remove('cursor-hidden');
+    this.resetCursorTimeout();
+  };
+
+  private resetCursorTimeout() {
+    if (this.cursorTimeout) clearTimeout(this.cursorTimeout);
+    this.cursorTimeout = setTimeout(() => {
+      if (this.presenterMode) this.classList.add('cursor-hidden');
+    }, 3000);
+  }
+
   private onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault();
@@ -258,6 +333,11 @@ export class ViewerApp extends LitElement {
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault();
       this.prevSlide();
+    } else if (e.key === ' ' && this.presenterMode) {
+      e.preventDefault();
+      this.nextSlide();
+    } else if (e.key === 'Escape' && this.presenterMode) {
+      this.exitPresenterMode();
     }
   };
 
@@ -424,6 +504,7 @@ export class ViewerApp extends LitElement {
     if (!this.deck) return html`<div class="error">No deck data</div>`;
 
     if (this.printMode) return this.renderPrintMode();
+    if (this.presenterMode) return this.renderPresenterMode();
     if (this.isMobile) return this.renderMobileMode();
 
     const slide = this.deck.slides[this.currentIndex];
@@ -457,6 +538,7 @@ export class ViewerApp extends LitElement {
               .saveStatus=${this.saveStatus}
               @toggle-edit=${this.onToggleEdit}
               @share-deck=${this.onShare}
+              @start-presentation=${() => this.enterPresenterMode()}
             ></viewer-toolbar>
           </div>
           <div class="slide-wrapper" style="width:${this.slideWidth}px;height:${this.slideHeight}px">
@@ -511,6 +593,26 @@ export class ViewerApp extends LitElement {
       vars.push(`--dp-text-title:${this.darkenHex(this.deck.accent_color)}`);
     }
     return vars.join(';');
+  }
+
+  private renderPresenterMode() {
+    if (!this.deck) return html``;
+    const slide = this.deck.slides[this.currentIndex];
+    const customVars = this.getCustomCssVars();
+    const scaleFactor = this.slideWidth / 960;
+
+    return html`
+      <div class="presenter-layout main-area">
+        <div class="slide-wrapper" style="width:${this.slideWidth}px;height:${this.slideHeight}px">
+          <div class="slide-container" style="transform:scale(${scaleFactor});${customVars}">
+            <slide-renderer .slide=${slide} .editable=${false}></slide-renderer>
+          </div>
+        </div>
+        <div class="presenter-counter">
+          ${this.currentIndex + 1} / ${this.deck.slides.length}
+        </div>
+      </div>
+    `;
   }
 
   private renderMobileMode() {

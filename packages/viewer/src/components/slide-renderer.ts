@@ -24,6 +24,7 @@ import './slide-closing.js';
 import './slide-swot.js';
 import './slide-quadrant.js';
 import './slide-venn-diagram.js';
+import './slide-chart.js';
 
 interface SlideData {
   layout: string;
@@ -286,6 +287,15 @@ export class SlideRenderer extends LitElement {
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-venn-diagram>`;
+
+      case 'chart':
+        return html`<slide-chart
+          .title=${c.title || ''}
+          .chartType=${c.chart_type || 'bar'}
+          .data=${c.data || { labels: [], datasets: [] }}
+          key-takeaway=${c.key_takeaway || ''}
+          .editable=${this.editable}
+        ></slide-chart>`;
 
       default:
         return html`<div style="padding:48px;color:#c00">Unknown layout: ${layout}</div>`;

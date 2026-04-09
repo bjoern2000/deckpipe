@@ -12,6 +12,14 @@ export function generateImageId(): string {
   return `img_${randomId(8)}`;
 }
 
+export function generateSlideId(): string {
+  return `sld_${randomId(8)}`;
+}
+
+export function generateCommentId(): string {
+  return `cmt_${randomId(12)}`;
+}
+
 export function generateEditKey(): string {
   return randomId(16);
 }

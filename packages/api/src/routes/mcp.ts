@@ -15,14 +15,12 @@ Keep slide copy short and scannable — use shorthand phrases, not full sentence
 
 MARKDOWN: All text content fields support markdown rendering. Use **bold**, *italic*, \`code\`, [links](url), and lists (1. ordered, - unordered) in body, subtitle, bullets, table cells, and key_takeaway fields. Body text fields support full block markdown including numbered and bulleted lists.
 
-Layouts: "title", "title_and_body", "title_and_bullets", "title_and_table", "two_columns", "section_break", "image_and_text", "image_gallery", "stats", "quote", "full_image", "timeline", "comparison", "code", "callout", "icons_and_text", "team", "embed", "pros_and_cons", "agenda", "swot", "quadrant", "venn_diagram", "closing", "chart".
-
-RICH BULLETS: In title_and_bullets, comparison, and pros_and_cons, bullets can be strings OR objects: { text, detail?, sources?[{ label, url? }] }. detail shows as an info tooltip on hover. sources render as numbered footnotes.
+Layouts: "title", "title_and_body", "title_and_bullets", "title_and_table", "two_columns", "section_break", "image_and_text", "image_gallery", "stats", "quote", "full_image", "timeline", "comparison", "code", "callout", "icons_and_text", "team", "embed", "pros_and_cons", "agenda", "closing", "swot", "quadrant", "venn_diagram", "chart".
 
 Content fields per layout (all layouts support optional key_takeaway):
 - title: { title, subtitle?, image_url? }
 - title_and_body: { title, body, image_url?, image_prompt? }
-- title_and_bullets: { title, bullets[] (strings or { text, detail?, sources?[] }), image_url?, image_prompt? }
+- title_and_bullets: { title, bullets[], image_url?, image_prompt? }
 - title_and_table: { title, table: { headers[], rows[][], highlight_column? } }
 - two_columns: { title, left: { heading, body }, right: { heading, body }, image_url?, image_prompt? }
 - section_break: { title }
@@ -37,14 +35,18 @@ Content fields per layout (all layouts support optional key_takeaway):
 - callout: { title?, value (required), label?, body? }
 - icons_and_text: { title?, items[]: { icon, heading, description? } (3-6 items) }
 - team: { title?, members[]: { name, role, bio?, image_url? } (1-6 items) }
-- embed: { url (required), caption?, aspect_ratio?: "16:9"|"4:3"|"1:1" }
+- embed: { title?, url (required), caption?, aspect_ratio?: "16:9"|"4:3"|"1:1" }
 - pros_and_cons: { title?, pros_heading?, cons_heading?, pros[], cons[] }
 - agenda: { title?, items[]: { topic, duration?, description? } (1-10 items) }
+- closing: { heading?, subheading?, contact_lines?[], image_url? }
 - swot: { title?, strengths[], weaknesses[], opportunities[], threats[] (1-5 items each) }
 - quadrant: { title?, body?, bullets?[], x_label?, y_label?, quadrant_labels?[4], items[]: { label, x: 0-1, y: 0-1 } (1-12 items) }
-- venn_diagram: { title?, circles[]: { label, items?[] } (2-3 circles), overlaps?[]: { sets: number[], label } (max 4) }
-- closing: { heading?, subheading?, contact_lines?[], image_url? }
-- chart: { chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12), datasets[]: { label?, values[], color? } (1-5) } (required), title? }
+- venn_diagram: { title?, body?, circles[]: { label, items?[] } (2-3 circles, required), overlaps?[]: { sets: [circle indices], label } (max 4) }
+- chart: { chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title? }
+
+IMAGE PLACEHOLDERS: Use image_prompt (any layout that supports image_url) to suggest an image without providing one. Renders as a dashed placeholder box with your prompt text so the user knows what image to drop in. Example: image_prompt: "Screenshot of the iOS app home screen". When the user drops in an image, it replaces the placeholder.
+
+RICH BULLETS: In any layout with bullets (title_and_bullets, comparison, swot, pros_and_cons, quadrant), bullets can be plain strings OR objects: { text, detail?, sources?: [{ label, url? }] }. Use "detail" for hover-accessible explanations (info icon tooltip). Use "sources" for citation footnotes (superscript numbers at bottom of slide).
 
 Optionally set heading_font and body_font (any Google Font name) and accent_color (hex like "#ff6600") to customize the look.
 Use upload_image first to get hosted URLs for any images.
@@ -58,7 +60,7 @@ Check warnings after every create/update call and fix any issues with a follow-u
       heading_font: z.string().optional().describe('Google Font for headings (e.g. "Playfair Display"). Default: DM Sans.'),
       body_font: z.string().optional().describe('Google Font for body text (e.g. "Inter"). Default: DM Sans.'),
       accent_color: z.string().optional().describe('Hex color (e.g. "#ff6600"). Overrides default purple accent.'),
-      agent_name: z.string().optional().describe('Your agent name (e.g. "Acme Strategy Agent"). Shown as author on comments you post.'),
+      agent_name: z.string().optional().describe('Your agent name (e.g. "Acme Strategy Agent"). Shown as author on comments you post. Set this once at deck creation.'),
       slides: z.array(z.object({
         layout: z.enum(LayoutNames),
         content: z.record(z.unknown()).describe('Content fields (vary by layout). All layouts support optional key_takeaway.'),
@@ -128,8 +130,8 @@ WARNINGS: The response may include a "warnings" array flagging unrecognized cont
     {
       deck_id: z.string().describe('Deck ID to update'),
       title: z.string().optional().describe('New deck title'),
-      heading_font: z.string().optional().describe('Google Font for headings'),
-      body_font: z.string().optional().describe('Google Font for body text'),
+      heading_font: z.string().optional().describe('Google Font for headings (e.g. "Playfair Display")'),
+      body_font: z.string().optional().describe('Google Font for body text (e.g. "Inter")'),
       accent_color: z.string().optional().describe('Hex color (e.g. "#ff6600")'),
       slide_operations: z.array(z.object({
         op: z.enum(['delete', 'insert', 'move', 'replace']).describe('Operation type: "insert" adds a new slide, "delete" removes one, "move" reorders, "replace" swaps layout+content'),
@@ -201,38 +203,44 @@ Accepts PNG, JPG, WebP up to 10MB. Upload first, then use the returned URL when 
     {},
     async () => {
       const layouts = [
-        { name: 'title', fields: 'title (required), subtitle?, image_url?, key_takeaway?' },
-        { name: 'title_and_body', fields: 'title (required), body (required), image_url?, key_takeaway?' },
-        { name: 'title_and_bullets', fields: 'title (required), bullets[] (required), image_url?, key_takeaway?' },
-        { name: 'title_and_table', fields: 'title (required), table: { headers[], rows[][], highlight_column? }, key_takeaway?' },
-        { name: 'two_columns', fields: 'title (required), left: { heading, body }, right: { heading, body }, image_url?, key_takeaway?' },
-        { name: 'section_break', fields: 'title (required), key_takeaway?' },
-        { name: 'image_and_text', fields: 'title (required), body (required), image_url (required), key_takeaway?' },
-        { name: 'image_gallery', fields: 'images[] (2-5 URLs, required unless image_prompt provided), image_prompt?, title?, caption?, key_takeaway?' },
-        { name: 'stats', fields: 'metrics[]: { value, label } (2-4 items, required), title?, key_takeaway?' },
-        { name: 'quote', fields: 'quote (required), attribution?, image_url?, key_takeaway?' },
-        { name: 'full_image', fields: 'image_url (required), title?, subtitle?, key_takeaway?' },
-        { name: 'timeline', fields: 'events[]: { label, title, description?, position?: 0-1 } (3-6 items, required), title?, key_takeaway?. Position places milestone at relative point on timeline (0=start, 1=end). Events alternate above/below line.' },
-        { name: 'comparison', fields: 'left: { heading, bullets[], image_url? }, right: { heading, bullets[], image_url? } (required), title?, verdict?, key_takeaway?' },
-        { name: 'code', fields: 'code (required), title?, language?, caption?, key_takeaway?. Syntax highlighted for 18 languages (js, ts, python, go, rust, java, etc.).' },
-        { name: 'callout', fields: 'value (required), title?, label?, body?, key_takeaway?' },
-        { name: 'icons_and_text', fields: 'items[]: { icon, heading, description? } (3-6 items, required), title?, key_takeaway?' },
-        { name: 'team', fields: 'members[]: { name, role, bio?, image_url? } (1-6 items, required), title?, key_takeaway?' },
-        { name: 'embed', fields: 'url (required), caption?, aspect_ratio? ("16:9"|"4:3"|"1:1"), key_takeaway?. Fills 90% of slide.' },
-        { name: 'pros_and_cons', fields: 'pros[] (required), cons[] (required), title?, pros_heading?, cons_heading?, key_takeaway?' },
-        { name: 'agenda', fields: 'items[]: { topic, duration?, description? } (1-10 items, required), title?, key_takeaway?' },
-        { name: 'swot', fields: 'strengths[], weaknesses[], opportunities[], threats[] (1-5 items each, all required), title?, key_takeaway?' },
-        { name: 'quadrant', fields: 'items[]: { label, x: 0-1, y: 0-1 } (1-12 items, required), title?, body?, bullets?[], x_label?, y_label?, quadrant_labels?[4], key_takeaway?. Title/body/bullets on left, chart on right.' },
-        { name: 'venn_diagram', fields: 'circles[]: { label, items?[] } (2-3 circles, required), overlaps?[]: { sets: number[], label } (max 4), title?, key_takeaway?. Renders overlapping circles with labeled intersections.' },
-        { name: 'closing', fields: 'heading?, subheading?, contact_lines?[], image_url?, key_takeaway?. Accent-colored background with white text. Contact lines at bottom. Use as final slide.' },
-        { name: 'chart', fields: 'chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12), datasets[]: { label?, values[], color? } (1-5) } (required), title?, key_takeaway?' },
+        { name: 'title', description: 'Large centered title slide.', fields: 'title (required), subtitle?, image_url?, key_takeaway?' },
+        { name: 'title_and_body', description: 'Title + paragraph.', fields: 'title (required), body (required), image_url?, image_prompt?, key_takeaway?' },
+        { name: 'title_and_bullets', description: 'Title + bullet list.', fields: 'title (required), bullets[] (required), image_url?, image_prompt?, key_takeaway?' },
+        { name: 'title_and_table', description: 'Title + data table.', fields: 'title (required), table: { headers[], rows[][], highlight_column? }, key_takeaway?' },
+        { name: 'two_columns', description: 'Title + two columns.', fields: 'title (required), left: { heading, body }, right: { heading, body }, image_url?, image_prompt?, key_takeaway?' },
+        { name: 'section_break', description: 'Bold section divider on accent bg.', fields: 'title (required), key_takeaway?' },
+        { name: 'image_and_text', description: 'Image-primary (~60%) + text.', fields: 'title (required), body (required), image_url or image_prompt (one required), key_takeaway?' },
+        { name: 'image_gallery', description: 'Horizontal row of portrait images — ideal for screenshot galleries.', fields: 'images[] (2-5 URLs, required), title?, caption?, key_takeaway?' },
+        { name: 'stats', description: 'Big metrics/numbers with labels.', fields: 'metrics[]: { value, label } (2-4 items, required), title?, key_takeaway?' },
+        { name: 'quote', description: 'Large pull-quote with optional attribution.', fields: 'quote (required), attribution?, image_url?, key_takeaway?' },
+        { name: 'full_image', description: 'Full-bleed background image with optional overlay text.', fields: 'image_url or image_prompt (one required), title?, subtitle?, key_takeaway?' },
+        { name: 'timeline', description: 'Horizontal timeline with 3-6 events.', fields: 'events[]: { label, title, description?, position?: 0-1 } (3-6 items, required), title?, key_takeaway?. Position places milestone at relative point on timeline (0=start, 1=end). Events alternate above/below line.' },
+        { name: 'comparison', description: 'Side-by-side A vs B with optional verdict.', fields: 'left: { heading, bullets[], image_url? }, right: { heading, bullets[], image_url? } (required), title?, verdict?, key_takeaway?' },
+        { name: 'code', description: 'Styled code block with language badge.', fields: 'code (required), title?, language?, caption?, key_takeaway?. Syntax highlighted for 18 languages (js, ts, python, go, rust, java, etc.).' },
+        { name: 'callout', description: 'Hero number or statement with supporting text.', fields: 'value (required), title?, label?, body?, key_takeaway?' },
+        { name: 'icons_and_text', description: 'Grid of 3-6 items with emoji icon, heading, description.', fields: 'items[]: { icon, heading, description? } (3-6 items, required), title?, key_takeaway?' },
+        { name: 'team', description: 'People grid with photos, names, roles.', fields: 'members[]: { name, role, bio?, image_url? } (1-6 items, required), title?, key_takeaway?' },
+        { name: 'embed', description: 'Embedded iframe (YouTube, Figma, etc).', fields: 'url (required), title?, caption?, aspect_ratio? ("16:9"|"4:3"|"1:1"), key_takeaway?. Fills 90% of slide.' },
+        { name: 'pros_and_cons', description: 'Two-column green/red pros and cons list.', fields: 'pros[] (required), cons[] (required), title?, pros_heading?, cons_heading?, key_takeaway?' },
+        { name: 'agenda', description: 'Numbered topic list with optional durations.', fields: 'items[]: { topic, duration?, description? } (1-10 items, required), title?, key_takeaway?' },
+        { name: 'closing', description: 'Thank you / contact info slide.', fields: 'heading?, subheading?, contact_lines?[], image_url?, key_takeaway?. Accent-colored background with white text. Contact lines at bottom. Use as final slide.' },
+        { name: 'swot', description: '2x2 SWOT analysis grid.', fields: 'strengths[], weaknesses[], opportunities[], threats[] (1-5 items each, all required), title?, key_takeaway?' },
+        { name: 'quadrant', description: 'X/Y positioning grid with labeled dots.', fields: 'items[]: { label, x: 0-1, y: 0-1 } (1-12 items, required), title?, body?, bullets?[], x_label?, y_label?, quadrant_labels?[4], key_takeaway?. Title/body/bullets on left, chart on right.' },
+        { name: 'venn_diagram', description: 'Venn diagram with 2 or 3 overlapping circles. Centered when no text; text-left/diagram-right when title/body provided.', fields: 'circles[]: { label, items?[] } (2-3 items, required), overlaps?[]: { sets: [circle indices], label } (max 4), title?, body?, key_takeaway?' },
+        { name: 'chart', description: 'Bar, line, pie, or donut chart from structured data.', fields: 'chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title?, key_takeaway?' },
       ];
       const customization = {
-        heading_font: 'Google Font for headings. Default: DM Sans.',
-        body_font: 'Google Font for body text. Default: DM Sans.',
-        accent_color: 'Hex color. Default: #7c3aed.',
+        heading_font: 'Optional Google Font for headings (e.g. "Playfair Display"). Default: DM Sans.',
+        body_font: 'Optional Google Font for body text (e.g. "Inter"). Default: DM Sans.',
+        accent_color: 'Optional hex color (e.g. "#ff6600"). Default: #7c3aed (purple).',
       };
-      return { content: [{ type: 'text' as const, text: JSON.stringify({ layouts, customization }, null, 2) }] };
+      const style_guide = {
+        copy: 'Keep text short and scannable. Use shorthand phrases, not full sentences. Bullets: 5-8 words max. Stats: abbreviate large numbers (e.g. "2.4M" not "2,400,000"). Quotes: under 30 words.',
+        images: 'Use upload_image to host images. image_gallery works best with 2-5 portrait images of consistent aspect ratio. full_image needs high-res landscape images.',
+        rich_bullets: 'Bullets in title_and_bullets, comparison, swot, pros_and_cons, and quadrant can be plain strings or objects: { text, detail?, sources?: [{ label, url? }] }. Use detail for hover tooltips. Use sources for footnote citations.',
+        image_prompt: 'Use image_prompt instead of image_url to suggest an image the user should provide. Renders as a dashed placeholder with your descriptive text. Example: "Screenshot of the competitor app onboarding flow". User drops in the real image later.',
+      };
+      return { content: [{ type: 'text' as const, text: JSON.stringify({ layouts, customization, style_guide }, null, 2) }] };
     }
   );
 
@@ -257,7 +265,7 @@ TIP: Use the "since" parameter with an ISO timestamp to only fetch comments that
     {
       deck_id: z.string().describe('The deck ID'),
       status: z.enum(['open', 'resolved']).optional().describe('Filter by status. Defaults to showing all. Use "open" to see only unresolved feedback.'),
-      slide_id: z.string().optional().describe('Filter to a specific slide by its stable slide_id'),
+      slide_id: z.string().optional().describe('Filter to a specific slide by its stable slide_id (e.g. "sld_a1b2c3d4")'),
       since: z.string().optional().describe('ISO timestamp. Only return comments created or updated since this time. Use this to poll for new feedback efficiently.'),
     },
     async ({ deck_id, status, slide_id, since }) => {
@@ -279,12 +287,14 @@ TIP: Use the "since" parameter with an ISO timestamp to only fetch comments that
     'reply_to_comment',
     `Reply to a comment thread on a deck. Use this after addressing user feedback to explain what you changed.
 
-The user will see your reply in the comment thread and can resolve the comment or continue the conversation. Keep replies concise — summarize the change you made, don't repeat the feedback.`,
+The user will see your reply in the comment thread and can resolve the comment or continue the conversation. Keep replies concise — summarize the change you made, don't repeat the feedback.
+
+Example: "Updated the title to focus on ROI metrics as suggested. Also shortened the bullet points on this slide."`,
     {
       deck_id: z.string().describe('The deck ID'),
-      comment_id: z.string().describe('The comment ID to reply to'),
+      comment_id: z.string().describe('The comment ID to reply to (e.g. "cmt_a1b2c3d4e5f6")'),
       body: z.string().describe('Your reply message'),
-      author_name: z.string().optional().describe('Your agent name. Defaults to the agent_name set at deck creation, or "Agent".'),
+      author_name: z.string().optional().describe('Your agent name. Defaults to the agent_name set at deck creation, or "Agent" if none was set.'),
     },
     async ({ deck_id, comment_id, body, author_name }) => {
       const apiUrl = config.apiUrl || `http://localhost:${config.port}`;

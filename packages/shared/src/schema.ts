@@ -369,7 +369,7 @@ export const LayoutNames = [
   'image_gallery', 'stats', 'quote', 'full_image',
   'timeline', 'comparison', 'code', 'callout',
   'icons_and_text', 'team', 'embed', 'pros_and_cons',
-  'agenda', 'swot', 'quadrant', 'venn_diagram', 'closing', 'chart',
+  'agenda', 'swot', 'quadrant', 'venn_diagram', 'chart', 'closing',
 ] as const;
 export type Layout = typeof LayoutNames[number];
 

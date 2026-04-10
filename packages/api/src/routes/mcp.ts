@@ -9,13 +9,13 @@ import { config } from '../config.js';
 function registerTools(server: McpServer) {
   server.tool(
     'create_deck',
-    `Create a new slide deck and get a shareable viewer URL.
+    `Create a new slide deck. Returns two URLs: viewer_url (with edit key — for the deck owner to view and edit) and share_url (read-only — for sharing with others).
 
-Keep slide copy short and scannable — use shorthand phrases, not full sentences. Bullets: 5-8 words max.
+Keep slide copy short, crisp, and scannable — use shorthand phrases, not full sentences. Bullets: 5-8 words max.
 
 MARKDOWN: All text content fields support markdown rendering. Use **bold**, *italic*, \`code\`, [links](url), and lists (1. ordered, - unordered) in body, subtitle, bullets, table cells, and key_takeaway fields. Body text fields support full block markdown including numbered and bulleted lists.
 
-Layouts: "title", "title_and_body", "title_and_bullets", "title_and_table", "two_columns", "section_break", "image_and_text", "image_gallery", "stats", "quote", "full_image", "timeline", "comparison", "code", "callout", "icons_and_text", "team", "embed", "pros_and_cons", "agenda", "closing", "swot", "quadrant", "venn_diagram", "chart".
+Layouts: "title", "title_and_body", "title_and_bullets", "title_and_table", "two_columns", "section_break", "image_and_text", "image_gallery", "stats", "quote", "full_image", "timeline", "comparison", "code", "callout", "icons_and_text", "team", "embed", "pros_and_cons", "agenda", "swot", "quadrant", "venn_diagram", "chart", "closing".
 
 Content fields per layout (all layouts support optional key_takeaway):
 - title: { title, subtitle?, image_url? }
@@ -38,11 +38,11 @@ Content fields per layout (all layouts support optional key_takeaway):
 - embed: { title?, url (required), caption?, aspect_ratio?: "16:9"|"4:3"|"1:1" }
 - pros_and_cons: { title?, pros_heading?, cons_heading?, pros[], cons[] }
 - agenda: { title?, items[]: { topic, duration?, description? } (1-10 items) }
-- closing: { heading?, subheading?, contact_lines?[], image_url? }
 - swot: { title?, strengths[], weaknesses[], opportunities[], threats[] (1-5 items each) }
 - quadrant: { title?, body?, bullets?[], x_label?, y_label?, quadrant_labels?[4], items[]: { label, x: 0-1, y: 0-1 } (1-12 items) }
 - venn_diagram: { title?, body?, circles[]: { label, items?[] } (2-3 circles, required), overlaps?[]: { sets: [circle indices], label } (max 4) }
 - chart: { chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title? }
+- closing: { heading?, subheading?, contact_lines?[], image_url? }
 
 IMAGE PLACEHOLDERS: Use image_prompt (any layout that supports image_url) to suggest an image without providing one. Renders as a dashed placeholder box with your prompt text so the user knows what image to drop in. Example: image_prompt: "Screenshot of the iOS app home screen". When the user drops in an image, it replaces the placeholder.
 
@@ -95,7 +95,9 @@ Check warnings after every create/update call and fix any issues with a follow-u
 
 Each slide includes a comments[] array with all open comments. Each comment has: id, content_path (the JSON field it refers to, e.g. "title", "bullets[2]", "slide" for general), status, messages[] thread, and created_at.
 
-WORKFLOW: Always call get_deck first when iterating on a deck. Read the comments on each slide to understand user feedback, then use update_deck to address it and reply_to_comment to explain what you changed.`,
+WORKFLOW: Always call get_deck first when iterating on a deck. Read the comments on each slide to understand user feedback, then use update_deck to address it and reply_to_comment to explain what you changed.
+
+IMPORTANT: NEVER create a new deck to incorporate feedback. Always use update_deck on the existing deck. Creating a new deck loses the original URL, edit key, and comment history.`,
     { deck_id: z.string().describe('The deck ID (e.g. "dk_a1b2c3d4")') },
     async ({ deck_id }) => {
       const apiUrl = config.apiUrl || `http://localhost:${config.port}`;
@@ -223,11 +225,11 @@ Accepts PNG, JPG, WebP up to 10MB. Upload first, then use the returned URL when 
         { name: 'embed', description: 'Embedded iframe (YouTube, Figma, etc).', fields: 'url (required), title?, caption?, aspect_ratio? ("16:9"|"4:3"|"1:1"), key_takeaway?. Fills 90% of slide.' },
         { name: 'pros_and_cons', description: 'Two-column green/red pros and cons list.', fields: 'pros[] (required), cons[] (required), title?, pros_heading?, cons_heading?, key_takeaway?' },
         { name: 'agenda', description: 'Numbered topic list with optional durations.', fields: 'items[]: { topic, duration?, description? } (1-10 items, required), title?, key_takeaway?' },
-        { name: 'closing', description: 'Thank you / contact info slide.', fields: 'heading?, subheading?, contact_lines?[], image_url?, key_takeaway?. Accent-colored background with white text. Contact lines at bottom. Use as final slide.' },
         { name: 'swot', description: '2x2 SWOT analysis grid.', fields: 'strengths[], weaknesses[], opportunities[], threats[] (1-5 items each, all required), title?, key_takeaway?' },
         { name: 'quadrant', description: 'X/Y positioning grid with labeled dots.', fields: 'items[]: { label, x: 0-1, y: 0-1 } (1-12 items, required), title?, body?, bullets?[], x_label?, y_label?, quadrant_labels?[4], key_takeaway?. Title/body/bullets on left, chart on right.' },
         { name: 'venn_diagram', description: 'Venn diagram with 2 or 3 overlapping circles. Centered when no text; text-left/diagram-right when title/body provided.', fields: 'circles[]: { label, items?[] } (2-3 items, required), overlaps?[]: { sets: [circle indices], label } (max 4), title?, body?, key_takeaway?' },
         { name: 'chart', description: 'Bar, line, pie, or donut chart from structured data.', fields: 'chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title?, key_takeaway?' },
+        { name: 'closing', description: 'Thank you / contact info slide. Use as final slide.', fields: 'heading?, subheading?, contact_lines?[], image_url?, key_takeaway?. Accent-colored background with white text. Contact lines at bottom.' },
       ];
       const customization = {
         heading_font: 'Optional Google Font for headings (e.g. "Playfair Display"). Default: DM Sans.',

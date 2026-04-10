@@ -92,7 +92,6 @@ export class ViewerApp extends LitElement {
       background: white;
       border-radius: 8px;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-      overflow: hidden;
     }
 
 
@@ -135,6 +134,43 @@ export class ViewerApp extends LitElement {
       margin: 0;
       border-radius: 0;
       box-shadow: none;
+    }
+
+    .floating-tooltip {
+      position: fixed;
+      z-index: 10000;
+      pointer-events: none;
+      background: #1e293b;
+      color: #f1f5f9;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: var(--dp-font-body, 'DM Sans', sans-serif);
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.4;
+      max-width: 280px;
+      width: max-content;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      text-align: left;
+    }
+
+    .floating-tooltip::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+    }
+
+    .floating-tooltip.below::after {
+      bottom: 100%;
+      border-bottom: 6px solid #1e293b;
+    }
+
+    .floating-tooltip.above::after {
+      top: 100%;
+      border-top: 6px solid #1e293b;
     }
 
     .floating-thread {
@@ -221,6 +257,8 @@ export class ViewerApp extends LitElement {
   @state() private threadComment: Comment | null = null;
   @state() private threadContentPath: string | null = null;
   @state() private threadPos: { x: number; y: number } | null = null;
+  @state() private tooltipText: string | null = null;
+  @state() private tooltipStyle = '';
 
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private resizeObserver: ResizeObserver | null = null;
@@ -608,6 +646,39 @@ export class ViewerApp extends LitElement {
     }
   }
 
+  private onShowTooltip(e: CustomEvent<{ text: string; triggerRect: { top: number; left: number; bottom: number; width: number } }>) {
+    const { text, triggerRect } = e.detail;
+    this.tooltipText = text;
+
+    // Position after render so we can measure the tooltip
+    requestAnimationFrame(() => {
+      const tooltipEl = this.shadowRoot?.querySelector('.floating-tooltip') as HTMLElement;
+      if (!tooltipEl) return;
+      const tooltipHeight = tooltipEl.offsetHeight;
+      const tooltipWidth = tooltipEl.offsetWidth;
+      const gap = 8;
+      const centerX = triggerRect.left + triggerRect.width / 2;
+
+      let top = triggerRect.bottom + gap;
+      let direction = 'below';
+
+      if (top + tooltipHeight > window.innerHeight - 8) {
+        top = triggerRect.top - tooltipHeight - gap;
+        direction = 'above';
+      }
+
+      let left = centerX - tooltipWidth / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - tooltipWidth - 8));
+
+      tooltipEl.className = `floating-tooltip ${direction}`;
+      this.tooltipStyle = `top:${top}px;left:${left}px`;
+    });
+  }
+
+  private onHideTooltip() {
+    this.tooltipText = null;
+  }
+
   private onSlideContentChanged(e: CustomEvent<{ field: string; value: unknown }>) {
     if (!this.deck) return;
 
@@ -722,6 +793,8 @@ export class ViewerApp extends LitElement {
                 .slide=${slide}
                 .editable=${this.editMode}
                 @slide-content-changed=${this.onSlideContentChanged}
+                @show-tooltip=${this.onShowTooltip}
+                @hide-tooltip=${this.onHideTooltip}
               ></slide-renderer>
               ${this.editMode && slide.layout !== 'section_break' ? html`
                 <image-drop-zone
@@ -769,6 +842,9 @@ export class ViewerApp extends LitElement {
             @drag-start=${this.onThreadDragStart}
           ></comment-thread>
         </div>
+      ` : ''}
+      ${this.tooltipText ? html`
+        <div class="floating-tooltip below" style="${this.tooltipStyle}">${this.tooltipText}</div>
       ` : ''}
     `;
   }

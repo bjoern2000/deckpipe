@@ -14,7 +14,7 @@ export class SlideBase extends LitElement {
       display: block;
       width: 100%;
       height: 100%;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .slide {
@@ -214,52 +214,8 @@ export class SlideBase extends LitElement {
       position: relative;
       line-height: 1;
     }
-    .bullet-detail-trigger:hover .bullet-tooltip,
-    .bullet-detail-trigger:focus-within .bullet-tooltip {
-      display: block;
-    }
-    /* Default: tooltip above */
-    .bullet-tooltip {
+    .bullet-detail-trigger .bullet-tooltip {
       display: none;
-      position: absolute;
-      left: 50%;
-      bottom: calc(100% + 8px);
-      transform: translateX(-50%);
-      background: #1e293b;
-      color: #f1f5f9;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 1.6em;
-      font-weight: 400;
-      line-height: 1.4;
-      max-width: 280px;
-      width: max-content;
-      z-index: 100;
-      pointer-events: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      text-align: left;
-    }
-    .bullet-tooltip::after {
-      content: '';
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-    }
-    /* Arrow below tooltip (default: tooltip above trigger) */
-    .bullet-tooltip:not(.below)::after {
-      top: 100%;
-      border-top: 6px solid #1e293b;
-    }
-    /* Flipped: tooltip below trigger */
-    .bullet-tooltip.below {
-      bottom: auto;
-      top: calc(100% + 8px);
-    }
-    .bullet-tooltip.below::after {
-      bottom: 100%;
-      border-bottom: 6px solid #1e293b;
     }
 
     /* --- Rich bullet: source superscripts --- */
@@ -309,17 +265,22 @@ export class SlideBase extends LitElement {
     const trigger = e.currentTarget as HTMLElement;
     const tooltip = trigger.querySelector('.bullet-tooltip') as HTMLElement;
     if (!tooltip) return;
-    const slide = trigger.closest('.slide') as HTMLElement;
-    if (!slide) return;
     const triggerRect = trigger.getBoundingClientRect();
-    const slideRect = slide.getBoundingClientRect();
-    // If trigger is in the top 35% of the slide, flip tooltip below
-    const relativeTop = (triggerRect.top - slideRect.top) / slideRect.height;
-    if (relativeTop < 0.35) {
-      tooltip.classList.add('below');
-    } else {
-      tooltip.classList.remove('below');
-    }
+    this.dispatchEvent(new CustomEvent('show-tooltip', {
+      detail: {
+        text: tooltip.textContent,
+        triggerRect: { top: triggerRect.top, left: triggerRect.left, bottom: triggerRect.bottom, width: triggerRect.width },
+      },
+      bubbles: true,
+      composed: true,
+    }));
+  }
+
+  private _hideTooltip() {
+    this.dispatchEvent(new CustomEvent('hide-tooltip', {
+      bubbles: true,
+      composed: true,
+    }));
   }
 
   protected updated(_changedProperties: Map<string, unknown>) {
@@ -454,7 +415,7 @@ export class SlideBase extends LitElement {
     const idx = this._bulletIndex++;
     return {
       tmpl: html`<li data-content-path="bullets[${idx}]">
-        <span class="bullet-content">${mdInline(b.text)}</span>${b.detail ? html`<span class="bullet-detail-trigger" tabindex="0" @mouseover=${this._positionTooltip}>i<span class="bullet-tooltip">${b.detail}</span></span>` : nothing}${sources.map((_, j) => html`<span class="source-sup">${sourceStartIndex + j + 1}</span>`)}
+        <span class="bullet-content">${mdInline(b.text)}</span>${b.detail ? html`<span class="bullet-detail-trigger" tabindex="0" @mouseover=${this._positionTooltip} @mouseout=${this._hideTooltip}>i<span class="bullet-tooltip">${b.detail}</span></span>` : nothing}${sources.map((_, j) => html`<span class="source-sup">${sourceStartIndex + j + 1}</span>`)}
       </li>`,
       sourceCount: sources.length,
     };

@@ -47,7 +47,7 @@ npm run build:shared        # Just shared (others depend on it)
 1. `packages/api/src/routes/mcp.ts` — the remote MCP server (served at `/mcp`, used by Claude.ai and other remote clients)
 2. `/Users/bjornschefzyk/Projects/deckpipe-mcp/src/index.ts` — the standalone npm package (used via `npx deckpipe-mcp`)
 
-When updating MCP tools (descriptions, parameters, new tools), always update both files.
+When updating MCP tools, **always update both files**. This includes: tool descriptions, parameter schemas, parameter `.describe()` hints, `list_layouts` response data (layout names, descriptions, fields, style_guide), and version strings. A review-friendly copy of all agent-facing text lives in `docs/mcp-agent-instructions.md` — update it too after any description change.
 
 ## Environment
 

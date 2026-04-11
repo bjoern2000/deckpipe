@@ -4,16 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>deckpipe — slide decks at prompt speed</title>
-  <meta name="description" content="deckpipe is the agent-first slide deck engine. Your agent describes slides as JSON; deckpipe renders, themes, and exports them. MCP server for Claude, Cursor, and Claude Code." />
+  <meta name="description" content="deckpipe is the agent-first slide deck engine. your agent describes slides as json; deckpipe renders, themes, and exports them. MCP server for claude, cursor, and claude code." />
   <meta name="keywords" content="AI slide deck, MCP server, AI presentations, Claude slides, agent-first, slide deck API, AI presentation tool, deckpipe" />
   <link rel="canonical" href="https://deckpipe.dev" />
   <meta property="og:title" content="deckpipe — slide decks at prompt speed" />
-  <meta property="og:description" content="Agent-first slide deck engine. Connect the MCP, prompt your agent, get a deck." />
+  <meta property="og:description" content="agent-first slide deck engine. connect the MCP, prompt your agent, get a deck." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://deckpipe.dev" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="deckpipe — slide decks at prompt speed" />
-  <meta name="twitter:description" content="Agent-first slide deck engine. Install the MCP, prompt your agent, get a deck." />
+  <meta name="twitter:description" content="agent-first slide deck engine. connect the MCP, prompt your agent, get a deck." />
   <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
@@ -27,7 +27,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "deckpipe",
-    "description": "Agent-first slide deck renderer. AI agents describe slides as JSON; deckpipe renders, themes, and exports them. Available as an MCP server for Claude, Cursor, and other AI tools.",
+    "description": "agent-first slide deck renderer. AI agents describe slides as json; deckpipe renders, themes, and exports them. available as an MCP server for claude, cursor, and other AI tools.",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Any",
     "url": "https://deckpipe.dev",
@@ -186,20 +186,38 @@
       position: relative;
     }
 
-    /* Atmospheric gradient behind hero — large soft yellow halo */
+    /* Atmospheric gradient behind hero — large soft yellow halo that drifts + pulses */
     .hero::before {
       content: "";
       position: absolute;
       top: -380px;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translate(-50%, 0) scale(1);
+      transform-origin: center center;
       width: min(1800px, 170%);
       height: 1300px;
       background:
-        radial-gradient(ellipse 50% 45% at center 42%, rgba(244, 255, 36, 0.42) 0%, rgba(244, 255, 36, 0.25) 25%, rgba(244, 255, 36, 0.1) 50%, rgba(244, 255, 36, 0) 75%);
+        radial-gradient(ellipse 50% 45% at center 42%, rgba(244, 255, 36, 0.58) 0%, rgba(244, 255, 36, 0.36) 25%, rgba(244, 255, 36, 0.15) 50%, rgba(244, 255, 36, 0) 75%);
       filter: blur(40px);
       pointer-events: none;
       z-index: 0;
+      animation: heroHaloDrift 14s ease-in-out infinite;
+      will-change: transform, opacity, filter;
+    }
+
+    @keyframes heroHaloDrift {
+      0%   { transform: translate(-50%, 0)     scale(1);    filter: blur(40px); opacity: 1;    }
+      20%  { transform: translate(-42%, -60px) scale(1.18); filter: blur(46px); opacity: 0.92; }
+      40%  { transform: translate(-58%, 30px)  scale(0.86); filter: blur(36px); opacity: 1;    }
+      60%  { transform: translate(-46%, -30px) scale(1.12); filter: blur(50px); opacity: 0.88; }
+      80%  { transform: translate(-55%, 10px)  scale(0.92); filter: blur(38px); opacity: 0.96; }
+      100% { transform: translate(-50%, 0)     scale(1);    filter: blur(40px); opacity: 1;    }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero::before {
+        animation: none;
+      }
     }
 
     .hero > * { position: relative; z-index: 1; }
@@ -561,6 +579,47 @@
       font-family: inherit;
       color: var(--fg);
       font-weight: 600;
+    }
+
+    /* ─── Flow grid (user flow steps) ─── */
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+    }
+
+    @media (max-width: 900px) { .flow { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .flow { grid-template-columns: 1fr; } }
+
+    .flow-step {
+      background: var(--bg-soft);
+      padding: 28px 22px;
+      position: relative;
+      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.55) inset;
+    }
+
+    .flow-step .step-num {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      color: var(--fg-mute);
+      margin-bottom: 22px;
+      font-weight: 600;
+    }
+
+    .flow-step .step-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--fg);
+      margin-bottom: 8px;
+      letter-spacing: -0.015em;
+    }
+
+    .flow-step .step-desc {
+      font-size: 0.82rem;
+      color: var(--fg-dim);
+      line-height: 1.6;
     }
 
     /* ─── Demo (prompt → deck) ─── */
@@ -991,12 +1050,12 @@
       <div class="eyebrow reveal reveal-1">agent slide engine</div>
 
       <h1 class="reveal reveal-2">
-        let your AI agent<br />
+        let your agent<br />
         <span class="line2">make slide decks</span>
       </h1>
 
       <p class="subtagline reveal reveal-3">
-        deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.
+        deckpipe is an MCP server that gives your AI agent tools to create and edit compelling slide decks.
       </p>
 
       <div class="cta-row reveal reveal-4">
@@ -1037,51 +1096,88 @@
     <!-- ═══ FEATURES ═══ -->
     <section id="features">
       <div class="section-label"><span class="num">01</span> what it does</div>
-      <h2 class="section-title"><span class="hl">A rendering engine for agents.</span></h2>
+      <h2 class="section-title"><span class="hl">a rendering engine for agents.</span></h2>
       <p class="section-lede">
-        Your agent describes a deck as JSON. deckpipe handles layout, typography, and hosting.
+        your agent describes a deck as json. deckpipe handles layout, typography, and hosting.
       </p>
 
       <div class="features">
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 01</span></div>
-          <h3 class="feat-title">Layouts</h3>
-          <p class="feat-body">Title, bullets, stats, quotes, timelines, SWOT, charts, galleries. Your agent chooses a layout. deckpipe handles the styling.</p>
+          <h3 class="feat-title">layouts</h3>
+          <p class="feat-body">title, bullets, stats, quotes, timelines, SWOT, charts, galleries. your agent chooses a layout. deckpipe handles the styling.</p>
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 02</span></div>
           <h3 class="feat-title">MCP native</h3>
-          <p class="feat-body">Remote server at <code>/mcp</code> for Claude.ai and Cursor. Local install via <code>npx deckpipe-mcp</code> for Claude Code.</p>
+          <p class="feat-body">remote server at <code>/mcp</code> for claude.ai and cursor. local install via <code>npx deckpipe-mcp</code> for claude code.</p>
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 03</span></div>
-          <h3 class="feat-title">Theming</h3>
-          <p class="feat-body">Any Google Font, any accent color, per-slide takeaways. Your agent changes one field; the whole deck re-renders.</p>
+          <h3 class="feat-title">theming</h3>
+          <p class="feat-body">any google font, any accent color, per-slide takeaways. your agent changes one field; the whole deck re-renders.</p>
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 04</span></div>
-          <h3 class="feat-title">Live editing</h3>
-          <p class="feat-body">PATCH with deep merge. <code>insert</code>, <code>delete</code>, <code>move</code>, <code>replace</code> operations. Your agent edits one bullet without re-sending the deck.</p>
+          <h3 class="feat-title">live editing</h3>
+          <p class="feat-body">PATCH with deep merge. <code>insert</code>, <code>delete</code>, <code>move</code>, <code>replace</code> operations. your agent edits one bullet without re-sending the deck.</p>
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 05</span></div>
-          <h3 class="feat-title">Comments</h3>
-          <p class="feat-body">You click any element to comment. Your agent reads the feedback, updates the deck, and replies.</p>
+          <h3 class="feat-title">comments</h3>
+          <p class="feat-body">you click any element to comment. your agent reads the feedback, updates the deck, and replies.</p>
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 06</span></div>
-          <h3 class="feat-title">Stock photos</h3>
-          <p class="feat-body">Your agent searches Unsplash and drops photos into slides. Attribution and re-hosting are automatic.</p>
+          <h3 class="feat-title">stock photos</h3>
+          <p class="feat-body">your agent searches unsplash and drops photos into slides. attribution and re-hosting are automatic.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ FLOW ═══ -->
+    <section id="flow">
+      <div class="section-label"><span class="num">02</span> flow</div>
+      <h2 class="section-title"><span class="hl">how you use it.</span></h2>
+      <p class="section-lede">
+        a typical workflow.
+      </p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="step-num">01</div>
+          <div class="step-name">jam</div>
+          <div class="step-desc">jam with your AI on a topic.</div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">02</div>
+          <div class="step-name">generate</div>
+          <div class="step-desc">ask your agent to make a deck.</div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">03</div>
+          <div class="step-name">review</div>
+          <div class="step-desc">comments from you or collaborators. or feedback straight to your agent.</div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">04</div>
+          <div class="step-name">iterate</div>
+          <div class="step-desc">your agent updates the deck.</div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">05</div>
+          <div class="step-name">share</div>
+          <div class="step-desc">share the link or present.</div>
         </div>
       </div>
     </section>
 
     <!-- ═══ DEMO ═══ -->
     <section id="demo">
-      <div class="section-label"><span class="num">02</span> demo</div>
-      <h2 class="section-title"><span class="hl">An example.</span></h2>
+      <div class="section-label"><span class="num">03</span> demo</div>
+      <h2 class="section-title"><span class="hl">example.</span></h2>
       <p class="section-lede">
-        You write a prompt. Your agent calls deckpipe and produces a deck.
+        you write a prompt. your agent calls deckpipe and produces a deck.
       </p>
 
       <div class="demo-grid">
@@ -1091,8 +1187,8 @@
             <span class="tag">input</span>
           </div>
           <div class="demo-card-body">
-            <span class="prompt-prefix">$</span>Create a deck about the Apollo 11 moon landing. Search the web for historic NASA photos and use them as full-bleed images. Include a timeline of the mission, stats on the Saturn V rocket, and a famous quote from Neil Armstrong. Use heading font "Libre Baskerville" and accent color "#1e3a5f".
-            <button class="copy-btn" onclick="copyCode(this, 'Create a deck about the Apollo 11 moon landing. Search the web for historic NASA photos and use them as full-bleed images. Include a timeline of the mission, stats on the Saturn V rocket, and a famous quote from Neil Armstrong. Use heading font &quot;Libre Baskerville&quot; and accent color &quot;#1e3a5f&quot;.')" title="Copy prompt">
+            <span class="prompt-prefix">$</span>create a deck about the apollo 11 moon landing. search the web for historic NASA photos and use them as full-bleed images. include a timeline of the mission, stats on the saturn V rocket, and a famous quote from neil armstrong. use heading font "libre baskerville" and accent color "#1e3a5f".
+            <button class="copy-btn" onclick="copyCode(this, 'create a deck about the apollo 11 moon landing. search the web for historic NASA photos and use them as full-bleed images. include a timeline of the mission, stats on the saturn V rocket, and a famous quote from neil armstrong. use heading font &quot;libre baskerville&quot; and accent color &quot;#1e3a5f&quot;.')" title="Copy prompt">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             </button>
           </div>
@@ -1105,7 +1201,7 @@
           </div>
           <div>
             <a href="https://deckpipe.dev/d/dk_YjAXnN8v/apollo-11-humanity-s-giant-leap" target="_blank" rel="noopener" class="demo-result-link">
-              Apollo 11: Humanity's Giant Leap
+              apollo 11: humanity's giant leap
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
             </a>
           </div>
@@ -1120,17 +1216,16 @@
 
     <!-- ═══ INSTALL ═══ -->
     <section id="connect">
-      <div class="section-label"><span class="num">03</span> connect</div>
-      <h2 class="section-title"><span class="hl">Connect deckpipe to your agent.</span></h2>
+      <div class="section-label"><span class="num">04</span> connect</div>
+      <h2 class="section-title"><span class="hl">connect deckpipe to your agent.</span></h2>
       <p class="section-lede">
-        Three ways to do it, depending on which agent you use. They all give your agent the same tools.
+        3 ways in. same tools either way.
       </p>
 
       <div class="install-steps">
         <div class="install-card">
           <div class="install-head">
             <div class="title"><span class="dim">01 //</span>remote mcp &nbsp;<span style="color:var(--fg-mute);font-size:0.72rem">— url only, no install</span></div>
-            <span class="badge">claude.ai · cursor</span>
           </div>
           <div class="install-body">
             <pre><code><span class="prompt-sym">&gt; </span>https://deckpipe.dev/mcp</code></pre>
@@ -1143,7 +1238,6 @@
         <div class="install-card">
           <div class="install-head">
             <div class="title"><span class="dim">02 //</span>claude code</div>
-            <span class="badge">cli</span>
           </div>
           <div class="install-body">
             <pre><code><span class="prompt-sym">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp</code></pre>
@@ -1156,7 +1250,6 @@
         <div class="install-card">
           <div class="install-head">
             <div class="title"><span class="dim">03 //</span>manual mcp config</div>
-            <span class="badge">json</span>
           </div>
           <div class="install-body">
 <pre><code>{
@@ -1177,10 +1270,10 @@
 
     <!-- ═══ TOOLS ═══ -->
     <section id="tools">
-      <div class="section-label"><span class="num">04</span> mcp tools</div>
-      <h2 class="section-title"><span class="hl">The tools your agent gets.</span></h2>
+      <div class="section-label"><span class="num">05</span> mcp tools</div>
+      <h2 class="section-title"><span class="hl">the full api.</span></h2>
       <p class="section-lede">
-        Each tool does one thing.
+        small and focused.
       </p>
       <div class="pill-group">
         <div class="pill">create_deck</div>
@@ -1198,10 +1291,10 @@
 
     <!-- ═══ LAYOUTS ═══ -->
     <section id="layouts">
-      <div class="section-label"><span class="num">05</span> layouts</div>
-      <h2 class="section-title"><span class="hl">Layouts your agent can use.</span></h2>
+      <div class="section-label"><span class="num">06</span> layouts</div>
+      <h2 class="section-title"><span class="hl">layouts your agent can use.</span></h2>
       <p class="section-lede">
-        Each layout has its own typed content shape. Your agent chooses the layout that fits the slide.
+        each layout has its own typed content shape. your agent chooses the layout that fits the slide.
       </p>
       <div class="pill-group">
         <div class="pill">title</div>
@@ -1230,24 +1323,24 @@
         <div class="pill">chart</div>
         <div class="pill">closing</div>
       </div>
-      <p class="see-all">▸ <a href="https://deckpipe.dev/d/dk_KRtXiuKV/the-clean-energy-transition-2026-outlook" target="_blank" rel="noopener">See every layout in one deck</a></p>
+      <p class="see-all">▸ <a href="https://deckpipe.dev/d/dk_KRtXiuKV/the-clean-energy-transition-2026-outlook" target="_blank" rel="noopener">see every layout in one deck</a></p>
     </section>
 
     <!-- ═══ CUSTOMIZATION ═══ -->
     <section id="customization">
-      <div class="section-label"><span class="num">06</span> theming</div>
-      <h2 class="section-title"><span class="hl">Theming.</span></h2>
+      <div class="section-label"><span class="num">07</span> theming</div>
+      <h2 class="section-title"><span class="hl">theming.</span></h2>
       <p class="section-lede">
-        Theme settings live on the deck. Your agent can change them at any time and the whole deck re-renders.
+        theme settings live on the deck. your agent can change them at any time and the whole deck re-renders.
       </p>
       <div class="pill-group">
         <div class="pill with-desc">
           <span class="name">heading_font</span>
-          <span class="desc">any Google Font for headings</span>
+          <span class="desc">any google font for headings</span>
         </div>
         <div class="pill with-desc">
           <span class="name">body_font</span>
-          <span class="desc">any Google Font for body text</span>
+          <span class="desc">any google font for body text</span>
         </div>
         <div class="pill with-desc">
           <span class="name">accent_color</span>
@@ -1259,34 +1352,34 @@
         </div>
       </div>
       <p class="see-all" style="margin-top: 36px;">
-        The <span class="ic">icons_and_text</span> layout takes any <a href="https://lucide.dev/icons/" target="_blank" rel="noopener">Lucide icon</a> by name
+        the <span class="ic">icons_and_text</span> layout takes any <a href="https://lucide.dev/icons/" target="_blank" rel="noopener">lucide icon</a> by name
         (e.g. <span class="ic">"clock"</span>, <span class="ic">"database"</span>) or any emoji.
       </p>
     </section>
 
     <!-- ═══ TRY IT ═══ -->
     <section id="try">
-      <div class="section-label"><span class="num">07</span> try it</div>
-      <h2 class="section-title"><span class="hl">Example prompts.</span></h2>
+      <div class="section-label"><span class="num">08</span> try</div>
+      <h2 class="section-title"><span class="hl">example prompts.</span></h2>
       <p class="section-lede">
-        Paste any of these into your agent to try deckpipe.
+        paste any of these into your agent to try deckpipe.
       </p>
 
       <ol class="try-list">
         <li>
-          Create a deck about the rise of electric vehicles. Search the web for relevant photos and use them. Use heading font "Space Grotesk", body font "Inter", and accent color "#0ea5e9".
+          create a deck about the rise of electric vehicles. search the web for relevant photos and use them. use heading font "space grotesk", body font "inter", and accent color "#0ea5e9".
           <button class="copy-btn" onclick="copyPrompt(this)" title="Copy">
             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
           </button>
         </li>
         <li>
-          Build a lecture deck on how neural networks learn. Use a comparison table for activation functions, bullet points for key concepts, and add a key takeaway to each slide.
+          build a lecture deck on how neural networks learn. use a comparison table for activation functions, bullet points for key concepts, and add a key takeaway to each slide.
           <button class="copy-btn" onclick="copyPrompt(this)" title="Copy">
             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
           </button>
         </li>
         <li>
-          Create a travel guide deck for Tokyo. Search the web for photos and include an image gallery of must-visit spots, stats on tourism, and a full-bleed image cover slide.
+          create a travel guide deck for tokyo. search the web for photos and include an image gallery of must-visit spots, stats on tourism, and a full-bleed image cover slide.
           <button class="copy-btn" onclick="copyPrompt(this)" title="Copy">
             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
           </button>
@@ -1296,7 +1389,7 @@
 
     <!-- ═══ FOOTER ═══ -->
     <footer class="footer">
-      <div>&copy; 2026 <a href="https://bjoernschefzyk.co" target="_blank" rel="noopener">Björn Schefzyk</a> &nbsp;·&nbsp; all rights reserved</div>
+      <div>&copy; 2026 <a href="https://bjoernschefzyk.co" target="_blank" rel="noopener">björn schefzyk</a> &nbsp;·&nbsp; all rights reserved</div>
       <div>
         <a href="https://github.com/bjoern2000/deckpipe-mcp" target="_blank" rel="noopener">github</a>
         <span class="sep">/</span>

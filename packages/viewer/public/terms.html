@@ -4,78 +4,135 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>deckpipe — terms of use</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1'/><path d='M14 2v5a1 1 0 0 0 1 1h5'/><path d='M2 15h10'/><path d='m9 18 3-3-3-3'/></svg>" />
+  <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg:           #DAE2E7;
+      --fg:           #14181c;
+      --fg-dim:       #3d4248;
+      --fg-mute:      #6b727a;
+      --fg-faint:     #9ba3aa;
+      --line:         #b6c0c8;
+      --accent:       #F4FF24;
+      --mono: "Overpass Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; min-width: 0; }
+
+    html { overflow-x: hidden; }
 
     body {
-      font-family: "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", monospace;
-      background: #0a0a0a;
-      color: #e0e0e0;
+      font-family: var(--mono);
+      font-weight: 400;
+      background: var(--bg);
+      color: var(--fg);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 80px 24px 60px;
-      line-height: 1.6;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: "zero";
     }
 
     .container {
-      max-width: 640px;
+      max-width: 720px;
       width: 100%;
     }
 
+    /* Highlighter-stripe effect for the title */
+    .hl {
+      background: linear-gradient(
+        to bottom,
+        transparent 55%,
+        var(--accent) 55%,
+        var(--accent) 95%,
+        transparent 95%
+      );
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+      padding: 0 0.12em;
+      margin: 0 -0.04em;
+    }
+
     h1 {
-      font-size: 1.5rem;
+      font-size: clamp(1.6rem, 3.4vw, 2.4rem);
       font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.02em;
-      margin-bottom: 8px;
+      color: var(--fg);
+      letter-spacing: -0.025em;
+      line-height: 1.1;
+      margin-bottom: 14px;
     }
 
     .updated {
-      font-size: 0.75rem;
-      color: #555;
-      margin-bottom: 40px;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--fg-mute);
+      margin-bottom: 56px;
     }
 
     h2 {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #666;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--fg);
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-top: 32px;
-      margin-bottom: 12px;
+      letter-spacing: 0.12em;
+      margin-top: 40px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    h2::before {
+      content: "";
+      width: 24px;
+      height: 1px;
+      background: var(--fg);
+      flex-shrink: 0;
     }
 
     p {
-      font-size: 0.875rem;
-      color: #aaa;
-      margin-bottom: 12px;
+      font-size: 0.92rem;
+      color: var(--fg-dim);
+      margin-bottom: 14px;
+      max-width: 64ch;
+    }
+
+    a {
+      color: var(--fg);
+      text-decoration: none;
+      border-bottom: 1px solid var(--fg-faint);
+      padding-bottom: 1px;
+      transition: border-color 0.15s ease;
+    }
+
+    a:hover {
+      border-color: var(--fg);
     }
 
     .footer {
       margin-top: 80px;
-      font-size: 0.75rem;
-      color: #444;
+      font-size: 0.78rem;
+      color: var(--fg-mute);
     }
 
-    a {
-      color: #888;
-      text-decoration: none;
-      border-bottom: 1px solid #333;
-    }
-
-    a:hover {
-      color: #ccc;
-      border-color: #666;
-    }
+    ::selection { background: var(--accent); color: var(--fg); }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>terms of use</h1>
+    <h1><span class="hl">terms of use</span></h1>
     <p class="updated">last updated: march 30, 2026</p>
 
     <h2>the service</h2>

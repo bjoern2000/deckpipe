@@ -38,7 +38,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
   <style>
     :root {
@@ -62,7 +62,7 @@
       --on-dark-mute: #7a838a;
       --max:          1200px;
       --edge:         clamp(20px, 5vw, 56px);
-      --mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      --mono: "Overpass Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; min-width: 0; }
@@ -166,11 +166,12 @@
     .nav-links {
       display: flex;
       gap: 28px;
-      color: var(--fg-dim);
+      color: var(--fg);
     }
 
     .nav-links a {
       position: relative;
+      font-weight: 600;
     }
 
     @media (max-width: 640px) {
@@ -229,7 +230,7 @@
     .hero h1 {
       margin-top: 28px;
       font-size: clamp(1.65rem, 5.6vw, 4.6rem);
-      font-weight: 500;
+      font-weight: 700;
       line-height: 1.05;
       letter-spacing: -0.04em;
       color: var(--fg);
@@ -247,6 +248,7 @@
       margin-top: 36px;
       max-width: 58ch;
       font-size: clamp(0.95rem, 1.4vw, 1.08rem);
+      font-weight: 500;
       line-height: 1.6;
       color: var(--fg-dim);
     }
@@ -471,7 +473,7 @@
 
     .section-title {
       font-size: clamp(1.2rem, 2.6vw, 2rem);
-      font-weight: 500;
+      font-weight: 700;
       line-height: 1.15;
       letter-spacing: -0.025em;
       max-width: min(24ch, 100%);
@@ -543,7 +545,7 @@
 
     .feat-title {
       font-size: 1.05rem;
-      font-weight: 500;
+      font-weight: 700;
       color: var(--fg);
       margin-bottom: 10px;
       letter-spacing: -0.015em;
@@ -979,7 +981,7 @@
       <div class="nav-links">
         <a href="#connect">connect</a>
         <a href="#layouts" class="hide-sm">layouts</a>
-        <a href="#try">try it</a>
+        <a href="#try">try</a>
         <a href="https://github.com/bjoern2000/deckpipe-mcp" target="_blank" rel="noopener">github</a>
       </div>
     </nav>
@@ -1069,7 +1071,7 @@
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 06</span></div>
           <h3 class="feat-title">Stock photos</h3>
-          <p class="feat-body">Your agent searches Unsplash from inside the conversation and pulls photos straight into slides. Photographer attribution is tracked automatically. Images are re-hosted on deck creation, so slides keep working if the original URL goes down.</p>
+          <p class="feat-body">Your agent searches Unsplash and drops photos into slides. Attribution and re-hosting are automatic.</p>
         </div>
       </div>
     </section>

@@ -3,34 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>deckpipe — monospace test</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+  <title>deckpipe — monospace test (round 2)</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&family=Space+Mono:wght@400;700&family=Fira+Code:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=DM+Mono:wght@400;500&family=Ubuntu+Mono:wght@400;700&family=Red+Hat+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Roboto+Mono:wght@400;500&family=Noto+Sans+Mono:wght@400;500&family=B612+Mono:wght@400;700&family=Spline+Sans+Mono:wght@400;500&family=Sometype+Mono:wght@400;500&family=Reddit+Mono:wght@400;500&family=Cousine:wght@400;700&family=Overpass+Mono:wght@400;500&family=Anonymous+Pro:wght@400;700&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <style>
     :root {
-      --bg:        #0a0a0b;
-      --bg-soft:   #15151a;
-      --bg-elev:   #17171d;
-      --bg-code:   #1f1f28;
-      --fg:        #f0efea;
-      --fg-dim:    #b4b3ae;
-      --fg-mute:   #6b6a66;
-      --fg-faint:  #35353a;
-      --line:      #1c1c20;
-      --line-hi:   #2a2a30;
-      --accent:    #ff5c1a;
-      --accent-dim: #8a3310;
-      --ok:        #9fd46b;
-      --sys:       -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      /* matches the live landing page */
+      --bg:           #DAE2E7;
+      --bg-soft:      #e8edf0;
+      --bg-elev:      #f2f5f7;
+      --bg-code:      #14181c;
+      --fg:           #14181c;
+      --fg-dim:       #3d4248;
+      --fg-mute:      #6b727a;
+      --fg-faint:     #9ba3aa;
+      --line:         #b6c0c8;
+      --line-hi:      #94a0a9;
+      --accent:       #F4FF24;
+      --on-dark:      #e8ecf0;
+      --on-dark-mute: #7a838a;
+      --sys: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; min-width: 0; }
 
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
 
     body {
       background: var(--bg);
@@ -60,6 +61,7 @@
       margin-top: 8px;
       color: var(--fg-mute);
       font-size: 0.85rem;
+      max-width: 60ch;
     }
 
     .toc {
@@ -85,8 +87,9 @@
     }
 
     .toc a:hover {
-      border-color: var(--accent);
-      color: var(--accent);
+      border-color: var(--fg);
+      color: var(--fg);
+      background: var(--bg-elev);
     }
 
     .specimen {
@@ -115,8 +118,9 @@
     }
 
     .label .num {
-      color: var(--accent);
+      color: var(--fg);
       margin-right: 10px;
+      font-weight: 600;
     }
 
     .name {
@@ -137,7 +141,7 @@
     .h1 {
       font-size: clamp(2.2rem, 5.6vw, 4.6rem);
       font-weight: 500;
-      line-height: 1.0;
+      line-height: 1.05;
       letter-spacing: -0.04em;
       color: var(--fg);
       max-width: 22ch;
@@ -145,10 +149,22 @@
 
     .h1 .line2 {
       display: block;
-      color: var(--fg-dim);
     }
 
-    .h1 .accent { color: var(--accent); }
+    /* highlighter stripe — matches landing .hl */
+    .hl {
+      background: linear-gradient(
+        to bottom,
+        transparent 55%,
+        var(--accent) 55%,
+        var(--accent) 95%,
+        transparent 95%
+      );
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+      padding: 0 0.12em;
+      margin: 0 -0.04em;
+    }
 
     .sub {
       margin-top: 28px;
@@ -169,29 +185,28 @@
       .row { grid-template-columns: 1fr; }
       .desc { text-align: left; max-width: none; }
       .label-row { flex-direction: column; align-items: flex-start; }
+      .specimen, .page-head, .toc { padding-left: 24px; padding-right: 24px; }
     }
 
     .codeblock {
       background: var(--bg-code);
-      border: 1px solid var(--line-hi);
-      border-top: 1px solid var(--line-hi);
-      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset;
+      border: 1px solid var(--bg-code);
+      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.06) inset;
       padding: 22px 24px;
       font-size: 0.9rem;
       line-height: 1.7;
-      color: var(--fg);
+      color: var(--on-dark);
       overflow-x: auto;
       white-space: pre;
     }
 
-    .codeblock .pmt { color: var(--accent); }
-    .codeblock .key { color: #a9c4ff; }
-    .codeblock .str { color: var(--ok); }
-    .codeblock .cmt { color: var(--fg-mute); }
+    .codeblock .pmt { color: var(--on-dark-mute); }
+    .codeblock .cmt { color: var(--on-dark-mute); }
 
     .charset {
       background: var(--bg-soft);
       border: 1px solid var(--line);
+      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.55) inset;
       padding: 22px 24px;
       font-size: 0.92rem;
       line-height: 1.9;
@@ -215,55 +230,58 @@
       color: var(--fg);
       background: var(--bg-soft);
       border: 1px solid var(--line);
+      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.5) inset;
     }
 
     /* ── Per-font classes ── */
-    .f-jetbrains { font-family: "JetBrains Mono", ui-monospace, monospace; }
-    .f-roboto    { font-family: "Roboto Mono",    ui-monospace, monospace; }
-    .f-plex      { font-family: "IBM Plex Mono",  ui-monospace, monospace; }
-    .f-source    { font-family: "Source Code Pro",ui-monospace, monospace; }
-    .f-space     { font-family: "Space Mono",     ui-monospace, monospace; }
-    .f-fira      { font-family: "Fira Code",      ui-monospace, monospace; }
-    .f-geist     { font-family: "Geist Mono",     ui-monospace, monospace; }
-    .f-dm        { font-family: "DM Mono",        ui-monospace, monospace; }
-    .f-ubuntu    { font-family: "Ubuntu Mono",    ui-monospace, monospace; }
-    .f-redhat    { font-family: "Red Hat Mono",   ui-monospace, monospace; }
+    .f-dm        { font-family: "DM Mono",         ui-monospace, monospace; }
+    .f-roboto    { font-family: "Roboto Mono",     ui-monospace, monospace; }
+    .f-noto      { font-family: "Noto Sans Mono",  ui-monospace, monospace; }
+    .f-b612      { font-family: "B612 Mono",       ui-monospace, monospace; }
+    .f-spline    { font-family: "Spline Sans Mono",ui-monospace, monospace; }
+    .f-sometype  { font-family: "Sometype Mono",   ui-monospace, monospace; }
+    .f-reddit    { font-family: "Reddit Mono",     ui-monospace, monospace; }
+    .f-cousine   { font-family: "Cousine",         ui-monospace, monospace; }
+    .f-overpass  { font-family: "Overpass Mono",   ui-monospace, monospace; }
+    .f-anon      { font-family: "Anonymous Pro",   ui-monospace, monospace; }
+    .f-martian   { font-family: "Martian Mono",    ui-monospace, monospace; }
   </style>
 </head>
 <body>
   <div class="page-head">
-    <h1>monospace specimens</h1>
-    <p>Same hero copy, code block, and character set rendered in 10 Google Fonts. Pick one and tell me the name.</p>
+    <h1>monospace specimens — round 2</h1>
+    <p>Same hero copy, code block, character set, and pill row in 10 simpler / more neutral monospace fonts. Live palette. Pick one and tell me the name.</p>
   </div>
 
   <nav class="toc">
-    <a href="#jetbrains">01 · JetBrains Mono <span style="color:var(--fg-mute)">(current)</span></a>
+    <a href="#dm">01 · DM Mono <span style="color:var(--fg-mute)">(current)</span></a>
     <a href="#roboto">02 · Roboto Mono</a>
-    <a href="#plex">03 · IBM Plex Mono</a>
-    <a href="#source">04 · Source Code Pro</a>
-    <a href="#space">05 · Space Mono</a>
-    <a href="#fira">06 · Fira Code</a>
-    <a href="#geist">07 · Geist Mono</a>
-    <a href="#dm">08 · DM Mono</a>
-    <a href="#ubuntu">09 · Ubuntu Mono</a>
-    <a href="#redhat">10 · Red Hat Mono</a>
+    <a href="#noto">03 · Noto Sans Mono</a>
+    <a href="#b612">04 · B612 Mono</a>
+    <a href="#spline">05 · Spline Sans Mono</a>
+    <a href="#sometype">06 · Sometype Mono</a>
+    <a href="#reddit">07 · Reddit Mono</a>
+    <a href="#cousine">08 · Cousine</a>
+    <a href="#overpass">09 · Overpass Mono</a>
+    <a href="#anon">10 · Anonymous Pro</a>
+    <a href="#martian">11 · Martian Mono</a>
   </nav>
 
-  <!-- 01 — JETBRAINS MONO -->
-  <section class="specimen f-jetbrains" id="jetbrains">
+  <!-- 01 — DM MONO (current) -->
+  <section class="specimen f-dm" id="dm">
     <div class="label-row">
       <div>
-        <div class="label"><span class="num">[ 01 ]</span>current</div>
-        <div class="name">JetBrains Mono</div>
+        <div class="label"><span class="num">01</span>current</div>
+        <div class="name">DM Mono</div>
       </div>
-      <div class="desc">Narrow, geometric, modern. The current pick. Very legible but condensed — feels tight at hero scale.</div>
+      <div class="desc">Geometric, slightly narrow. The current pick. Pairs naturally with DM Sans (the deck body font).</div>
     </div>
 
     <h1 class="h1">
-      enable your AI agent<br />
-      <span class="line2">to create <span class="accent">compelling</span> slide decks_</span>
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
     </h1>
-    <p class="sub">deckpipe provides tools to any agent via MCP to create and iterate on slide decks using 25 templates.</p>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
 
     <div class="row">
       <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp
@@ -288,17 +306,17 @@
   <section class="specimen f-roboto" id="roboto">
     <div class="label-row">
       <div>
-        <div class="label"><span class="num">[ 02 ]</span>specimen</div>
+        <div class="label"><span class="num">02</span>specimen</div>
         <div class="name">Roboto Mono</div>
       </div>
-      <div class="desc">Wider, very neutral, Google's house monospace. Friendly, highly legible at any size.</div>
+      <div class="desc">Google's house monospace. Very neutral, slightly humanist, friendly. The "default" simple mono.</div>
     </div>
 
     <h1 class="h1">
-      enable your AI agent<br />
-      <span class="line2">to create <span class="accent">compelling</span> slide decks_</span>
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
     </h1>
-    <p class="sub">deckpipe provides tools to any agent via MCP to create and iterate on slide decks using 25 templates.</p>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
 
     <div class="row">
       <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp
@@ -319,21 +337,21 @@
     </div>
   </section>
 
-  <!-- 03 — IBM PLEX MONO -->
-  <section class="specimen f-plex" id="plex">
+  <!-- 03 — NOTO SANS MONO -->
+  <section class="specimen f-noto" id="noto">
     <div class="label-row">
       <div>
-        <div class="label"><span class="num">[ 03 ]</span>specimen</div>
-        <div class="name">IBM Plex Mono</div>
+        <div class="label"><span class="num">03</span>specimen</div>
+        <div class="name">Noto Sans Mono</div>
       </div>
-      <div class="desc">Medium width, characterful, slightly quirky tails. The previous pick.</div>
+      <div class="desc">Google's universal mono — designed for legibility across every script. Calm, neutral, mostly featureless letterforms.</div>
     </div>
 
     <h1 class="h1">
-      enable your AI agent<br />
-      <span class="line2">to create <span class="accent">compelling</span> slide decks_</span>
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
     </h1>
-    <p class="sub">deckpipe provides tools to any agent via MCP to create and iterate on slide decks using 25 templates.</p>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
 
     <div class="row">
       <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp
@@ -354,21 +372,21 @@
     </div>
   </section>
 
-  <!-- 04 — SOURCE CODE PRO -->
-  <section class="specimen f-source" id="source">
+  <!-- 04 — B612 MONO -->
+  <section class="specimen f-b612" id="b612">
     <div class="label-row">
       <div>
-        <div class="label"><span class="num">[ 04 ]</span>specimen</div>
-        <div class="name">Source Code Pro</div>
+        <div class="label"><span class="num">04</span>specimen</div>
+        <div class="name">B612 Mono</div>
       </div>
-      <div class="desc">Adobe's classic. Wide, calm, professional. Reads almost humanist for a monospace.</div>
+      <div class="desc">Designed by Airbus for cockpit displays — ultra-clear, neutral, low-character. Maybe the simplest mono on Google Fonts.</div>
     </div>
 
     <h1 class="h1">
-      enable your AI agent<br />
-      <span class="line2">to create <span class="accent">compelling</span> slide decks_</span>
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
     </h1>
-    <p class="sub">deckpipe provides tools to any agent via MCP to create and iterate on slide decks using 25 templates.</p>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
 
     <div class="row">
       <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp
@@ -389,21 +407,21 @@
     </div>
   </section>
 
-  <!-- 05 — SPACE MONO -->
-  <section class="specimen f-space" id="space">
+  <!-- 05 — SPLINE SANS MONO -->
+  <section class="specimen f-spline" id="spline">
     <div class="label-row">
       <div>
-        <div class="label"><span class="num">[ 05 ]</span>specimen</div>
-        <div class="name">Space Mono</div>
+        <div class="label"><span class="num">05</span>specimen</div>
+        <div class="name">Spline Sans Mono</div>
       </div>
-      <div class="desc">Wide, distinctive, retro-futurist. Strong personality at hero scale — almost a display face.</div>
+      <div class="desc">Modern, geometric, contemporary. Closer to a sans-serif than most monos. Very clean.</div>
     </div>
 
     <h1 class="h1">
-      enable your AI agent<br />
-      <span class="line2">to create <span class="accent">compelling</span> slide decks_</span>
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
     </h1>
-    <p class="sub">deckpipe provides tools to any agent via MCP to create and iterate on slide decks using 25 templates.</p>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
 
     <div class="row">
       <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp
@@ -424,21 +442,21 @@
     </div>
   </section>
 
-  <!-- 06 — FIRA CODE -->
-  <section class="specimen f-fira" id="fira">
+  <!-- 06 — SOMETYPE MONO -->
+  <section class="specimen f-sometype" id="sometype">
     <div class="label-row">
       <div>
-        <div class="label"><span class="num">[ 06 ]</span>specimen</div>
-        <div class="name">Fira Code</div>
+        <div class="label"><span class="num">06</span>specimen</div>
+        <div class="name">Sometype Mono</div>
       </div>
-      <div class="desc">Mozilla's coding font. Narrow-medium, programmer-coded, ligatures for code symbols.</div>
+      <div class="desc">Quiet, neutral, slightly geometric. Restrained letterforms with no quirks.</div>
     </div>
 
     <h1 class="h1">
-      enable your AI agent<br />
-      <span class="line2">to create <span class="accent">compelling</span> slide decks_</span>
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
     </h1>
-    <p class="sub">deckpipe provides tools to any agent via MCP to create and iterate on slide decks using 25 templates.</p>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
 
     <div class="row">
       <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp
@@ -459,21 +477,21 @@
     </div>
   </section>
 
-  <!-- 07 — GEIST MONO -->
-  <section class="specimen f-geist" id="geist">
+  <!-- 07 — REDDIT MONO -->
+  <section class="specimen f-reddit" id="reddit">
     <div class="label-row">
       <div>
-        <div class="label"><span class="num">[ 07 ]</span>specimen</div>
-        <div class="name">Geist Mono</div>
+        <div class="label"><span class="num">07</span>specimen</div>
+        <div class="name">Reddit Mono</div>
       </div>
-      <div class="desc">Vercel's house font. Modern, geometric, very clean. Medium width.</div>
+      <div class="desc">Recently published as part of Reddit's design system. Friendly, neutral, modern. Open letterforms.</div>
     </div>
 
     <h1 class="h1">
-      enable your AI agent<br />
-      <span class="line2">to create <span class="accent">compelling</span> slide decks_</span>
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
     </h1>
-    <p class="sub">deckpipe provides tools to any agent via MCP to create and iterate on slide decks using 25 templates.</p>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
 
     <div class="row">
       <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp
@@ -494,21 +512,21 @@
     </div>
   </section>
 
-  <!-- 08 — DM MONO -->
-  <section class="specimen f-dm" id="dm">
+  <!-- 08 — COUSINE -->
+  <section class="specimen f-cousine" id="cousine">
     <div class="label-row">
       <div>
-        <div class="label"><span class="num">[ 08 ]</span>specimen</div>
-        <div class="name">DM Mono</div>
+        <div class="label"><span class="num">08</span>specimen</div>
+        <div class="name">Cousine</div>
       </div>
-      <div class="desc">Geometric, clean, slightly narrow. Pairs naturally with DM Sans (your default body font).</div>
+      <div class="desc">Designed as a metric-compatible alternative to Courier New. Plain, calm, document-y.</div>
     </div>
 
     <h1 class="h1">
-      enable your AI agent<br />
-      <span class="line2">to create <span class="accent">compelling</span> slide decks_</span>
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
     </h1>
-    <p class="sub">deckpipe provides tools to any agent via MCP to create and iterate on slide decks using 25 templates.</p>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
 
     <div class="row">
       <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp
@@ -529,21 +547,21 @@
     </div>
   </section>
 
-  <!-- 09 — UBUNTU MONO -->
-  <section class="specimen f-ubuntu" id="ubuntu">
+  <!-- 09 — OVERPASS MONO -->
+  <section class="specimen f-overpass" id="overpass">
     <div class="label-row">
       <div>
-        <div class="label"><span class="num">[ 09 ]</span>specimen</div>
-        <div class="name">Ubuntu Mono</div>
+        <div class="label"><span class="num">09</span>specimen</div>
+        <div class="name">Overpass Mono</div>
       </div>
-      <div class="desc">Friendly, slightly wider, humanist edges. Warm without losing the techno feel.</div>
+      <div class="desc">Inspired by Highway Gothic — utilitarian, neutral, slightly wide. From Red Hat's Overpass family.</div>
     </div>
 
     <h1 class="h1">
-      enable your AI agent<br />
-      <span class="line2">to create <span class="accent">compelling</span> slide decks_</span>
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
     </h1>
-    <p class="sub">deckpipe provides tools to any agent via MCP to create and iterate on slide decks using 25 templates.</p>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
 
     <div class="row">
       <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp
@@ -564,21 +582,56 @@
     </div>
   </section>
 
-  <!-- 10 — RED HAT MONO -->
-  <section class="specimen f-redhat" id="redhat">
+  <!-- 10 — ANONYMOUS PRO -->
+  <section class="specimen f-anon" id="anon">
     <div class="label-row">
       <div>
-        <div class="label"><span class="num">[ 10 ]</span>specimen</div>
-        <div class="name">Red Hat Mono</div>
+        <div class="label"><span class="num">10</span>specimen</div>
+        <div class="name">Anonymous Pro</div>
       </div>
-      <div class="desc">Modern, neutral, slightly geometric. Wider than JetBrains, calmer than Plex.</div>
+      <div class="desc">Designed specifically for code. Plain, neutral, clearly distinguished glyphs (zero, one, l). Calm and document-friendly.</div>
     </div>
 
     <h1 class="h1">
-      enable your AI agent<br />
-      <span class="line2">to create <span class="accent">compelling</span> slide decks_</span>
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
     </h1>
-    <p class="sub">deckpipe provides tools to any agent via MCP to create and iterate on slide decks using 25 templates.</p>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
+
+    <div class="row">
+      <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp
+<span class="cmt"># or, no install:</span>
+<span class="pmt">&gt; </span>https://deckpipe.dev/mcp</div>
+      <div class="charset">
+        <div class="row1">ABCDEFGHIJKLMNOPQRSTUVWXYZ</div>
+        <div class="row2">abcdefghijklmnopqrstuvwxyz</div>
+        <div class="row3">0123456789 {[(&lt;&gt;)]} &amp;@#$%*</div>
+      </div>
+    </div>
+
+    <div class="pills">
+      <div class="pill">create_deck</div>
+      <div class="pill">get_deck</div>
+      <div class="pill">update_deck</div>
+      <div class="pill">list_layouts</div>
+    </div>
+  </section>
+
+  <!-- 11 — MARTIAN MONO -->
+  <section class="specimen f-martian" id="martian">
+    <div class="label-row">
+      <div>
+        <div class="label"><span class="num">11</span>specimen</div>
+        <div class="name">Martian Mono</div>
+      </div>
+      <div class="desc">Wide, geometric, distinctive — by Roman Shchyukin / Evil Martians. More display-leaning than the others; strong personality at hero scale.</div>
+    </div>
+
+    <h1 class="h1">
+      let your AI agent<br />
+      <span class="line2">make slide decks</span>
+    </h1>
+    <p class="sub">deckpipe is an MCP server that gives your agent tools to create and edit compelling slide decks.</p>
 
     <div class="row">
       <div class="codeblock"><span class="pmt">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp

@@ -65,9 +65,12 @@
       --mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; min-width: 0; }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
 
     body {
       font-family: var(--mono);
@@ -80,6 +83,8 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
     }
 
     /* Subtle grain overlay — atmosphere without crossing into kitsch */
@@ -121,6 +126,7 @@
     /* ─── Layout shell ─── */
     .shell {
       max-width: var(--max);
+      width: 100%;
       margin: 0 auto;
       padding: 0 var(--edge);
       position: relative;
@@ -222,39 +228,20 @@
 
     .hero h1 {
       margin-top: 28px;
-      font-size: clamp(2.2rem, 5.6vw, 4.6rem);
+      font-size: clamp(1.65rem, 5.6vw, 4.6rem);
       font-weight: 500;
-      line-height: 1.0;
+      line-height: 1.05;
       letter-spacing: -0.04em;
       color: var(--fg);
-      max-width: 22ch;
+      max-width: min(22ch, 100%);
+      overflow-wrap: break-word;
     }
 
     .hero h1 .line2 {
       display: block;
-      color: var(--fg-dim);
+      color: var(--fg);
     }
 
-    .hero h1 .line2 .at {
-      color: var(--accent);
-    }
-
-
-    .hero h1 .caret {
-      display: inline-block;
-      width: 0.48em;
-      height: 0.78em;
-      background: var(--accent);
-      margin-left: 0.1em;
-      vertical-align: -0.04em;
-      animation: blink 1.08s steps(1) infinite;
-      box-shadow: 0 0 18px rgba(244, 255, 36, 0.65);
-    }
-
-    @keyframes blink {
-      0%, 49%   { opacity: 1; }
-      50%, 100% { opacity: 0; }
-    }
 
     .subtagline {
       margin-top: 36px;
@@ -483,12 +470,13 @@
     }
 
     .section-title {
-      font-size: clamp(1.5rem, 2.6vw, 2rem);
+      font-size: clamp(1.2rem, 2.6vw, 2rem);
       font-weight: 500;
-      line-height: 1.1;
+      line-height: 1.15;
       letter-spacing: -0.025em;
-      max-width: 24ch;
+      max-width: min(24ch, 100%);
       margin-bottom: 14px;
+      overflow-wrap: break-word;
     }
 
     .section-title .accent { color: var(--accent); }
@@ -1002,7 +990,7 @@
 
       <h1 class="reveal reveal-2">
         let your AI agent<br />
-        <span class="line2">make <span class="at">slide decks</span><span class="caret" aria-hidden="true"></span></span>
+        <span class="line2">make slide decks</span>
       </h1>
 
       <p class="subtagline reveal reveal-3">
@@ -1013,10 +1001,6 @@
         <a href="#connect" class="btn btn-primary">
           connect mcp
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </a>
-        <a href="#demo" class="btn btn-ghost">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
-          watch demo
         </a>
       </div>
 
@@ -1244,7 +1228,7 @@
         <div class="pill">chart</div>
         <div class="pill">closing</div>
       </div>
-      <p class="see-all">▸ <a href="https://deckpipe.dev/d/dk_CsHBYjLY/building-a-saas-startup-from-idea-to-ipo" target="_blank" rel="noopener">See every layout in one deck</a></p>
+      <p class="see-all">▸ <a href="https://deckpipe.dev/d/dk_KRtXiuKV/the-clean-energy-transition-2026-outlook" target="_blank" rel="noopener">See every layout in one deck</a></p>
     </section>
 
     <!-- ═══ CUSTOMIZATION ═══ -->

@@ -16,6 +16,10 @@ export function generateSlideId(): string {
   return `sld_${randomId(8)}`;
 }
 
+export function generateUnsplashImageId(): string {
+  return `uimg_${randomId(8)}`;
+}
+
 export function generateCommentId(): string {
   return `cmt_${randomId(12)}`;
 }

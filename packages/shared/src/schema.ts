@@ -22,6 +22,7 @@ const BaseContentFields = {
   key_takeaway: z.string().optional(),
   image_prompt: z.string().optional(),
   image_attribution: ImageAttributionSchema.optional(),
+  image_ref: z.string().optional(),
 };
 
 // --- Table ---
@@ -126,9 +127,10 @@ const ImageGalleryContentSchema = z.object({
   title: z.string().optional(),
   caption: z.string().optional(),
   images: z.array(z.string().url()).min(2).max(5).optional(),
+  image_refs: z.array(z.string()).min(2).max(5).optional(),
   image_details: z.array(ImageDetailSchema).optional(),
   image_focuses: z.array(FocalPointSchema).optional(),
-}).refine(d => (d.images && d.images.length > 0) || d.image_prompt, { message: 'images or image_prompt is required', path: ['images'] });
+}).refine(d => (d.images && d.images.length > 0) || (d.image_refs && d.image_refs.length > 0) || d.image_prompt, { message: 'images, image_refs, or image_prompt is required', path: ['images'] });
 
 const MetricSchema = z.object({
   value: z.string().min(1),

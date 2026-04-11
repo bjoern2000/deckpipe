@@ -20,7 +20,8 @@ CONTENT STYLE
 - All text fields support markdown: **bold**, *italic*, \`code\`, [links](url), lists. Body fields support full block markdown.
 
 IMAGES
-- Use search_images to find stock photos (Unsplash). You MUST include the returned image_attribution data when using any image from search results.
+- Use search_images to find stock photos (Unsplash). It returns image IDs — use them as image_ref in your slides. Attribution, URLs, and download tracking are handled automatically.
+- Use search_images with multiple queries in one call to find images for several slides at once, rather than making separate calls per slide.
 - Use upload_image to host your own images (PNG/JPG/WebP, base64-encoded).
 - Use image_prompt instead of image_url to suggest an image the user should provide. Renders as a placeholder box with your descriptive text.
 
@@ -68,7 +69,7 @@ IMPORTANT:
 - To modify this deck later, use update_deck. NEVER create a new deck to make changes — it loses the URL and comment history.
 - To iterate: get_deck (read current state + comments) → update_deck (make changes) → reply_to_comment (explain what you changed). The user resolves comments once satisfied.
 - Check the "warnings" array in the response and fix any issues with a follow-up update_deck call.
-- Use search_images to find stock photos — you must include the returned image_attribution data with any image you use.`,
+- Use search_images to find stock photos — use the returned id as image_ref in your slides. For image_gallery, use image_refs (array of IDs).`,
     {
       title: z.string().describe('Deck title'),
       heading_font: z.string().optional().describe('Google Font for headings (e.g. "Playfair Display"). Default: DM Sans.'),
@@ -205,24 +206,24 @@ slides (content edit) examples:
 
   server.tool(
     'search_images',
-    `Search Unsplash for stock photos. Returns URLs, photographer info, and attribution data.
+    `Search Unsplash for stock photos. Returns image IDs and thumbnails. Use the returned id as image_ref in your slides — attribution, URLs, and download tracking are handled automatically.
 
-When using an image from results, you MUST set both image_url and image_attribution:
-1. image_url → use the urls.regular value
-2. image_attribution → { name: "<photographer>", url: "<profile_url>?utm_source=deckpipe&utm_medium=referral", source: "Unsplash", source_url: "https://unsplash.com/?utm_source=deckpipe&utm_medium=referral", download_location: "<download_location from result>" }
-3. For image_gallery: put attribution inside each image_details[] entry as an "attribution" object (same shape)
+Use the "queries" parameter to search for multiple terms in one call (e.g. one per slide) instead of making separate calls. Results are grouped by query.
 
-The download_location triggers required Unsplash download tracking automatically when the deck is saved.`,
+For image_gallery: pass an array of IDs as image_refs instead of images.`,
     {
-      query: z.string().describe('Search terms (e.g. "modern office workspace", "sunset over mountains")'),
-      per_page: z.number().min(1).max(30).optional().describe('Number of results (default 9, max 30)'),
+      query: z.string().optional().describe('Single search query (e.g. "modern office workspace"). Use this OR queries, not both.'),
+      queries: z.array(z.string()).max(5).optional().describe('Multiple search queries in one call (max 5). Results grouped by query. More efficient than separate calls.'),
+      per_page: z.number().min(1).max(30).optional().describe('Results per query (default 5, max 30)'),
       orientation: z.enum(['landscape', 'portrait', 'squarish']).optional().describe('Filter by orientation. Use "landscape" for full_image/image_and_text, "portrait" for image_gallery.'),
     },
-    async ({ query, per_page, orientation }) => {
-      console.log(`[mcp] tool: search_images "${query}"`);
+    async ({ query, queries, per_page, orientation }) => {
+      console.log(`[mcp] tool: search_images query=${query || ''} queries=${queries?.length || 0}`);
       try {
         const apiUrl = config.apiUrl || `http://localhost:${config.port}`;
-        const params = new URLSearchParams({ query });
+        const params = new URLSearchParams();
+        if (query) params.set('query', query);
+        if (queries) params.set('queries', JSON.stringify(queries));
         if (per_page) params.set('per_page', String(per_page));
         if (orientation) params.set('orientation', orientation);
         const res = await fetch(`${apiUrl}/v1/unsplash/search?${params}`);
@@ -398,7 +399,7 @@ mcpRouter.post('/', async (req, res) => {
       if (transport.sessionId) transports.delete(transport.sessionId);
     };
 
-    const mcpServer = new McpServer({ name: 'deckpipe', version: '0.2.10' }, { instructions: INSTRUCTIONS });
+    const mcpServer = new McpServer({ name: 'deckpipe', version: '0.2.11' }, { instructions: INSTRUCTIONS });
     registerTools(mcpServer);
     await mcpServer.connect(transport);
     await transport.handleRequest(req, res);

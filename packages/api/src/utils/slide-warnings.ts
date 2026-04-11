@@ -1,7 +1,7 @@
 // Known content fields per layout, derived from packages/shared/src/schema.ts
 // BaseContentFields (key_takeaway, image_prompt) are included in every layout.
 
-const BASE_FIELDS = ['key_takeaway', 'image_prompt', 'image_attribution'];
+const BASE_FIELDS = ['key_takeaway', 'image_prompt', 'image_attribution', 'image_ref'];
 
 const LAYOUT_FIELDS: Record<string, string[]> = {
   title:             ['title', 'subtitle', 'image_url', 'image_focus'],
@@ -11,7 +11,7 @@ const LAYOUT_FIELDS: Record<string, string[]> = {
   two_columns:       ['title', 'left', 'right', 'image_url', 'image_focus'],
   section_break:     ['title'],
   image_and_text:    ['title', 'body', 'image_url', 'image_focus'],
-  image_gallery:     ['title', 'caption', 'images', 'image_details', 'image_focuses'],
+  image_gallery:     ['title', 'caption', 'images', 'image_refs', 'image_details', 'image_focuses'],
   stats:             ['title', 'metrics'],
   quote:             ['quote', 'attribution', 'image_url', 'image_focus'],
   full_image:        ['image_url', 'image_focus', 'title', 'subtitle'],

@@ -5,7 +5,7 @@ import { createDeckLimiter, getDeckLimiter, updateDeckLimiter, exportPdfLimiter 
 import { query } from '../db/client.js';
 import { config } from '../config.js';
 import { detectUnknownFields, extractImageUrls, validateImageUrls } from '../utils/slide-warnings.js';
-import { triggerUnsplashDownload } from './unsplash.js';
+import { triggerUnsplashDownload, lookupUnsplashImage } from './unsplash.js';
 export const decksRouter = Router();
 
 /** Fire Unsplash download tracking for any slides with unsplash attribution, then strip download_location before storage */
@@ -47,6 +47,69 @@ function processUnsplashDownloads(slides: any[]) {
         delete c[side].image_attribution.download_location;
       }
     }
+  }
+}
+
+function buildAttribution(img: { photographer_name: string; photographer_url: string }) {
+  return {
+    name: img.photographer_name,
+    url: `${img.photographer_url}?utm_source=deckpipe&utm_medium=referral`,
+    source: 'Unsplash',
+    source_url: 'https://unsplash.com/?utm_source=deckpipe&utm_medium=referral',
+  };
+}
+
+/** Resolve image_ref / image_refs to real URLs + attribution, trigger download tracking */
+async function resolveImageRefs(slides: any[]) {
+  for (const slide of slides) {
+    const c = slide.content;
+    if (!c) continue;
+
+    // Top-level image_ref → image_url + image_attribution
+    if (c.image_ref && typeof c.image_ref === 'string') {
+      const img = await lookupUnsplashImage(c.image_ref);
+      if (img) {
+        c.image_url = img.url_regular;
+        c.image_attribution = buildAttribution(img);
+        triggerUnsplashDownload(img.download_location);
+      }
+      delete c.image_ref;
+    }
+
+    // image_gallery: image_refs[] → images[] + image_details[].attribution
+    if (Array.isArray(c.image_refs)) {
+      const urls: string[] = c.images || [];
+      const details: any[] = c.image_details || [];
+      for (let i = 0; i < c.image_refs.length; i++) {
+        const img = await lookupUnsplashImage(c.image_refs[i]);
+        if (img) {
+          urls.push(img.url_regular);
+          details.push({ ...(details[urls.length - 1] || {}), attribution: buildAttribution(img) });
+          triggerUnsplashDownload(img.download_location);
+        }
+      }
+      c.images = urls;
+      c.image_details = details;
+      delete c.image_refs;
+    }
+  }
+}
+
+/** Resolve image_ref/image_refs in request body before validation */
+async function resolveRefsMiddleware(req: Request, _res: Response, next: NextFunction) {
+  try {
+    if (req.body?.slides && Array.isArray(req.body.slides)) {
+      await resolveImageRefs(req.body.slides);
+    }
+    // Also resolve in slide_operations (insert/replace slides)
+    if (req.body?.slide_operations && Array.isArray(req.body.slide_operations)) {
+      for (const op of req.body.slide_operations) {
+        if (op.slide) await resolveImageRefs([op.slide]);
+      }
+    }
+    next();
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -99,7 +162,7 @@ function ensureSlideIds(slides: any[]): any[] {
 }
 
 // POST /v1/decks — Create a new deck
-decksRouter.post('/', createDeckLimiter, saveRawBody, validate(CreateDeckSchema), async (req, res, next) => {
+decksRouter.post('/', createDeckLimiter, resolveRefsMiddleware, saveRawBody, validate(CreateDeckSchema), async (req, res, next) => {
   try {
     const { title, heading_font, body_font, accent_color, agent_name, slides: rawSlides } = req.body;
     const slides = ensureSlideIds(convertPlaceholderUrls(rawSlides));
@@ -236,7 +299,7 @@ function applySlideOperations(slides: any[], operations: SlideOperation[]): any[
 }
 
 // PATCH /v1/decks/:id — Update deck
-decksRouter.patch('/:id', updateDeckLimiter, validate(UpdateDeckSchema), async (req, res, next) => {
+decksRouter.patch('/:id', updateDeckLimiter, resolveRefsMiddleware, validate(UpdateDeckSchema), async (req, res, next) => {
   try {
     const existing = await query('SELECT * FROM decks WHERE deck_id = $1', [req.params.id]);
     if (existing.rows.length === 0) {

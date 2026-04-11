@@ -16,7 +16,7 @@ export class SlideImageAndText extends SlideBase {
       .image-area {
         flex: 0 0 58%;
         display: flex;
-        align-items: center;
+        flex-direction: column;
         justify-content: center;
         overflow: hidden;
       }
@@ -47,6 +47,7 @@ export class SlideImageAndText extends SlideBase {
   @property() body = '';
   @property({ attribute: 'image-url' }) imageUrl = '';
   @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
+  @property({ type: Object }) imageAttribution: { name?: string; url?: string; source?: string; source_url?: string } | null = null;
   @property({ attribute: 'image-prompt' }) imagePrompt = '';
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
@@ -59,6 +60,7 @@ export class SlideImageAndText extends SlideBase {
             ${this.editable
               ? this.wrapDeletable('image_url', html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`, null)
               : html`<img src="${this.imageUrl}" alt="" style="object-position:${focalPointToObjectPosition(this.imageFocus)}" @error=${this.onImgError} />`}
+            ${this.renderAttribution(this.imageAttribution)}
           </div>
         ` : nothing}
         <div class="text-area">

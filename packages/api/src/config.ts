@@ -13,4 +13,5 @@ export const config = {
   imageStoragePath: process.env.IMAGE_STORAGE_PATH || './data/images',
   adminUsername: process.env.ADMIN_USERNAME || '',
   adminPassword: process.env.ADMIN_PASSWORD || '',
+  unsplashAccessKey: process.env.UNSPLASH_ACCESS_KEY || '',
 };

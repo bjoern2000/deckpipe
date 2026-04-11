@@ -48,11 +48,15 @@ export class SlideFullImage extends SlideBase {
         background: rgba(255,255,255,0.15);
         color: #ffffff;
       }
+      .image-attribution { position: absolute; bottom: 8px; right: 16px; z-index: 2; color: rgba(255,255,255,0.5); }
+      .image-attribution a { color: rgba(255,255,255,0.5); text-decoration-color: rgba(255,255,255,0.2); }
+      .image-attribution a:hover { color: rgba(255,255,255,0.7); }
     `,
   ];
 
   @property({ attribute: 'image-url' }) imageUrl = '';
   @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
+  @property({ type: Object }) imageAttribution: { name?: string; url?: string; source?: string; source_url?: string } | null = null;
   @property() title = '';
   @property() subtitle = '';
   @property({ attribute: 'image-prompt' }) imagePrompt = '';
@@ -89,6 +93,7 @@ export class SlideFullImage extends SlideBase {
               : html`<p class="subtitle" data-content-path="subtitle">${this.subtitle}</p>`
             : nothing}
         </div>
+        ${this.imageUrl ? this.renderAttribution(this.imageAttribution) : ''}
       </div>
     `;
   }

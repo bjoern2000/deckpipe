@@ -34,6 +34,9 @@ export class SlideTitle extends SlideBase {
         z-index: 0;
       }
       .content { position: relative; z-index: 1; }
+      .image-attribution { color: rgba(255,255,255,0.5); position: absolute; bottom: 8px; right: 16px; z-index: 1; }
+      .image-attribution a { color: rgba(255,255,255,0.5); text-decoration-color: rgba(255,255,255,0.2); }
+      .image-attribution a:hover { color: rgba(255,255,255,0.7); }
     `,
   ];
 
@@ -41,6 +44,7 @@ export class SlideTitle extends SlideBase {
   @property() subtitle = '';
   @property({ attribute: 'image-url' }) imageUrl = '';
   @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
+  @property({ type: Object }) imageAttribution: { name?: string; url?: string; source?: string; source_url?: string } | null = null;
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -68,6 +72,7 @@ export class SlideTitle extends SlideBase {
             : html`<p class="subtitle" data-content-path="subtitle">${mdInline(this.subtitle)}</p>`
           : ''}
         </div>
+        ${this.imageUrl ? this.renderAttribution(this.imageAttribution) : ''}
       </div>
     `;
   }

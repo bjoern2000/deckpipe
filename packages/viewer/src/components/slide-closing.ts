@@ -63,6 +63,9 @@ export class SlideClosing extends SlideBase {
         color: #ffffff;
         text-decoration: underline;
       }
+      .image-attribution { position: absolute; bottom: 8px; right: 16px; z-index: 1; color: rgba(255,255,255,0.4); }
+      .image-attribution a { color: rgba(255,255,255,0.4); text-decoration-color: rgba(255,255,255,0.2); }
+      .image-attribution a:hover { color: rgba(255,255,255,0.6); }
     `,
   ];
 
@@ -71,6 +74,7 @@ export class SlideClosing extends SlideBase {
   @property({ type: Array }) contactLines: string[] = [];
   @property({ attribute: 'image-url' }) imageUrl = '';
   @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
+  @property({ type: Object }) imageAttribution: { name?: string; url?: string; source?: string; source_url?: string } | null = null;
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
 
@@ -126,6 +130,7 @@ export class SlideClosing extends SlideBase {
               `
             : nothing}
         </div>
+        ${this.imageUrl ? this.renderAttribution(this.imageAttribution) : ''}
       </div>
     `;
   }

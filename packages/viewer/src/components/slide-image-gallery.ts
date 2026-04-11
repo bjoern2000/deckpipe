@@ -49,7 +49,7 @@ export class SlideImageGallery extends SlideBase {
   @property() title = '';
   @property() caption = '';
   @property({ type: Array }) images: string[] = [];
-  @property({ type: Array }) imageDetails: Array<{ title?: string; caption?: string }> = [];
+  @property({ type: Array }) imageDetails: Array<{ title?: string; caption?: string; attribution?: { name?: string; url?: string; source?: string; source_url?: string } }> = [];
   @property({ type: Array }) imageFocuses: Array<{ x: number; y: number }> = [];
   @property({ attribute: 'image-prompt' }) imagePrompt = '';
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
@@ -79,6 +79,7 @@ export class SlideImageGallery extends SlideBase {
         </div>
         ${title ? html`<div class="item-title">${title}</div>` : nothing}
         ${caption ? html`<div class="item-caption">${caption}</div>` : nothing}
+        ${this.renderAttribution(this.imageDetails[i]?.attribution)}
       </div>
     `;
   }

@@ -48,6 +48,7 @@ export class SlideTitleAndBullets extends SlideBase {
   @property({ type: Array }) bullets: BulletItem[] = [];
   @property({ attribute: 'image-url' }) imageUrl = '';
   @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
+  @property({ type: Object }) imageAttribution: { name?: string; url?: string; source?: string; source_url?: string } | null = null;
   @property({ attribute: 'image-prompt' }) imagePrompt = '';
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
@@ -91,6 +92,7 @@ export class SlideTitleAndBullets extends SlideBase {
               ? html`<div class="image-area">${this.renderImagePrompt(this.imagePrompt)}</div>`
               : ''}
         </div>
+        ${this.imageUrl ? this.renderAttribution(this.imageAttribution) : ''}
         ${this.editable ? '' : this.renderFootnotes(allSources)}
       </div>
     `;

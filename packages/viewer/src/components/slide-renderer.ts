@@ -55,6 +55,7 @@ export class SlideRenderer extends LitElement {
           .subtitle=${c.subtitle || ''}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          .imageAttribution=${c.image_attribution || null}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-title>`;
@@ -65,6 +66,7 @@ export class SlideRenderer extends LitElement {
           .body=${c.body || ''}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          .imageAttribution=${c.image_attribution || null}
           image-prompt=${c.image_prompt || ''}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
@@ -76,6 +78,7 @@ export class SlideRenderer extends LitElement {
           .bullets=${(c.bullets as string[]) || []}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          .imageAttribution=${c.image_attribution || null}
           image-prompt=${c.image_prompt || ''}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
@@ -96,6 +99,7 @@ export class SlideRenderer extends LitElement {
           .right=${(c.right as { heading: string; body: string }) || { heading: '', body: '' }}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          .imageAttribution=${c.image_attribution || null}
           image-prompt=${c.image_prompt || ''}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
@@ -114,6 +118,7 @@ export class SlideRenderer extends LitElement {
           .body=${c.body || ''}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          .imageAttribution=${c.image_attribution || null}
           image-prompt=${c.image_prompt || ''}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
@@ -124,7 +129,7 @@ export class SlideRenderer extends LitElement {
           .title=${c.title || ''}
           .caption=${c.caption || ''}
           .images=${(c.images as string[]) || []}
-          .imageDetails=${(c.image_details as Array<{title?: string, caption?: string}>) || []}
+          .imageDetails=${(c.image_details as Array<{title?: string, caption?: string, attribution?: {name?: string, url?: string, source?: string, source_url?: string}}>) || []}
           .imageFocuses=${(c.image_focuses as Array<{x: number, y: number}>) || []}
           image-prompt=${c.image_prompt || ''}
           key-takeaway=${c.key_takeaway || ''}
@@ -145,6 +150,7 @@ export class SlideRenderer extends LitElement {
           .attribution=${c.attribution || ''}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          .imageAttribution=${c.image_attribution || null}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-quote>`;
@@ -153,6 +159,7 @@ export class SlideRenderer extends LitElement {
         return html`<slide-full-image
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          .imageAttribution=${c.image_attribution || null}
           image-prompt=${c.image_prompt || ''}
           .title=${c.title || ''}
           .subtitle=${c.subtitle || ''}
@@ -250,6 +257,7 @@ export class SlideRenderer extends LitElement {
           .contactLines=${(c.contact_lines as string[]) || []}
           image-url=${c.image_url || ''}
           .imageFocus=${c.image_focus || null}
+          .imageAttribution=${c.image_attribution || null}
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-closing>`;

@@ -45,6 +45,7 @@ export class SlideTwoColumns extends SlideBase {
   @property({ type: Object }) right: { heading: string; body: string } = { heading: '', body: '' };
   @property({ attribute: 'image-url' }) imageUrl = '';
   @property({ type: Object }) imageFocus: { x: number; y: number } | null = null;
+  @property({ type: Object }) imageAttribution: { name?: string; url?: string; source?: string; source_url?: string } | null = null;
   @property({ attribute: 'image-prompt' }) imagePrompt = '';
   @property({ attribute: 'key-takeaway' }) keyTakeaway = '';
   @property({ type: Boolean }) editable = false;
@@ -99,6 +100,7 @@ export class SlideTwoColumns extends SlideBase {
           : this.imagePrompt
             ? html`<div class="bottom-image">${this.renderImagePrompt(this.imagePrompt)}</div>`
             : ''}
+        ${this.imageUrl ? this.renderAttribution(this.imageAttribution) : ''}
       </div>
     `;
   }

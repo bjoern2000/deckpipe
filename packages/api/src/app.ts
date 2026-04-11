@@ -8,6 +8,7 @@ import { commentsRouter } from './routes/comments.js';
 import { imagesRouter } from './routes/images.js';
 import { mcpRouter } from './routes/mcp.js';
 import { adminRouter } from './routes/admin.js';
+import { unsplashRouter } from './routes/unsplash.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { basicAuth } from './middleware/basic-auth.js';
 import { query } from './db/client.js';
@@ -42,6 +43,7 @@ export function createApp() {
   app.use('/v1/decks', decksRouter);
   app.use('/v1/decks/:id/comments', commentsRouter);
   app.use('/v1/images', imagesRouter);
+  app.use('/v1/unsplash', unsplashRouter);
 
   // Health check
   app.get('/health', (_req, res) => {

@@ -7,10 +7,21 @@ const FocalPointSchema = z.object({
 });
 export type FocalPoint = z.infer<typeof FocalPointSchema>;
 
+// --- Image attribution (for Unsplash and other sources) ---
+export const ImageAttributionSchema = z.object({
+  name: z.string(),
+  url: z.string().url(),
+  source: z.string(),
+  source_url: z.string().url(),
+  download_location: z.string().url().optional(),
+});
+export type ImageAttribution = z.infer<typeof ImageAttributionSchema>;
+
 // --- Base content fields (shared across all layouts) ---
 const BaseContentFields = {
   key_takeaway: z.string().optional(),
   image_prompt: z.string().optional(),
+  image_attribution: ImageAttributionSchema.optional(),
 };
 
 // --- Table ---
@@ -107,6 +118,7 @@ const ImageAndTextContentSchema = z.object({
 const ImageDetailSchema = z.object({
   title: z.string().optional(),
   caption: z.string().optional(),
+  attribution: ImageAttributionSchema.optional(),
 });
 
 const ImageGalleryContentSchema = z.object({

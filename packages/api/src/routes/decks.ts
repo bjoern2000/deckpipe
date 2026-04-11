@@ -5,7 +5,50 @@ import { createDeckLimiter, getDeckLimiter, updateDeckLimiter, exportPdfLimiter 
 import { query } from '../db/client.js';
 import { config } from '../config.js';
 import { detectUnknownFields, extractImageUrls, validateImageUrls } from '../utils/slide-warnings.js';
+import { triggerUnsplashDownload } from './unsplash.js';
 export const decksRouter = Router();
+
+/** Fire Unsplash download tracking for any slides with unsplash attribution, then strip download_location before storage */
+function processUnsplashDownloads(slides: any[]) {
+  for (const slide of slides) {
+    const c = slide.content;
+    if (!c) continue;
+
+    // Top-level image_attribution
+    if (c.image_attribution?.source?.toLowerCase() === 'unsplash' && c.image_attribution?.download_location) {
+      triggerUnsplashDownload(c.image_attribution.download_location);
+      delete c.image_attribution.download_location;
+    }
+
+    // image_gallery per-image attribution
+    if (Array.isArray(c.image_details)) {
+      for (const detail of c.image_details) {
+        if (detail?.attribution?.source?.toLowerCase() === 'unsplash' && detail.attribution?.download_location) {
+          triggerUnsplashDownload(detail.attribution.download_location);
+          delete detail.attribution.download_location;
+        }
+      }
+    }
+
+    // team members
+    if (Array.isArray(c.members)) {
+      for (const member of c.members) {
+        if (member?.image_attribution?.source?.toLowerCase() === 'unsplash' && member.image_attribution?.download_location) {
+          triggerUnsplashDownload(member.image_attribution.download_location);
+          delete member.image_attribution.download_location;
+        }
+      }
+    }
+
+    // comparison sides
+    for (const side of ['left', 'right']) {
+      if (c[side]?.image_attribution?.source?.toLowerCase() === 'unsplash' && c[side].image_attribution?.download_location) {
+        triggerUnsplashDownload(c[side].image_attribution.download_location);
+        delete c[side].image_attribution.download_location;
+      }
+    }
+  }
+}
 
 /** Snapshot raw body before Zod strips unrecognized fields */
 function saveRawBody(req: Request, _res: Response, next: NextFunction) {
@@ -79,6 +122,9 @@ decksRouter.post('/', createDeckLimiter, saveRawBody, validate(CreateDeckSchema)
     // Collect warnings: unreachable image URLs (non-blocking, 5s timeout per URL)
     const imageWarnings = await validateImageUrls(extractImageUrls(slides));
     warnings.push(...imageWarnings);
+
+    // Trigger Unsplash download tracking and strip download_location before storage
+    processUnsplashDownloads(slides);
 
     await query(
       'INSERT INTO decks (deck_id, title, heading_font, body_font, accent_color, agent_name, slides, edit_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
@@ -265,6 +311,9 @@ decksRouter.patch('/:id', updateDeckLimiter, validate(UpdateDeckSchema), async (
       const imageWarnings = await validateImageUrls(refs);
       warnings.push(...imageWarnings);
     }
+
+    // Trigger Unsplash download tracking and strip download_location before storage
+    processUnsplashDownloads(newSlides);
 
     await query(
       'UPDATE decks SET title = $1, heading_font = $2, body_font = $3, accent_color = $4, slides = $5, updated_at = NOW() WHERE deck_id = $6',

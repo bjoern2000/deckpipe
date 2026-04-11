@@ -192,6 +192,25 @@ export class SlideBase extends LitElement {
       display: none;
     }
 
+    /* --- Image attribution caption --- */
+    .image-attribution {
+      font-size: 0.42em;
+      color: #94a3b8;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 2px 0;
+    }
+    .image-attribution a {
+      color: #94a3b8;
+      text-decoration: underline;
+      text-decoration-color: rgba(148, 163, 184, 0.4);
+    }
+    .image-attribution a:hover {
+      color: #64748b;
+    }
+
     /* --- Rich bullet: detail tooltip --- */
     .bullet-content {
       display: inline;
@@ -347,6 +366,16 @@ export class SlideBase extends LitElement {
         </svg>
         <span class="image-prompt-text">${imagePrompt}</span>
         <span class="image-prompt-hint">Drop image or use Edit mode</span>
+      </div>
+    `;
+  }
+
+  protected renderAttribution(attribution: { name?: string; url?: string; source?: string; source_url?: string } | undefined | null) {
+    if (!attribution?.name) return nothing;
+    return html`
+      <div class="image-attribution">
+        Photo by <a href="${attribution.url || '#'}" target="_blank" rel="noopener noreferrer">${attribution.name}</a>
+        ${attribution.source ? html` on <a href="${attribution.source_url || '#'}" target="_blank" rel="noopener noreferrer">${attribution.source}</a>` : nothing}
       </div>
     `;
   }

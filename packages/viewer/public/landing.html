@@ -14,9 +14,13 @@
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="deckpipe — slide decks at prompt speed" />
   <meta name="twitter:description" content="Agent-first slide deck engine. Install the MCP, prompt your agent, get a deck." />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff5c1a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1'/><path d='M14 2v5a1 1 0 0 0 1 1h5'/><path d='M2 15h10'/><path d='m9 18 3-3-3-3'/></svg>" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicon/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+  <link rel="mask-icon" href="/favicon/favicon.svg" color="#14181c" />
+  <link rel="manifest" href="/favicon/site.webmanifest" />
 
   <script type="application/ld+json">
   {
@@ -38,21 +42,26 @@
 
   <style>
     :root {
-      --bg:         #0a0a0b;
-      --bg-elev:    #17171d;
-      --bg-soft:    #15151a;
-      --bg-code:    #1f1f28;
-      --fg:         #f0efea;
-      --fg-dim:     #b4b3ae;
-      --fg-mute:    #6b6a66;
-      --fg-faint:   #35353a;
-      --line:       #1c1c20;
-      --line-hi:    #2a2a30;
-      --accent:     #ff5c1a;
-      --accent-dim: #8a3310;
-      --ok:         #9fd46b;
-      --max:        1200px;
-      --edge:       clamp(20px, 5vw, 56px);
+      /* cool light + electric yellow */
+      --bg:           #DAE2E7;   /* page — cool light grey */
+      --bg-soft:      #e8edf0;   /* raised cards */
+      --bg-elev:      #f2f5f7;   /* hover / lifted */
+      --bg-code:      #14181c;   /* inverted dark code blocks */
+      --fg:           #14181c;   /* cool near-black */
+      --fg-dim:       #3d4248;
+      --fg-mute:      #6b727a;
+      --fg-faint:     #9ba3aa;
+      --line:         #b6c0c8;
+      --line-hi:      #94a0a9;
+      --accent:       #F4FF24;   /* electric yellow — used for big/glowing/decorative */
+      --accent-dim:   #a8b300;   /* olive — for small text accents that need contrast */
+      --accent-soft:  #fbff5e;   /* lighter yellow for hover */
+      --ok:           #2d8a1f;
+      /* on-dark variants for use inside dark code blocks */
+      --on-dark:      #e8ecf0;
+      --on-dark-mute: #7a838a;
+      --max:          1200px;
+      --edge:         clamp(20px, 5vw, 56px);
       --mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     }
 
@@ -80,8 +89,8 @@
       inset: 0;
       pointer-events: none;
       z-index: 100;
-      opacity: 0.035;
-      mix-blend-mode: overlay;
+      opacity: 0.06;
+      mix-blend-mode: multiply;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     }
 
@@ -92,7 +101,7 @@
       inset: 0;
       pointer-events: none;
       z-index: 99;
-      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%);
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(20,24,28,0.12) 100%);
     }
 
     a {
@@ -101,9 +110,13 @@
       transition: color 0.15s ease;
     }
 
-    a:hover { color: var(--accent); }
+    a:hover {
+      color: var(--fg);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
 
-    ::selection { background: var(--accent); color: var(--bg); }
+    ::selection { background: var(--accent); color: var(--fg); }
 
     /* ─── Layout shell ─── */
     .shell {
@@ -129,7 +142,7 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
       font-weight: 500;
       font-size: 0.92rem;
       letter-spacing: -0.01em;
@@ -137,15 +150,6 @@
 
     .brand svg {
       flex-shrink: 0;
-    }
-
-    .brand-dot {
-      width: 7px;
-      height: 7px;
-      background: var(--accent);
-      border-radius: 50%;
-      box-shadow: 0 0 12px var(--accent);
-      animation: pulse 2.4s ease-in-out infinite;
     }
 
     @keyframes pulse {
@@ -163,21 +167,6 @@
       position: relative;
     }
 
-    .nav-links a::before {
-      content: "[ ";
-      color: var(--fg-faint);
-    }
-
-    .nav-links a::after {
-      content: " ]";
-      color: var(--fg-faint);
-    }
-
-    .nav-links a:hover::before,
-    .nav-links a:hover::after {
-      color: var(--accent);
-    }
-
     @media (max-width: 640px) {
       .nav-links { gap: 18px; }
       .nav-links .hide-sm { display: none; }
@@ -190,16 +179,18 @@
       position: relative;
     }
 
-    /* Atmospheric gradient behind hero */
+    /* Atmospheric gradient behind hero — large soft yellow halo */
     .hero::before {
       content: "";
       position: absolute;
-      top: -200px;
+      top: -380px;
       left: 50%;
       transform: translateX(-50%);
-      width: min(900px, 100%);
-      height: 700px;
-      background: radial-gradient(ellipse at center, rgba(255, 92, 26, 0.09) 0%, rgba(255, 92, 26, 0) 60%);
+      width: min(1800px, 170%);
+      height: 1300px;
+      background:
+        radial-gradient(ellipse 50% 45% at center 42%, rgba(244, 255, 36, 0.42) 0%, rgba(244, 255, 36, 0.25) 25%, rgba(244, 255, 36, 0.1) 50%, rgba(244, 255, 36, 0) 75%);
+      filter: blur(40px);
       pointer-events: none;
       z-index: 0;
     }
@@ -217,7 +208,7 @@
       padding: 7px 14px;
       border: 1px solid var(--line-hi);
       border-radius: 100px;
-      background: rgba(255, 255, 255, 0.015);
+      background: rgba(20, 24, 28, 0.05);
     }
 
     .eyebrow::before {
@@ -248,6 +239,7 @@
       color: var(--accent);
     }
 
+
     .hero h1 .caret {
       display: inline-block;
       width: 0.48em;
@@ -256,7 +248,7 @@
       margin-left: 0.1em;
       vertical-align: -0.04em;
       animation: blink 1.08s steps(1) infinite;
-      box-shadow: 0 0 14px rgba(255, 92, 26, 0.5);
+      box-shadow: 0 0 18px rgba(244, 255, 36, 0.65);
     }
 
     @keyframes blink {
@@ -305,22 +297,22 @@
 
     .btn-primary {
       background: var(--accent);
-      color: #1a0a00;
+      color: var(--fg);
       border-color: var(--accent);
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .btn-primary:hover {
-      background: #ff7a3f;
-      border-color: #ff7a3f;
-      box-shadow: 0 0 0 1px #ff7a3f, 0 6px 30px rgba(255, 92, 26, 0.35);
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
+      box-shadow: 0 0 0 1px var(--accent-soft), 0 8px 30px rgba(244, 255, 36, 0.5);
       transform: translateY(-1px);
     }
 
     .btn-ghost:hover {
       border-color: var(--fg);
       color: var(--fg);
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(20, 24, 28, 0.04);
     }
 
     /* ─── Hero video placeholder ─── */
@@ -333,13 +325,13 @@
       position: relative;
       aspect-ratio: 16 / 9;
       width: 100%;
-      background: var(--bg-elev);
-      border: 1px solid var(--line-hi);
+      background: var(--bg-code);
+      border: 1px solid var(--bg-code);
       overflow: hidden;
       box-shadow:
         0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
-        0 50px 100px -30px rgba(0, 0, 0, 0.8),
-        0 0 120px -20px rgba(255, 92, 26, 0.25);
+        0 40px 80px -30px rgba(20, 24, 28, 0.35),
+        0 0 100px -20px rgba(244, 255, 36, 0.28);
     }
 
     .video-frame video,
@@ -357,9 +349,9 @@
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(135deg, transparent 49.5%, rgba(255,255,255,0.02) 49.5%, rgba(255,255,255,0.02) 50.5%, transparent 50.5%),
-        linear-gradient(45deg,  transparent 49.5%, rgba(255,255,255,0.02) 49.5%, rgba(255,255,255,0.02) 50.5%, transparent 50.5%),
-        radial-gradient(ellipse at center, #17171b 0%, #0d0d10 70%);
+        linear-gradient(135deg, transparent 49.5%, rgba(255,255,255,0.025) 49.5%, rgba(255,255,255,0.025) 50.5%, transparent 50.5%),
+        linear-gradient(45deg,  transparent 49.5%, rgba(255,255,255,0.025) 49.5%, rgba(255,255,255,0.025) 50.5%, transparent 50.5%),
+        radial-gradient(ellipse at center, #1c2228 0%, #0e1216 70%);
       background-size: 28px 28px, 28px 28px, 100% 100%;
       display: flex;
       flex-direction: column;
@@ -399,8 +391,8 @@
 
     .video-placeholder .play:hover {
       background: var(--accent);
-      color: #1a0a00;
-      box-shadow: 0 0 40px rgba(255, 92, 26, 0.45);
+      color: var(--fg);
+      box-shadow: 0 0 40px rgba(244, 255, 36, 0.55);
     }
 
     .video-placeholder .play svg {
@@ -483,11 +475,11 @@
       content: "";
       width: 32px;
       height: 1px;
-      background: var(--accent);
+      background: var(--fg);
     }
 
     .section-label .num {
-      color: var(--accent);
+      color: var(--fg);
     }
 
     .section-title {
@@ -500,6 +492,21 @@
     }
 
     .section-title .accent { color: var(--accent); }
+
+    /* Highlighter-stripe effect for headlines */
+    .hl {
+      background: linear-gradient(
+        to bottom,
+        transparent 55%,
+        var(--accent) 55%,
+        var(--accent) 95%,
+        transparent 95%
+      );
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+      padding: 0 0.12em;
+      margin: 0 -0.04em;
+    }
 
     .section-lede {
       font-size: 0.95rem;
@@ -522,15 +529,15 @@
     @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
 
     .feat {
-      background: #2c2c36;
+      background: var(--bg-soft);
       padding: 32px 28px;
       position: relative;
       transition: background 0.2s ease;
-      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.06) inset;
+      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.55) inset;
     }
 
     .feat:hover {
-      background: #36363f;
+      background: var(--bg-elev);
     }
 
     .feat-num {
@@ -543,7 +550,7 @@
     }
 
     .feat-num .count {
-      color: var(--accent);
+      color: var(--fg);
     }
 
     .feat-title {
@@ -562,8 +569,8 @@
 
     .feat-body code {
       font-family: inherit;
-      color: var(--accent);
-      font-weight: 500;
+      color: var(--fg);
+      font-weight: 600;
     }
 
     /* ─── Demo (prompt → deck) ─── */
@@ -596,7 +603,7 @@
     }
 
     .demo-card-head .tag {
-      color: var(--accent);
+      color: var(--fg);
     }
 
     .demo-card-body {
@@ -609,9 +616,9 @@
     }
 
     .demo-card-body .prompt-prefix {
-      color: var(--accent);
+      color: var(--fg);
       margin-right: 6px;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .demo-result {
@@ -621,7 +628,7 @@
       padding: 22px 20px;
       gap: 20px;
       background:
-        linear-gradient(135deg, transparent 49.5%, rgba(255,255,255,0.015) 49.5%, rgba(255,255,255,0.015) 50.5%, transparent 50.5%),
+        linear-gradient(135deg, transparent 49.5%, rgba(20,24,28,0.04) 49.5%, rgba(20,24,28,0.04) 50.5%, transparent 50.5%),
         var(--bg-soft);
       background-size: 22px 22px, 100% 100%;
     }
@@ -639,8 +646,8 @@
     }
 
     .demo-result-link:hover {
-      color: var(--accent);
-      border-color: var(--accent);
+      color: var(--fg);
+      border-color: var(--fg);
     }
 
     .demo-result-meta {
@@ -654,7 +661,7 @@
 
     .demo-result-meta span::before {
       content: "▸ ";
-      color: var(--accent);
+      color: var(--fg);
     }
 
     /* ─── Install ─── */
@@ -694,8 +701,8 @@
       font-size: 0.68rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--accent);
-      border: 1px solid var(--accent-dim);
+      color: var(--fg);
+      border: 1px solid var(--fg);
       padding: 3px 10px;
       border-radius: 100px;
       white-space: nowrap;
@@ -705,15 +712,15 @@
       padding: 0;
       position: relative;
       background: var(--bg-code);
-      border-top: 1px solid var(--line-hi);
-      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset;
+      border-top: 1px solid var(--bg-code);
+      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.06) inset;
     }
 
     .install-body pre {
       padding: 22px 24px;
       font-size: 0.86rem;
       line-height: 1.7;
-      color: var(--fg);
+      color: var(--on-dark);
       overflow-x: auto;
       white-space: pre;
       background: transparent;
@@ -724,7 +731,7 @@
     }
 
     .install-body .prompt-sym {
-      color: var(--accent);
+      color: var(--on-dark-mute);
       user-select: none;
     }
 
@@ -732,9 +739,9 @@
       position: absolute;
       top: 14px;
       right: 14px;
-      background: rgba(10, 10, 11, 0.7);
+      background: rgba(20, 24, 28, 0.06);
       backdrop-filter: blur(4px);
-      border: 1px solid var(--line-hi);
+      border: 1px solid var(--line);
       padding: 7px 9px;
       cursor: pointer;
       color: var(--fg-mute);
@@ -747,8 +754,8 @@
     }
 
     .copy-btn:hover {
-      color: var(--accent);
-      border-color: var(--accent);
+      color: var(--fg);
+      border-color: var(--fg);
     }
 
     .copy-btn.copied {
@@ -756,10 +763,22 @@
       border-color: var(--ok);
     }
 
-    /* JSON highlighting */
+    /* Dark variant — copy buttons living on dark code surfaces */
+    .install-body .copy-btn {
+      background: rgba(8, 12, 16, 0.5);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: var(--on-dark-mute);
+    }
+
+    .install-body .copy-btn:hover {
+      color: var(--on-dark);
+      border-color: var(--on-dark);
+    }
+
+    /* JSON highlighting (used inside dark code blocks) */
     .key    { color: #a9c4ff; }
-    .string { color: var(--ok); }
-    .punc   { color: var(--fg-mute); }
+    .string { color: #9fd46b; }
+    .punc   { color: var(--on-dark-mute); }
 
     /* ─── Pills (layouts, tools, customization, etc.) ─── */
     .pill-group {
@@ -781,8 +800,9 @@
     }
 
     .pill:hover {
-      border-color: var(--accent);
-      color: var(--accent);
+      border-color: var(--fg);
+      color: var(--fg);
+      background: var(--bg-elev);
     }
 
     .pill::before {
@@ -795,7 +815,7 @@
     }
 
     .pill:hover::before {
-      background: var(--accent);
+      background: var(--fg);
     }
 
     .pill.with-desc {
@@ -809,8 +829,8 @@
     .pill.with-desc::before { display: none; }
 
     .pill.with-desc .name {
-      color: var(--accent);
-      font-weight: 500;
+      color: var(--fg);
+      font-weight: 600;
       font-size: 0.8rem;
     }
 
@@ -855,8 +875,8 @@
     }
 
     .see-all a:hover {
-      color: var(--accent);
-      border-color: var(--accent);
+      color: var(--fg);
+      border-color: var(--fg);
     }
 
     /* ─── Try prompts ─── */
@@ -889,9 +909,9 @@
       left: 22px;
       top: 22px;
       font-size: 0.72rem;
-      color: var(--accent);
+      color: var(--fg);
       letter-spacing: 0.08em;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .try-list .copy-btn {
@@ -920,7 +940,7 @@
     }
 
     .footer a:hover {
-      color: var(--accent);
+      color: var(--fg);
     }
 
     .footer .sep {
@@ -931,9 +951,9 @@
     /* Inline code in prose */
     .ic {
       font-family: inherit;
-      color: var(--accent);
-      background: rgba(255, 92, 26, 0.08);
-      border: 1px solid rgba(255, 92, 26, 0.18);
+      color: var(--fg);
+      background: rgba(244, 255, 36, 0.45);
+      border: 1px solid rgba(244, 255, 36, 0.7);
       padding: 1px 7px;
       font-size: 0.82em;
     }
@@ -965,9 +985,8 @@
     <!-- ═══ NAV ═══ -->
     <nav class="nav">
       <div class="brand">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20"/><path d="M21 3v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3"/><path d="m7 21 5-5 5 5"/></svg>
         <span>deckpipe</span>
-        <span class="brand-dot" aria-hidden="true"></span>
       </div>
       <div class="nav-links">
         <a href="#connect">connect</a>
@@ -979,7 +998,7 @@
 
     <!-- ═══ HERO ═══ -->
     <header class="hero">
-      <div class="eyebrow reveal reveal-1">agent · slide engine</div>
+      <div class="eyebrow reveal reveal-1">agent slide engine</div>
 
       <h1 class="reveal reveal-2">
         let your AI agent<br />
@@ -1031,8 +1050,8 @@
 
     <!-- ═══ FEATURES ═══ -->
     <section id="features">
-      <div class="section-label"><span class="num">[ 01 ]</span> what it does</div>
-      <h2 class="section-title">A rendering engine for agents.</h2>
+      <div class="section-label"><span class="num">01</span> what it does</div>
+      <h2 class="section-title"><span class="hl">A rendering engine for agents.</span></h2>
       <p class="section-lede">
         Your agent describes a deck as JSON. deckpipe handles layout, typography, and hosting.
       </p>
@@ -1065,16 +1084,16 @@
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 06</span></div>
-          <h3 class="feat-title">Image rehosting</h3>
-          <p class="feat-body">Image URLs are re-hosted on deck creation, so slides keep working if the original URL goes down.</p>
+          <h3 class="feat-title">Stock photos</h3>
+          <p class="feat-body">Your agent searches Unsplash from inside the conversation and pulls photos straight into slides. Photographer attribution is tracked automatically. Images are re-hosted on deck creation, so slides keep working if the original URL goes down.</p>
         </div>
       </div>
     </section>
 
     <!-- ═══ DEMO ═══ -->
     <section id="demo">
-      <div class="section-label"><span class="num">[ 02 ]</span> demo</div>
-      <h2 class="section-title">An example.</h2>
+      <div class="section-label"><span class="num">02</span> demo</div>
+      <h2 class="section-title"><span class="hl">An example.</span></h2>
       <p class="section-lede">
         You write a prompt. Your agent calls deckpipe and produces a deck.
       </p>
@@ -1115,8 +1134,8 @@
 
     <!-- ═══ INSTALL ═══ -->
     <section id="connect">
-      <div class="section-label"><span class="num">[ 03 ]</span> connect</div>
-      <h2 class="section-title">Connect deckpipe to your agent.</h2>
+      <div class="section-label"><span class="num">03</span> connect</div>
+      <h2 class="section-title"><span class="hl">Connect deckpipe to your agent.</span></h2>
       <p class="section-lede">
         Three ways to do it, depending on which agent you use. They all give your agent the same tools.
       </p>
@@ -1172,8 +1191,8 @@
 
     <!-- ═══ TOOLS ═══ -->
     <section id="tools">
-      <div class="section-label"><span class="num">[ 04 ]</span> mcp tools</div>
-      <h2 class="section-title">The tools your agent gets.</h2>
+      <div class="section-label"><span class="num">04</span> mcp tools</div>
+      <h2 class="section-title"><span class="hl">The tools your agent gets.</span></h2>
       <p class="section-lede">
         Each tool does one thing.
       </p>
@@ -1183,6 +1202,7 @@
         <div class="pill">update_deck</div>
         <div class="pill">delete_deck</div>
         <div class="pill">upload_image</div>
+        <div class="pill">search_images</div>
         <div class="pill">list_layouts</div>
         <div class="pill">list_comments</div>
         <div class="pill">reply_to_comment</div>
@@ -1192,8 +1212,8 @@
 
     <!-- ═══ LAYOUTS ═══ -->
     <section id="layouts">
-      <div class="section-label"><span class="num">[ 05 ]</span> layouts</div>
-      <h2 class="section-title">Layouts your agent can use.</h2>
+      <div class="section-label"><span class="num">05</span> layouts</div>
+      <h2 class="section-title"><span class="hl">Layouts your agent can use.</span></h2>
       <p class="section-lede">
         Each layout has its own typed content shape. Your agent chooses the layout that fits the slide.
       </p>
@@ -1229,8 +1249,8 @@
 
     <!-- ═══ CUSTOMIZATION ═══ -->
     <section id="customization">
-      <div class="section-label"><span class="num">[ 06 ]</span> theming</div>
-      <h2 class="section-title">Theming.</h2>
+      <div class="section-label"><span class="num">06</span> theming</div>
+      <h2 class="section-title"><span class="hl">Theming.</span></h2>
       <p class="section-lede">
         Theme settings live on the deck. Your agent can change them at any time and the whole deck re-renders.
       </p>
@@ -1260,8 +1280,8 @@
 
     <!-- ═══ TRY IT ═══ -->
     <section id="try">
-      <div class="section-label"><span class="num">[ 07 ]</span> try it</div>
-      <h2 class="section-title">Example prompts.</h2>
+      <div class="section-label"><span class="num">07</span> try it</div>
+      <h2 class="section-title"><span class="hl">Example prompts.</span></h2>
       <p class="section-lede">
         Paste any of these into your agent to try deckpipe.
       </p>
@@ -1290,7 +1310,7 @@
 
     <!-- ═══ FOOTER ═══ -->
     <footer class="footer">
-      <div>&copy; 2025 Björn Schefzyk &nbsp;·&nbsp; all rights reserved</div>
+      <div>&copy; 2026 <a href="https://bjoernschefzyk.co" target="_blank" rel="noopener">Björn Schefzyk</a> &nbsp;·&nbsp; all rights reserved</div>
       <div>
         <a href="https://github.com/bjoern2000/deckpipe-mcp" target="_blank" rel="noopener">github</a>
         <span class="sep">/</span>

@@ -1,9 +1,39 @@
 # MCP Agent Instructions
 
-All tool descriptions and parameter hints that agents see when using Deckpipe MCP tools. This is a review document — the source of truth lives in two places that must be kept in sync:
+All agent-facing text for Deckpipe MCP tools. This is a review document — the source of truth lives in two places that must be kept in sync:
 
 - **Remote MCP**: `packages/api/src/routes/mcp.ts`
 - **Standalone MCP**: `deckpipe-mcp` repo — `src/index.ts`
+
+---
+
+## Server Instructions (sent automatically on connect)
+
+Deckpipe is a slide deck rendering engine. You describe slides as JSON (layout + content); Deckpipe renders, themes, and exports them. Each deck gets a shareable viewer URL.
+
+WORKFLOW
+- Use create_deck for NEW decks. Use update_deck to modify EXISTING decks.
+- NEVER recreate a deck to make changes. Recreating loses the URL, edit key, and comment history. Always update in place.
+- To iterate on a deck: get_deck (read current state + comments) → update_deck (make changes) → reply_to_comment (explain what you changed).
+- Check the "warnings" array in every create/update response. Fix unrecognized fields or unreachable image URLs with a follow-up update_deck call.
+
+CONTENT STYLE
+- Keep text short, crisp, and scannable. Use shorthand phrases, not full sentences.
+- Bullets: 5-8 words max. Stats: abbreviate ("2.4M" not "2,400,000"). Quotes: under 30 words.
+- All text fields support markdown: **bold**, *italic*, `code`, [links](url), lists. Body fields support full block markdown.
+
+IMAGES
+- Use search_images to find stock photos (Unsplash). You MUST include the returned image_attribution data when using any image from search results.
+- Use upload_image to host your own images (PNG/JPG/WebP, base64-encoded).
+- Use image_prompt instead of image_url to suggest an image the user should provide. Renders as a placeholder box with your descriptive text.
+
+RICH BULLETS
+- In layouts with bullets (title_and_bullets, comparison, swot, pros_and_cons, quadrant), bullets can be strings or objects: { text, detail?, sources?: [{ label, url? }] }.
+- "detail" adds a hover tooltip (info icon). "sources" adds footnote citations (superscript numbers).
+
+CUSTOMIZATION
+- heading_font / body_font: any Google Font name (default: DM Sans).
+- accent_color: hex color like "#ff6600" (default: #7c3aed purple).
 
 ---
 
@@ -11,15 +41,9 @@ All tool descriptions and parameter hints that agents see when using Deckpipe MC
 
 ### Description
 
-Create a new slide deck. Returns two URLs: viewer_url (with edit key — for the deck owner to view and edit) and share_url (read-only — for sharing with others).
+Create a new slide deck. Returns viewer_url (owner link with edit key) and share_url (read-only).
 
-Keep slide copy short, crisp, and scannable — use shorthand phrases, not full sentences. Bullets: 5-8 words max.
-
-MARKDOWN: All text content fields support markdown rendering. Use **bold**, *italic*, `code`, [links](url), and lists (1. ordered, - unordered) in body, subtitle, bullets, table cells, and key_takeaway fields. Body text fields support full block markdown including numbered and bulleted lists.
-
-Layouts: "title", "title_and_body", "title_and_bullets", "title_and_table", "two_columns", "section_break", "image_and_text", "image_gallery", "stats", "quote", "full_image", "timeline", "comparison", "code", "callout", "icons_and_text", "team", "embed", "pros_and_cons", "agenda", "swot", "quadrant", "venn_diagram", "chart", "closing".
-
-Content fields per layout (all layouts support optional key_takeaway):
+25 layouts — call list_layouts for full details, descriptions, and style guide. Content fields per layout (all support optional key_takeaway):
 - title: { title, subtitle?, image_url? }
 - title_and_body: { title, body, image_url?, image_prompt? }
 - title_and_bullets: { title, bullets[], image_url?, image_prompt? }
@@ -27,7 +51,7 @@ Content fields per layout (all layouts support optional key_takeaway):
 - two_columns: { title, left: { heading, body }, right: { heading, body }, image_url?, image_prompt? }
 - section_break: { title }
 - image_and_text: { title, body, image_url (required unless image_prompt provided), image_prompt? }
-- image_gallery: { title?, caption?, images[] (2-5 URLs, required unless image_prompt provided), image_prompt? }
+- image_gallery: { title?, caption?, images[] (2-5 URLs, required unless image_prompt provided), image_details?[], image_prompt? }
 - stats: { title?, metrics[]: { value, label } (2-4 items) }
 - quote: { quote, attribution?, image_url? }
 - full_image: { image_url (required unless image_prompt provided), image_prompt?, title?, subtitle? }
@@ -45,18 +69,6 @@ Content fields per layout (all layouts support optional key_takeaway):
 - venn_diagram: { title?, body?, circles[]: { label, items?[] } (2-3 circles, required), overlaps?[]: { sets: [circle indices], label } (max 4) }
 - chart: { chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title? }
 - closing: { heading?, subheading?, contact_lines?[], image_url? }
-
-IMAGE PLACEHOLDERS: Use image_prompt (any layout that supports image_url) to suggest an image without providing one. Renders as a dashed placeholder box with your prompt text so the user knows what image to drop in. Example: image_prompt: "Screenshot of the iOS app home screen". When the user drops in an image, it replaces the placeholder.
-
-RICH BULLETS: In any layout with bullets (title_and_bullets, comparison, swot, pros_and_cons, quadrant), bullets can be plain strings OR objects: { text, detail?, sources?: [{ label, url? }] }. Use "detail" for hover-accessible explanations (info icon tooltip). Use "sources" for citation footnotes (superscript numbers at bottom of slide).
-
-Optionally set heading_font and body_font (any Google Font name) and accent_color (hex like "#ff6600") to customize the look.
-Use upload_image first to get hosted URLs for any images.
-
-WARNINGS: The response may include a "warnings" array with actionable feedback:
-- Unrecognized content fields (typos, wrong fields for a layout) — the field was silently ignored
-- Unreachable image URLs — the image will not render in the viewer
-Check warnings after every create/update call and fix any issues with a follow-up update_deck call.
 
 ### Parameters
 
@@ -77,13 +89,9 @@ Check warnings after every create/update call and fix any issues with a follow-u
 
 ### Description
 
-Retrieve a deck by ID, including any user edits made in the viewer.
+Retrieve a deck by ID. Returns all slides with their current content, including any edits made by the user in the viewer.
 
-Each slide includes a comments[] array with all open comments. Each comment has: id, content_path (the JSON field it refers to, e.g. "title", "bullets[2]", "slide" for general), status, messages[] thread, and created_at.
-
-WORKFLOW: Always call get_deck first when iterating on a deck. Read the comments on each slide to understand user feedback, then use update_deck to address it and reply_to_comment to explain what you changed.
-
-IMPORTANT: NEVER create a new deck to incorporate feedback. Always use update_deck on the existing deck. Creating a new deck loses the original URL, edit key, and comment history.
+Each slide includes a comments[] array with open comments. Each comment has: id, content_path (e.g. "title", "bullets[2]", "slide" for general), status, messages[] thread, and created_at.
 
 ### Parameters
 
@@ -97,25 +105,21 @@ IMPORTANT: NEVER create a new deck to incorporate feedback. Always use update_de
 
 ### Description
 
-Update a deck. NEVER recreate a deck — always use this tool. This tool has TWO separate parameters for two different purposes:
+Update an existing deck. Two parameters for two purposes:
 
-1. "slide_operations" — STRUCTURAL changes (adding, removing, reordering slides). This is the ONLY way to add new slides.
-2. "slides" — CONTENT edits to existing slides (partial merge by index). This does NOT add slides — it only updates content of slides that already exist.
+1. "slide_operations" — structural changes (insert, delete, move, replace). The ONLY way to add new slides.
+2. "slides" — content edits to existing slides by index (partial merge). Does NOT add slides.
 
-IMPORTANT: To add a new slide, you MUST use slide_operations with op "insert", NOT the slides array. The slides array only merges content into existing slide indices.
+slide_operations execute first, then slides content edits apply to the resulting array.
 
-slide_operations examples (executed in order):
-- ADD a new slide: { "op": "insert", "index": 5, "slide": { "layout": "title_and_bullets", "content": { "title": "New Slide", "bullets": ["Point 1", "Point 2"] } } }
-- Remove a slide: { "op": "delete", "index": 2 }
-- Reorder: { "op": "move", "from": 0, "to": 3 }
-- Replace entirely: { "op": "replace", "index": 4, "slide": { "layout": "stats", "content": { "metrics": [{ "value": "99%", "label": "Uptime" }] } } }
+slide_operations examples:
+- Insert: { "op": "insert", "index": 5, "slide": { "layout": "title_and_bullets", "content": { "title": "New", "bullets": ["..."] } } }
+- Delete: { "op": "delete", "index": 2 }
+- Move: { "op": "move", "from": 0, "to": 3 }
+- Replace: { "op": "replace", "index": 4, "slide": { "layout": "stats", "content": { "metrics": [...] } } }
 
-slides (content edit) examples — only for updating EXISTING slides:
+slides (content edit) examples:
 - Update title of slide 0: { "index": 0, "content": { "title": "New Title" } }
-
-slide_operations run first, then slides content edits apply to the post-operations array. All text fields support markdown.
-
-WARNINGS: The response may include a "warnings" array flagging unrecognized content fields (typos/wrong layout fields) and unreachable image URLs. Always check warnings and fix issues.
 
 ### Parameters
 
@@ -126,7 +130,7 @@ WARNINGS: The response may include a "warnings" array flagging unrecognized cont
 | `heading_font` | string | no | Google Font for headings (e.g. "Playfair Display") |
 | `body_font` | string | no | Google Font for body text (e.g. "Inter") |
 | `accent_color` | string | no | Hex color (e.g. "#ff6600") |
-| `slide_operations` | array | no | Structural changes: add, remove, reorder, or replace slides. Use this to INSERT NEW SLIDES — do not recreate the deck. |
+| `slide_operations` | array | no | Structural changes: add, remove, reorder, or replace slides. |
 | `slide_operations[].op` | enum | yes | "insert", "delete", "move", or "replace" |
 | `slide_operations[].index` | number | no | Target slide index. Required for insert, delete, replace. |
 | `slide_operations[].from` | number | no | Source index. Only for move. |
@@ -156,9 +160,7 @@ Delete a deck permanently.
 
 ### Description
 
-Upload a base64-encoded image to get a hosted URL for use in slide image_url fields.
-
-Accepts PNG, JPG, WebP up to 10MB. Upload first, then use the returned URL when creating or updating a deck.
+Upload a base64-encoded image (PNG/JPG/WebP, max 10MB) to get a hosted URL for use in slide image_url fields.
 
 ### Parameters
 
@@ -167,6 +169,29 @@ Accepts PNG, JPG, WebP up to 10MB. Upload first, then use the returned URL when 
 | `image_data` | string | yes | Base64-encoded image data |
 | `filename` | string | yes | Filename with extension (e.g. "photo.jpg") |
 | `content_type` | enum | yes | "image/png", "image/jpeg", or "image/webp" |
+
+---
+
+## search_images
+
+### Description
+
+Search Unsplash for stock photos. Returns URLs, photographer info, and attribution data.
+
+When using an image from results, you MUST set both image_url and image_attribution:
+1. image_url → use the urls.regular value
+2. image_attribution → { name: "<photographer>", url: "<profile_url>?utm_source=deckpipe&utm_medium=referral", source: "Unsplash", source_url: "https://unsplash.com/?utm_source=deckpipe&utm_medium=referral", download_location: "<download_location from result>" }
+3. For image_gallery: put attribution inside each image_details[] entry as an "attribution" object (same shape)
+
+The download_location triggers required Unsplash download tracking automatically when the deck is saved.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | yes | Search terms (e.g. "modern office workspace", "sunset over mountains") |
+| `per_page` | number | no | Number of results (default 9, max 30) |
+| `orientation` | enum | no | "landscape", "portrait", or "squarish". Use "landscape" for full_image/image_and_text, "portrait" for image_gallery. |
 
 ---
 
@@ -180,56 +205,24 @@ List all available slide layouts, their content fields, and themes. Use this to 
 
 None.
 
-### Response
-
-Returns a JSON object with three sections:
-
-**`layouts`** — Array of objects, each with:
-- `name` — Layout identifier
-- `description` — Short human-readable description
-- `fields` — Content fields with types and required/optional markers
-
-**`customization`** — Styling options:
-- `heading_font`: Optional Google Font for headings (e.g. "Playfair Display"). Default: DM Sans.
-- `body_font`: Optional Google Font for body text (e.g. "Inter"). Default: DM Sans.
-- `accent_color`: Optional hex color (e.g. "#ff6600"). Default: #7c3aed (purple).
-
-**`style_guide`** — Guidance for producing good slides:
-- `copy`: Keep text short and scannable. Use shorthand phrases, not full sentences. Bullets: 5-8 words max. Stats: abbreviate large numbers (e.g. "2.4M" not "2,400,000"). Quotes: under 30 words.
-- `images`: Use upload_image to host images. image_gallery works best with 2-5 portrait images of consistent aspect ratio. full_image needs high-res landscape images.
-- `rich_bullets`: Bullets in title_and_bullets, comparison, swot, pros_and_cons, and quadrant can be plain strings or objects: { text, detail?, sources?: [{ label, url? }] }. Use detail for hover tooltips. Use sources for footnote citations.
-- `image_prompt`: Use image_prompt instead of image_url to suggest an image the user should provide. Renders as a dashed placeholder with your descriptive text. Example: "Screenshot of the competitor app onboarding flow". User drops in the real image later.
-
 ---
 
 ## list_comments
 
 ### Description
 
-List comments on a deck. Use this to check for user feedback before making updates.
+List comments on a deck. Returns comment objects with: id, slide_id, content_path (e.g. "title", "bullets[2]", "slide"), status ("open"/"resolved"), messages[] thread, created_at, updated_at.
 
-WORKFLOW — always follow this when iterating on a deck:
-1. Call list_comments to see open feedback
-2. Read each comment's content_path to know which field it refers to (e.g. "title", "bullets[2]", "left.heading", or "slide" for general feedback)
-3. Use the slide_id to find the right slide in the deck
-4. Call update_deck to address the feedback
-5. Call reply_to_comment explaining what you changed
-6. The user will resolve the comment once satisfied — do NOT resolve comments yourself unless explicitly asked
-
-Each comment has a messages[] thread. The first message is the original comment; subsequent messages are replies from users or agents.
-
-RETURNS: Array of comment objects, each with: id, slide_id, content_path, status ("open"/"resolved"), messages[], created_at, updated_at.
-
-TIP: Use the "since" parameter with an ISO timestamp to only fetch comments that are new or have new replies since your last check. Save the current timestamp before each call and pass it as "since" on the next call.
+Use the "since" parameter with an ISO timestamp to only fetch comments added or updated since your last check.
 
 ### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `deck_id` | string | yes | The deck ID |
-| `status` | enum | no | Filter by "open" or "resolved". Defaults to showing all. Use "open" to see only unresolved feedback. |
+| `status` | enum | no | Filter by "open" or "resolved". Defaults to showing all. |
 | `slide_id` | string | no | Filter to a specific slide by its stable slide_id (e.g. "sld_a1b2c3d4") |
-| `since` | string | no | ISO timestamp. Only return comments created or updated since this time. Use this to poll for new feedback efficiently. |
+| `since` | string | no | ISO timestamp. Only return comments created or updated since this time. |
 
 ---
 
@@ -237,11 +230,7 @@ TIP: Use the "since" parameter with an ISO timestamp to only fetch comments that
 
 ### Description
 
-Reply to a comment thread on a deck. Use this after addressing user feedback to explain what you changed.
-
-The user will see your reply in the comment thread and can resolve the comment or continue the conversation. Keep replies concise — summarize the change you made, don't repeat the feedback.
-
-Example: "Updated the title to focus on ROI metrics as suggested. Also shortened the bullet points on this slide."
+Reply to a comment thread. Keep replies concise — summarize what you changed, don't repeat the feedback.
 
 ### Parameters
 
@@ -258,9 +247,7 @@ Example: "Updated the title to focus on ROI metrics as suggested. Also shortened
 
 ### Description
 
-Resolve a comment, marking it as addressed. Typically the user resolves comments after reviewing your changes, but you may resolve if explicitly asked to.
-
-Do NOT resolve comments proactively — always let the user confirm the feedback has been addressed.
+Resolve a comment, marking it as addressed. Only resolve when explicitly asked — let the user confirm satisfaction first.
 
 ### Parameters
 

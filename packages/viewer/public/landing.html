@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>deckpipe — agent-first slide deck engine</title>
-  <meta name="description" content="Create polished slide decks from any AI agent. 25 layouts, custom Google Fonts, collaborative comments, image galleries, stats, quotes, Venn diagrams. Install the MCP server and start prompting." />
+  <title>deckpipe — slide decks at prompt speed</title>
+  <meta name="description" content="deckpipe is the agent-first slide deck engine. Your agent describes slides as JSON; deckpipe renders, themes, and exports them. MCP server for Claude, Cursor, and Claude Code." />
   <meta name="keywords" content="AI slide deck, MCP server, AI presentations, Claude slides, agent-first, slide deck API, AI presentation tool, deckpipe" />
   <link rel="canonical" href="https://deckpipe.com" />
-  <meta property="og:title" content="deckpipe — AI slide deck creator" />
-  <meta property="og:description" content="Create polished slide decks from any AI agent. 25 layouts, custom fonts, images, stats, quotes, and Venn diagrams. Install via MCP and start prompting." />
+  <meta property="og:title" content="deckpipe — slide decks at prompt speed" />
+  <meta property="og:description" content="Agent-first slide deck engine. Connect the MCP, prompt your agent, get a deck." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://deckpipe.com" />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="deckpipe — AI slide deck creator" />
-  <meta name="twitter:description" content="Create polished slide decks from any AI agent via MCP. 25 layouts, custom fonts, images." />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1'/><path d='M14 2v5a1 1 0 0 0 1 1h5'/><path d='M2 15h10'/><path d='m9 18 3-3-3-3'/></svg>" />
+  <meta name="twitter:title" content="deckpipe — slide decks at prompt speed" />
+  <meta name="twitter:description" content="Agent-first slide deck engine. Install the MCP, prompt your agent, get a deck." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff5c1a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1'/><path d='M14 2v5a1 1 0 0 0 1 1h5'/><path d='M2 15h10'/><path d='m9 18 3-3-3-3'/></svg>" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
@@ -34,343 +34,1303 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
 
   <style>
+    :root {
+      --bg:         #0a0a0b;
+      --bg-elev:    #17171d;
+      --bg-soft:    #15151a;
+      --bg-code:    #1f1f28;
+      --fg:         #f0efea;
+      --fg-dim:     #b4b3ae;
+      --fg-mute:    #6b6a66;
+      --fg-faint:   #35353a;
+      --line:       #1c1c20;
+      --line-hi:    #2a2a30;
+      --accent:     #ff5c1a;
+      --accent-dim: #8a3310;
+      --ok:         #9fd46b;
+      --max:        1200px;
+      --edge:       clamp(20px, 5vw, 56px);
+      --mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: "Inconsolata", monospace;
-      background: #0a0a0a;
-      color: #e0e0e0;
+      font-family: var(--mono);
+      font-weight: 400;
+      background: var(--bg);
+      color: var(--fg);
       min-height: 100vh;
+      line-height: 1.55;
+      font-feature-settings: "zero";
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* Subtle grain overlay — atmosphere without crossing into kitsch */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0.035;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* Vignette on the edges */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 99;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    a:hover { color: var(--accent); }
+
+    ::selection { background: var(--accent); color: var(--bg); }
+
+    /* ─── Layout shell ─── */
+    .shell {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 0 var(--edge);
+      position: relative;
+    }
+
+    /* ─── Top nav ─── */
+    .nav {
+      padding-top: 28px;
+      padding-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      letter-spacing: 0.02em;
+      position: relative;
+      z-index: 5;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      font-size: 0.92rem;
+      letter-spacing: -0.01em;
+    }
+
+    .brand svg {
+      flex-shrink: 0;
+    }
+
+    .brand-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--accent);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      color: var(--fg-dim);
+    }
+
+    .nav-links a {
+      position: relative;
+    }
+
+    .nav-links a::before {
+      content: "[ ";
+      color: var(--fg-faint);
+    }
+
+    .nav-links a::after {
+      content: " ]";
+      color: var(--fg-faint);
+    }
+
+    .nav-links a:hover::before,
+    .nav-links a:hover::after {
+      color: var(--accent);
+    }
+
+    @media (max-width: 640px) {
+      .nav-links { gap: 18px; }
+      .nav-links .hide-sm { display: none; }
+    }
+
+    /* ─── Hero ─── */
+    .hero {
+      padding-top: clamp(40px, 8vw, 96px);
+      padding-bottom: clamp(48px, 8vw, 100px);
+      position: relative;
+    }
+
+    /* Atmospheric gradient behind hero */
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(900px, 100%);
+      height: 700px;
+      background: radial-gradient(ellipse at center, rgba(255, 92, 26, 0.09) 0%, rgba(255, 92, 26, 0) 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero > * { position: relative; z-index: 1; }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--fg-dim);
+      padding: 7px 14px;
+      border: 1px solid var(--line-hi);
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .hero h1 {
+      margin-top: 28px;
+      font-size: clamp(2.2rem, 5.6vw, 4.6rem);
+      font-weight: 500;
+      line-height: 1.0;
+      letter-spacing: -0.04em;
+      color: var(--fg);
+      max-width: 22ch;
+    }
+
+    .hero h1 .line2 {
+      display: block;
+      color: var(--fg-dim);
+    }
+
+    .hero h1 .line2 .at {
+      color: var(--accent);
+    }
+
+    .hero h1 .caret {
+      display: inline-block;
+      width: 0.48em;
+      height: 0.78em;
+      background: var(--accent);
+      margin-left: 0.1em;
+      vertical-align: -0.04em;
+      animation: blink 1.08s steps(1) infinite;
+      box-shadow: 0 0 14px rgba(255, 92, 26, 0.5);
+    }
+
+    @keyframes blink {
+      0%, 49%   { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .subtagline {
+      margin-top: 36px;
+      max-width: 58ch;
+      font-size: clamp(0.95rem, 1.4vw, 1.08rem);
+      line-height: 1.6;
+      color: var(--fg-dim);
+    }
+
+    .subtagline strong {
+      color: var(--fg);
+      font-weight: 500;
+    }
+
+    .cta-row {
+      margin-top: 36px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 22px;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      border: 1px solid var(--line-hi);
+      background: transparent;
+      color: var(--fg);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      position: relative;
+    }
+
+    .btn svg { width: 14px; height: 14px; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #1a0a00;
+      border-color: var(--accent);
+      font-weight: 500;
+    }
+
+    .btn-primary:hover {
+      background: #ff7a3f;
+      border-color: #ff7a3f;
+      box-shadow: 0 0 0 1px #ff7a3f, 0 6px 30px rgba(255, 92, 26, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--fg);
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* ─── Hero video placeholder ─── */
+    .hero-video {
+      margin-top: clamp(48px, 7vw, 84px);
+      position: relative;
+    }
+
+    .video-frame {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      width: 100%;
+      background: var(--bg-elev);
+      border: 1px solid var(--line-hi);
+      overflow: hidden;
+      box-shadow:
+        0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
+        0 50px 100px -30px rgba(0, 0, 0, 0.8),
+        0 0 120px -20px rgba(255, 92, 26, 0.25);
+    }
+
+    .video-frame video,
+    .video-frame img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Placeholder pattern used until a real video is dropped in */
+    .video-placeholder {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, transparent 49.5%, rgba(255,255,255,0.02) 49.5%, rgba(255,255,255,0.02) 50.5%, transparent 50.5%),
+        linear-gradient(45deg,  transparent 49.5%, rgba(255,255,255,0.02) 49.5%, rgba(255,255,255,0.02) 50.5%, transparent 50.5%),
+        radial-gradient(ellipse at center, #17171b 0%, #0d0d10 70%);
+      background-size: 28px 28px, 28px 28px, 100% 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 80px 24px 60px;
-      line-height: 1.6;
+      justify-content: center;
+      gap: 24px;
     }
 
-    .container {
-      max-width: 640px;
-      width: 100%;
-    }
-
-    h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.02em;
-    }
-
-    .tagline {
-      margin-top: 12px;
-      font-size: 0.95rem;
-      color: #ccc;
-    }
-
-    .value-prop {
-      margin-top: 48px;
-      font-size: 0.875rem;
-      color: #ccc;
-      border-left: 2px solid #333;
-      padding-left: 16px;
-    }
-
-    .value-prop p + p {
-      margin-top: 12px;
-    }
-
-    h2 {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #999;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-top: 56px;
-      margin-bottom: 16px;
-    }
-
-    .steps {
-      list-style: none;
-      counter-reset: step;
-    }
-
-    .steps li {
-      counter-increment: step;
-      font-size: 0.875rem;
-      color: #ccc;
-      padding: 12px 0;
-      border-bottom: 1px solid #1a1a1a;
+    .video-placeholder .play {
+      width: 76px;
+      height: 76px;
+      border: 1.5px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
       position: relative;
-      padding-right: 36px;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
 
-    .steps li::before {
-      content: counter(step) ".";
-      color: #555;
-      margin-right: 12px;
+    .video-placeholder .play::before {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border: 1px solid var(--accent);
+      border-radius: 50%;
+      opacity: 0.35;
+      animation: ringPulse 2.4s ease-out infinite;
+    }
+
+    @keyframes ringPulse {
+      0%   { transform: scale(0.9); opacity: 0.45; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+
+    .video-placeholder .play:hover {
+      background: var(--accent);
+      color: #1a0a00;
+      box-shadow: 0 0 40px rgba(255, 92, 26, 0.45);
+    }
+
+    .video-placeholder .play svg {
+      width: 26px;
+      height: 26px;
+      margin-left: 3px;
+    }
+
+    .video-placeholder .label {
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--fg-mute);
+    }
+
+    /* Corner brackets */
+    .bracketed {
+      position: relative;
+    }
+
+    .bracketed::before,
+    .bracketed::after,
+    .bracketed > .bl,
+    .bracketed > .br {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-color: var(--accent);
+      border-style: solid;
+      border-width: 0;
+      pointer-events: none;
+    }
+
+    .bracketed::before { top: -1px; left: -1px;  border-top-width: 1.5px; border-left-width: 1.5px; }
+    .bracketed::after  { top: -1px; right: -1px; border-top-width: 1.5px; border-right-width: 1.5px; }
+    .bracketed > .bl   { bottom: -1px; left: -1px;  border-bottom-width: 1.5px; border-left-width: 1.5px; }
+    .bracketed > .br   { bottom: -1px; right: -1px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+
+    .video-caption {
+      margin-top: 18px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--fg-mute);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .video-caption .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: #e03030;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 1.6s ease-in-out infinite;
+      vertical-align: middle;
+    }
+
+    /* ─── Section scaffolding ─── */
+    section {
+      padding-top: clamp(70px, 9vw, 130px);
+      padding-bottom: clamp(20px, 4vw, 50px);
+      position: relative;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--fg-mute);
+      margin-bottom: 28px;
+    }
+
+    .section-label::before {
+      content: "";
+      width: 32px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .section-label .num {
+      color: var(--accent);
+    }
+
+    .section-title {
+      font-size: clamp(1.5rem, 2.6vw, 2rem);
       font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      max-width: 24ch;
+      margin-bottom: 14px;
+    }
+
+    .section-title .accent { color: var(--accent); }
+
+    .section-lede {
+      font-size: 0.95rem;
+      color: var(--fg-dim);
+      max-width: 62ch;
+      margin-bottom: 48px;
+      line-height: 1.7;
+    }
+
+    /* ─── Feature grid ─── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+    }
+
+    @media (max-width: 900px) { .features { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
+
+    .feat {
+      background: #2c2c36;
+      padding: 32px 28px;
+      position: relative;
+      transition: background 0.2s ease;
+      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.06) inset;
+    }
+
+    .feat:hover {
+      background: #36363f;
+    }
+
+    .feat-num {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      color: var(--fg-mute);
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .feat-num .count {
+      color: var(--accent);
+    }
+
+    .feat-title {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--fg);
+      margin-bottom: 10px;
+      letter-spacing: -0.015em;
+    }
+
+    .feat-body {
+      font-size: 0.84rem;
+      color: var(--fg-dim);
+      line-height: 1.65;
+    }
+
+    .feat-body code {
+      font-family: inherit;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ─── Demo (prompt → deck) ─── */
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 820px) { .demo-grid { grid-template-columns: 1fr; } }
+
+    .demo-card {
+      border: 1px solid var(--line-hi);
+      background: var(--bg-soft);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .demo-card-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--fg-mute);
+    }
+
+    .demo-card-head .tag {
+      color: var(--accent);
+    }
+
+    .demo-card-body {
+      padding: 22px 20px;
+      font-size: 0.86rem;
+      line-height: 1.7;
+      color: var(--fg);
+      flex: 1;
+      position: relative;
+    }
+
+    .demo-card-body .prompt-prefix {
+      color: var(--accent);
+      margin-right: 6px;
+      font-weight: 500;
+    }
+
+    .demo-result {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 22px 20px;
+      gap: 20px;
+      background:
+        linear-gradient(135deg, transparent 49.5%, rgba(255,255,255,0.015) 49.5%, rgba(255,255,255,0.015) 50.5%, transparent 50.5%),
+        var(--bg-soft);
+      background-size: 22px 22px, 100% 100%;
+    }
+
+    .demo-result-link {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--fg);
+      border-bottom: 1px solid var(--fg-faint);
+      padding-bottom: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .demo-result-link:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .demo-result-meta {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--fg-mute);
+      display: flex;
+      gap: 16px;
+    }
+
+    .demo-result-meta span::before {
+      content: "▸ ";
+      color: var(--accent);
+    }
+
+    /* ─── Install ─── */
+    .install-steps {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 22px;
+      max-width: 860px;
+    }
+
+    .install-card {
+      border: 1px solid var(--line);
+      background: var(--bg-soft);
+    }
+
+    .install-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .install-head .title {
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      color: var(--fg);
+    }
+
+    .install-head .title .dim {
+      color: var(--fg-mute);
+      margin-right: 8px;
+    }
+
+    .install-head .badge {
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent-dim);
+      padding: 3px 10px;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+
+    .install-body {
+      padding: 0;
+      position: relative;
+      background: var(--bg-code);
+      border-top: 1px solid var(--line-hi);
+      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset;
+    }
+
+    .install-body pre {
+      padding: 22px 24px;
+      font-size: 0.86rem;
+      line-height: 1.7;
+      color: var(--fg);
+      overflow-x: auto;
+      white-space: pre;
+      background: transparent;
+    }
+
+    .install-body pre code {
+      font-family: inherit;
+    }
+
+    .install-body .prompt-sym {
+      color: var(--accent);
+      user-select: none;
     }
 
     .copy-btn {
       position: absolute;
-      top: 12px;
-      right: 0;
-      background: none;
-      border: 1px solid #333;
-      border-radius: 4px;
-      padding: 6px 6px;
+      top: 14px;
+      right: 14px;
+      background: rgba(10, 10, 11, 0.7);
+      backdrop-filter: blur(4px);
+      border: 1px solid var(--line-hi);
+      padding: 7px 9px;
       cursor: pointer;
-      color: #555;
+      color: var(--fg-mute);
       font-size: 0.7rem;
-      transition: color 0.15s, border-color 0.15s;
+      transition: all 0.15s ease;
       line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .copy-btn:hover {
-      color: #aaa;
-      border-color: #555;
+      color: var(--accent);
+      border-color: var(--accent);
     }
 
     .copy-btn.copied {
-      color: #98c379;
-      border-color: #98c379;
+      color: var(--ok);
+      border-color: var(--ok);
     }
 
-    .pre-wrapper {
+    /* JSON highlighting */
+    .key    { color: #a9c4ff; }
+    .string { color: var(--ok); }
+    .punc   { color: var(--fg-mute); }
+
+    /* ─── Pills (layouts, tools, customization, etc.) ─── */
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      color: var(--fg);
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      transition: all 0.15s ease;
+    }
+
+    .pill:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .pill::before {
+      content: "";
+      width: 4px;
+      height: 4px;
+      background: var(--fg-faint);
+      border-radius: 50%;
+      transition: background 0.15s ease;
+    }
+
+    .pill:hover::before {
+      background: var(--accent);
+    }
+
+    .pill.with-desc {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      padding: 14px 18px;
+      min-width: 220px;
+    }
+
+    .pill.with-desc::before { display: none; }
+
+    .pill.with-desc .name {
+      color: var(--accent);
+      font-weight: 500;
+      font-size: 0.8rem;
+    }
+
+    .pill.with-desc .desc {
+      color: var(--fg-dim);
+      font-size: 0.76rem;
+    }
+
+    .layouts-count {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .layouts-count .big {
+      font-size: 2.2rem;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .layouts-count .lab {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--fg-mute);
+    }
+
+    .see-all {
+      margin-top: 24px;
+      font-size: 0.85rem;
+      color: var(--fg-dim);
+    }
+
+    .see-all a {
+      color: var(--fg);
+      border-bottom: 1px solid var(--fg-faint);
+      padding-bottom: 2px;
+      transition: all 0.15s ease;
+    }
+
+    .see-all a:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* ─── Try prompts ─── */
+    .try-list {
+      list-style: none;
+      counter-reset: try;
+      display: grid;
+      gap: 14px;
+    }
+
+    .try-list li {
+      counter-increment: try;
       position: relative;
+      padding: 22px 60px 22px 64px;
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: var(--fg-dim);
+      transition: border-color 0.15s ease;
     }
 
-    .pre-wrapper .copy-btn {
-      top: 10px;
-      right: 10px;
+    .try-list li:hover {
+      border-color: var(--line-hi);
     }
 
-    pre {
-      background: #1e1e1e;
-      border: 1px solid #333;
-      border-radius: 6px;
-      padding: 16px 20px;
-      margin-top: 8px;
-      overflow-x: auto;
-      font-size: 0.8rem;
-      line-height: 1.7;
-      color: #ccc;
+    .try-list li::before {
+      content: counter(try, decimal-leading-zero);
+      position: absolute;
+      left: 22px;
+      top: 22px;
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      font-weight: 500;
     }
 
-    code {
-      font-family: inherit;
+    .try-list .copy-btn {
+      top: 18px;
+      right: 18px;
     }
 
-    .inline-code {
-      background: #1a1a1a;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-size: 0.85em;
-      color: #ccc;
-    }
-
-    .comment {
-      color: #555;
-    }
-
-    .string {
-      color: #98c379;
-    }
-
-    .key {
-      color: #e5c07b;
-    }
-
-    .section + .section {
-      margin-top: 48px;
-    }
-
-    .tools {
-      margin-top: 12px;
-      font-size: 0.8rem;
-      color: #666;
-    }
-
-    .tools span {
-      display: inline-block;
-      background: #222;
-      border: 1px solid #3a3a3a;
-      border-radius: 4px;
-      padding: 3px 8px;
-      margin: 3px 4px 3px 0;
-      color: #ccc;
-    }
-
+    /* ─── Footer ─── */
     .footer {
-      margin-top: 80px;
-      font-size: 0.75rem;
-      color: #444;
+      margin-top: clamp(80px, 12vw, 160px);
+      padding-top: 40px;
+      padding-bottom: 50px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.74rem;
+      color: var(--fg-mute);
+      letter-spacing: 0.02em;
     }
 
-    a {
-      color: #ccc;
-      text-decoration: none;
-      border-bottom: 1px dotted #bbb;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    .footer a {
+      color: var(--fg-dim);
     }
 
-    a:hover {
-      background: #ccc;
-      color: #0a0a0a;
-      border-bottom-style: solid;
-      border-color: #ccc;
+    .footer a:hover {
+      color: var(--accent);
+    }
+
+    .footer .sep {
+      color: var(--fg-faint);
+      margin: 0 10px;
+    }
+
+    /* Inline code in prose */
+    .ic {
+      font-family: inherit;
+      color: var(--accent);
+      background: rgba(255, 92, 26, 0.08);
+      border: 1px solid rgba(255, 92, 26, 0.18);
+      padding: 1px 7px;
+      font-size: 0.82em;
+    }
+
+    /* Entrance animation for hero */
+    .reveal {
+      opacity: 0;
+      transform: translateY(14px);
+      animation: reveal 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+    }
+    .reveal-1 { animation-delay: 0.05s; }
+    .reveal-2 { animation-delay: 0.18s; }
+    .reveal-3 { animation-delay: 0.32s; }
+    .reveal-4 { animation-delay: 0.46s; }
+    .reveal-5 { animation-delay: 0.62s; }
+
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { animation: none; opacity: 1; transform: none; }
+      .brand-dot, .hero h1 .caret, .video-placeholder .play::before, .video-caption .dot { animation: none; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:10px"><path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>deckpipe</h1>
-    <p class="tagline">Agent-first slide renderer. Enable your AI agent to create compelling slide decks.</p>
+  <div class="shell">
+    <!-- ═══ NAV ═══ -->
+    <nav class="nav">
+      <div class="brand">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
+        <span>deckpipe</span>
+        <span class="brand-dot" aria-hidden="true"></span>
+      </div>
+      <div class="nav-links">
+        <a href="#connect">connect</a>
+        <a href="#layouts" class="hide-sm">layouts</a>
+        <a href="#try">try it</a>
+        <a href="https://github.com/bjoern2000/deckpipe-mcp" target="_blank" rel="noopener">github</a>
+      </div>
+    </nav>
 
-    <div class="section">
-      <h2>Demo</h2>
-      <p style="font-size: 0.8rem; color: #999; margin-bottom: 12px;">Prompt</p>
-      <div class="pre-wrapper"><pre style="white-space: pre-wrap;">Create a deck about the Apollo 11 moon landing. Search the web for historic NASA photos and use them as full-bleed images. Include a timeline of the mission, stats on the Saturn V rocket, and a famous quote from Neil Armstrong. Use heading font "Libre Baskerville" and accent color "#1e3a5f".</pre><button class="copy-btn" onclick="copyCode(this, 'Create a deck about the Apollo 11 moon landing. Search the web for historic NASA photos and use them as full-bleed images. Include a timeline of the mission, stats on the Saturn V rocket, and a famous quote from Neil Armstrong. Use heading font &quot;Libre Baskerville&quot; and accent color &quot;#1e3a5f&quot;.')" title="Copy to clipboard"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div>
-      <p style="font-size: 0.8rem; color: #999; margin-top: 20px; margin-bottom: 12px;">Result</p>
-      <p style="font-size: 0.875rem;">&#9654; <a href="https://deckpipe.com/d/dk_YjAXnN8v/apollo-11-humanity-s-giant-leap" target="_blank">Apollo 11: Humanity's Giant Leap</a></p>
-    </div>
+    <!-- ═══ HERO ═══ -->
+    <header class="hero">
+      <div class="eyebrow reveal reveal-1">agent · slide engine</div>
 
-    <div class="section">
-      <h2>Install</h2>
+      <h1 class="reveal reveal-2">
+        let your AI agent<br />
+        <span class="line2">make <span class="at">slide decks</span><span class="caret" aria-hidden="true"></span></span>
+      </h1>
 
-      <p style="font-size: 0.875rem; color: #ccc; margin-bottom: 8px;">Remote MCP server (Claude.ai, Cursor, etc.):</p>
-<div class="pre-wrapper"><pre>https://deckpipe.com/mcp</pre><button class="copy-btn" onclick="copyCode(this, 'https://deckpipe.com/mcp')" title="Copy to clipboard"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div>
+      <p class="subtagline reveal reveal-3">
+        deckpipe is an MCP server. It gives your agent the tools to create and edit slide decks.
+      </p>
 
-      <p style="font-size: 0.875rem; color: #ccc; margin-top: 24px; margin-bottom: 8px;">Claude Code:</p>
-<div class="pre-wrapper"><pre>claude mcp add deckpipe -- npx deckpipe-mcp</pre><button class="copy-btn" onclick="copyCode(this, 'claude mcp add deckpipe -- npx deckpipe-mcp')" title="Copy to clipboard"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div>
+      <div class="cta-row reveal reveal-4">
+        <a href="#connect" class="btn btn-primary">
+          connect mcp
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+        <a href="#demo" class="btn btn-ghost">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+          watch demo
+        </a>
+      </div>
 
-      <p style="font-size: 0.875rem; color: #ccc; margin-top: 24px; margin-bottom: 8px;">Or add manually to MCP config:</p>
+      <!-- ═══ HERO VIDEO ═══ -->
+      <div class="hero-video reveal reveal-5">
+        <div class="video-frame bracketed">
+          <span class="bl" aria-hidden="true"></span>
+          <span class="br" aria-hidden="true"></span>
 
-<div class="pre-wrapper"><pre>{
-  <span class="key">"mcpServers"</span>: {
-    <span class="key">"deckpipe"</span>: {
-      <span class="key">"command"</span>: <span class="string">"npx"</span>,
-      <span class="key">"args"</span>: [<span class="string">"-y"</span>, <span class="string">"deckpipe-mcp"</span>]
+          <!--
+            DROP-IN VIDEO:
+            When the demo video is ready, replace the .video-placeholder block below with:
+
+              <video autoplay muted loop playsinline poster="/demo-poster.jpg">
+                <source src="/demo.mp4" type="video/mp4" />
+              </video>
+          -->
+          <div class="video-placeholder" id="videoPlaceholder">
+            <button class="play" type="button" aria-label="Play demo">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            </button>
+            <div class="label">demo video · coming soon</div>
+          </div>
+        </div>
+        <div class="video-caption">
+          <span>demo</span>
+          <span>/ prompt → deck</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══ FEATURES ═══ -->
+    <section id="features">
+      <div class="section-label"><span class="num">[ 01 ]</span> what it does</div>
+      <h2 class="section-title">A rendering engine for agents.</h2>
+      <p class="section-lede">
+        Your agent describes a deck as JSON. deckpipe handles layout, typography, and hosting.
+      </p>
+
+      <div class="features">
+        <div class="feat">
+          <div class="feat-num"><span>feature</span><span class="count">/ 01</span></div>
+          <h3 class="feat-title">Layouts</h3>
+          <p class="feat-body">Title, bullets, stats, quotes, timelines, SWOT, charts, galleries. Your agent chooses a layout. deckpipe handles the styling.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-num"><span>feature</span><span class="count">/ 02</span></div>
+          <h3 class="feat-title">MCP native</h3>
+          <p class="feat-body">Remote server at <code>/mcp</code> for Claude.ai and Cursor. Local install via <code>npx deckpipe-mcp</code> for Claude Code.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-num"><span>feature</span><span class="count">/ 03</span></div>
+          <h3 class="feat-title">Theming</h3>
+          <p class="feat-body">Any Google Font, any accent color, per-slide takeaways. Your agent changes one field; the whole deck re-renders.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-num"><span>feature</span><span class="count">/ 04</span></div>
+          <h3 class="feat-title">Live editing</h3>
+          <p class="feat-body">PATCH with deep merge. <code>insert</code>, <code>delete</code>, <code>move</code>, <code>replace</code> operations. Your agent edits one bullet without re-sending the deck.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-num"><span>feature</span><span class="count">/ 05</span></div>
+          <h3 class="feat-title">Comments</h3>
+          <p class="feat-body">You click any element to comment. Your agent reads the feedback, updates the deck, and replies.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-num"><span>feature</span><span class="count">/ 06</span></div>
+          <h3 class="feat-title">Image rehosting</h3>
+          <p class="feat-body">Image URLs are re-hosted on deck creation, so slides keep working if the original URL goes down.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DEMO ═══ -->
+    <section id="demo">
+      <div class="section-label"><span class="num">[ 02 ]</span> demo</div>
+      <h2 class="section-title">An example.</h2>
+      <p class="section-lede">
+        You write a prompt. Your agent calls deckpipe and produces a deck.
+      </p>
+
+      <div class="demo-grid">
+        <div class="demo-card">
+          <div class="demo-card-head">
+            <span>&gt;&nbsp;prompt.txt</span>
+            <span class="tag">input</span>
+          </div>
+          <div class="demo-card-body">
+            <span class="prompt-prefix">$</span>Create a deck about the Apollo 11 moon landing. Search the web for historic NASA photos and use them as full-bleed images. Include a timeline of the mission, stats on the Saturn V rocket, and a famous quote from Neil Armstrong. Use heading font "Libre Baskerville" and accent color "#1e3a5f".
+            <button class="copy-btn" onclick="copyCode(this, 'Create a deck about the Apollo 11 moon landing. Search the web for historic NASA photos and use them as full-bleed images. Include a timeline of the mission, stats on the Saturn V rocket, and a famous quote from Neil Armstrong. Use heading font &quot;Libre Baskerville&quot; and accent color &quot;#1e3a5f&quot;.')" title="Copy prompt">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="demo-card demo-result">
+          <div class="demo-card-head" style="border: none; padding: 0;">
+            <span>→&nbsp;result.deck</span>
+            <span class="tag">output</span>
+          </div>
+          <div>
+            <a href="https://deckpipe.com/d/dk_YjAXnN8v/apollo-11-humanity-s-giant-leap" target="_blank" rel="noopener" class="demo-result-link">
+              Apollo 11: Humanity's Giant Leap
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+            </a>
+          </div>
+          <div class="demo-result-meta">
+            <span>12 slides</span>
+            <span>nasa imagery</span>
+            <span>custom theme</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ INSTALL ═══ -->
+    <section id="connect">
+      <div class="section-label"><span class="num">[ 03 ]</span> connect</div>
+      <h2 class="section-title">Connect deckpipe to your agent.</h2>
+      <p class="section-lede">
+        Three ways to do it, depending on which agent you use. They all give your agent the same tools.
+      </p>
+
+      <div class="install-steps">
+        <div class="install-card">
+          <div class="install-head">
+            <div class="title"><span class="dim">01 //</span>remote mcp &nbsp;<span style="color:var(--fg-mute);font-size:0.72rem">— url only, no install</span></div>
+            <span class="badge">claude.ai · cursor</span>
+          </div>
+          <div class="install-body">
+            <pre><code><span class="prompt-sym">&gt; </span>https://deckpipe.com/mcp</code></pre>
+            <button class="copy-btn" onclick="copyCode(this, 'https://deckpipe.com/mcp')" title="Copy">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="install-card">
+          <div class="install-head">
+            <div class="title"><span class="dim">02 //</span>claude code</div>
+            <span class="badge">cli</span>
+          </div>
+          <div class="install-body">
+            <pre><code><span class="prompt-sym">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp</code></pre>
+            <button class="copy-btn" onclick="copyCode(this, 'claude mcp add deckpipe -- npx deckpipe-mcp')" title="Copy">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="install-card">
+          <div class="install-head">
+            <div class="title"><span class="dim">03 //</span>manual mcp config</div>
+            <span class="badge">json</span>
+          </div>
+          <div class="install-body">
+<pre><code>{
+  <span class="key">"mcpServers"</span><span class="punc">:</span> {
+    <span class="key">"deckpipe"</span><span class="punc">:</span> {
+      <span class="key">"command"</span><span class="punc">:</span> <span class="string">"npx"</span><span class="punc">,</span>
+      <span class="key">"args"</span><span class="punc">:</span> [<span class="string">"-y"</span><span class="punc">,</span> <span class="string">"deckpipe-mcp"</span>]
     }
   }
-}</pre><button class="copy-btn" onclick="copyCode(this, '{\n  &quot;mcpServers&quot;: {\n    &quot;deckpipe&quot;: {\n      &quot;command&quot;: &quot;npx&quot;,\n      &quot;args&quot;: [&quot;-y&quot;, &quot;deckpipe-mcp&quot;]\n    }\n  }\n}')" title="Copy to clipboard"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div>
-    </div>
-
-    <div class="section">
-      <h2>Tools</h2>
-      <div class="tools">
-        <span>create_deck</span>
-        <span>get_deck</span>
-        <span>update_deck</span>
-        <span>delete_deck</span>
-        <span>upload_image</span>
-        <span>list_layouts</span>
-        <span>list_comments</span>
-        <span>reply_to_comment</span>
-        <span>resolve_comment</span>
+}</code></pre>
+            <button class="copy-btn" onclick="copyCode(this, '{\n  &quot;mcpServers&quot;: {\n    &quot;deckpipe&quot;: {\n      &quot;command&quot;: &quot;npx&quot;,\n      &quot;args&quot;: [&quot;-y&quot;, &quot;deckpipe-mcp&quot;]\n    }\n  }\n}')" title="Copy">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="section">
-      <h2>Layouts</h2>
-      <div class="tools">
-        <span>title</span>
-        <span>title_and_body</span>
-        <span>title_and_bullets</span>
-        <span>title_and_table</span>
-        <span>two_columns</span>
-        <span>section_break</span>
-        <span>image_and_text</span>
-        <span>image_gallery</span>
-        <span>stats</span>
-        <span>quote</span>
-        <span>full_image</span>
-        <span>timeline</span>
-        <span>comparison</span>
-        <span>code</span>
-        <span>callout</span>
-        <span>icons_and_text</span>
-        <span>team</span>
-        <span>embed</span>
-        <span>pros_and_cons</span>
-        <span>agenda</span>
-        <span>swot</span>
-        <span>quadrant</span>
-        <span>venn_diagram</span>
-        <span>chart</span>
-        <span>closing</span>
+    <!-- ═══ TOOLS ═══ -->
+    <section id="tools">
+      <div class="section-label"><span class="num">[ 04 ]</span> mcp tools</div>
+      <h2 class="section-title">The tools your agent gets.</h2>
+      <p class="section-lede">
+        Each tool does one thing.
+      </p>
+      <div class="pill-group">
+        <div class="pill">create_deck</div>
+        <div class="pill">get_deck</div>
+        <div class="pill">update_deck</div>
+        <div class="pill">delete_deck</div>
+        <div class="pill">upload_image</div>
+        <div class="pill">list_layouts</div>
+        <div class="pill">list_comments</div>
+        <div class="pill">reply_to_comment</div>
+        <div class="pill">resolve_comment</div>
       </div>
-      <p style="font-size: 0.875rem; margin-top: 16px;">&#9654; <a href="https://deckpipe.com/d/dk_CsHBYjLY/building-a-saas-startup-from-idea-to-ipo" target="_blank">See all 25 layouts in action</a></p>
-    </div>
+    </section>
 
-    <div class="section">
-      <h2>Customization</h2>
-      <div class="tools">
-        <span>heading_font &mdash; Google Font for headings</span>
-        <span>body_font &mdash; Google Font for body text</span>
-        <span>accent_color &mdash; hex color</span>
-        <span>key_takeaway &mdash; per-slide highlight box</span>
+    <!-- ═══ LAYOUTS ═══ -->
+    <section id="layouts">
+      <div class="section-label"><span class="num">[ 05 ]</span> layouts</div>
+      <h2 class="section-title">Layouts your agent can use.</h2>
+      <p class="section-lede">
+        Each layout has its own typed content shape. Your agent chooses the layout that fits the slide.
+      </p>
+      <div class="pill-group">
+        <div class="pill">title</div>
+        <div class="pill">title_and_body</div>
+        <div class="pill">title_and_bullets</div>
+        <div class="pill">title_and_table</div>
+        <div class="pill">two_columns</div>
+        <div class="pill">section_break</div>
+        <div class="pill">image_and_text</div>
+        <div class="pill">image_gallery</div>
+        <div class="pill">stats</div>
+        <div class="pill">quote</div>
+        <div class="pill">full_image</div>
+        <div class="pill">timeline</div>
+        <div class="pill">comparison</div>
+        <div class="pill">code</div>
+        <div class="pill">callout</div>
+        <div class="pill">icons_and_text</div>
+        <div class="pill">team</div>
+        <div class="pill">embed</div>
+        <div class="pill">pros_and_cons</div>
+        <div class="pill">agenda</div>
+        <div class="pill">swot</div>
+        <div class="pill">quadrant</div>
+        <div class="pill">venn_diagram</div>
+        <div class="pill">chart</div>
+        <div class="pill">closing</div>
       </div>
-    </div>
+      <p class="see-all">▸ <a href="https://deckpipe.com/d/dk_CsHBYjLY/building-a-saas-startup-from-idea-to-ipo" target="_blank" rel="noopener">See every layout in one deck</a></p>
+    </section>
 
-    <div class="section">
-      <h2>Icons</h2>
-      <p style="font-size: 0.875rem; color: #ccc;">The <code>icons_and_text</code> layout supports all 1,695 <a href="https://lucide.dev/icons/" target="_blank">Lucide icons</a> by name (e.g. <code>"clock"</code>, <code>"message-square"</code>, <code>"database"</code>) or emoji.</p>
-    </div>
-
-    <div class="section">
-      <h2>Editing</h2>
-      <div class="tools">
-        <span>insert &mdash; add slides at any position</span>
-        <span>delete &mdash; remove slides by index</span>
-        <span>move &mdash; reorder slides</span>
-        <span>replace &mdash; swap layout + content</span>
+    <!-- ═══ CUSTOMIZATION ═══ -->
+    <section id="customization">
+      <div class="section-label"><span class="num">[ 06 ]</span> theming</div>
+      <h2 class="section-title">Theming.</h2>
+      <p class="section-lede">
+        Theme settings live on the deck. Your agent can change them at any time and the whole deck re-renders.
+      </p>
+      <div class="pill-group">
+        <div class="pill with-desc">
+          <span class="name">heading_font</span>
+          <span class="desc">any Google Font for headings</span>
+        </div>
+        <div class="pill with-desc">
+          <span class="name">body_font</span>
+          <span class="desc">any Google Font for body text</span>
+        </div>
+        <div class="pill with-desc">
+          <span class="name">accent_color</span>
+          <span class="desc">hex color, applied across the deck</span>
+        </div>
+        <div class="pill with-desc">
+          <span class="name">key_takeaway</span>
+          <span class="desc">per-slide highlight box</span>
+        </div>
       </div>
-    </div>
+      <p class="see-all" style="margin-top: 36px;">
+        The <span class="ic">icons_and_text</span> layout takes any <a href="https://lucide.dev/icons/" target="_blank" rel="noopener">Lucide icon</a> by name
+        (e.g. <span class="ic">"clock"</span>, <span class="ic">"database"</span>) or any emoji.
+      </p>
+    </section>
 
-    <div class="section">
-      <h2>Comments</h2>
-      <p style="font-size: 0.875rem; color: #ccc;">Collaborative feedback between users and agents. Users click on any slide element to leave a comment; agents read the feedback, update the deck, and reply &mdash; all through the API.</p>
-      <div class="tools" style="margin-top: 12px;">
-        <span>threaded replies</span>
-        <span>per-element anchoring</span>
-        <span>resolve / reopen</span>
-        <span>agent + human identity</span>
-      </div>
-    </div>
+    <!-- ═══ TRY IT ═══ -->
+    <section id="try">
+      <div class="section-label"><span class="num">[ 07 ]</span> try it</div>
+      <h2 class="section-title">Example prompts.</h2>
+      <p class="section-lede">
+        Paste any of these into your agent to try deckpipe.
+      </p>
 
-    <div class="section">
-      <h2>Try it</h2>
-      <ol class="steps">
-        <li>Create a deck about the rise of electric vehicles. Search the web for relevant photos and use them. Use heading font "Space Grotesk", body font "Inter", and accent color "#0ea5e9".<button class="copy-btn" onclick="copyPrompt(this)" title="Copy to clipboard"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></li>
-
-        <li>Build a lecture deck on how neural networks learn. Use a comparison table for activation functions, bullet points for key concepts, and add a key takeaway to each slide.<button class="copy-btn" onclick="copyPrompt(this)" title="Copy to clipboard"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></li>
-        <li>Create a travel guide deck for Tokyo. Search the web for photos and include an image gallery of must-visit spots, stats on tourism, and a full-bleed image cover slide.<button class="copy-btn" onclick="copyPrompt(this)" title="Copy to clipboard"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></li>
+      <ol class="try-list">
+        <li>
+          Create a deck about the rise of electric vehicles. Search the web for relevant photos and use them. Use heading font "Space Grotesk", body font "Inter", and accent color "#0ea5e9".
+          <button class="copy-btn" onclick="copyPrompt(this)" title="Copy">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          </button>
+        </li>
+        <li>
+          Build a lecture deck on how neural networks learn. Use a comparison table for activation functions, bullet points for key concepts, and add a key takeaway to each slide.
+          <button class="copy-btn" onclick="copyPrompt(this)" title="Copy">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          </button>
+        </li>
+        <li>
+          Create a travel guide deck for Tokyo. Search the web for photos and include an image gallery of must-visit spots, stats on tourism, and a full-bleed image cover slide.
+          <button class="copy-btn" onclick="copyPrompt(this)" title="Copy">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          </button>
+        </li>
       </ol>
-    </div>
+    </section>
 
-    <p class="footer">&copy; 2025 Bj&ouml;rn Schefzyk. All rights reserved. &mdash; <a href="https://github.com/bjoern2000/deckpipe-mcp">github</a> &middot; <a href="/terms.html">terms</a> &middot; <a href="/privacy.html">privacy</a></p>
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="footer">
+      <div>&copy; 2025 Björn Schefzyk &nbsp;·&nbsp; all rights reserved</div>
+      <div>
+        <a href="https://github.com/bjoern2000/deckpipe-mcp" target="_blank" rel="noopener">github</a>
+        <span class="sep">/</span>
+        <a href="/terms.html">terms</a>
+        <span class="sep">/</span>
+        <a href="/privacy.html">privacy</a>
+      </div>
+    </footer>
   </div>
 
   <script>
-    const clipboardSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
-    const checkSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const clipboardSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+    const checkSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    function flashCopied(btn) {
+      btn.innerHTML = checkSvg;
+      btn.classList.add('copied');
+      setTimeout(() => { btn.innerHTML = clipboardSvg; btn.classList.remove('copied'); }, 1500);
+    }
+
     function copyPrompt(btn) {
       const li = btn.closest('li');
-      const text = li.textContent.trim();
-      navigator.clipboard.writeText(text).then(() => {
-        btn.innerHTML = checkSvg;
-        btn.classList.add('copied');
-        setTimeout(() => { btn.innerHTML = clipboardSvg; btn.classList.remove('copied'); }, 1500);
-      });
+      // Clone to strip the button content from the extracted text.
+      const clone = li.cloneNode(true);
+      clone.querySelectorAll('button').forEach(b => b.remove());
+      const text = clone.textContent.trim();
+      navigator.clipboard.writeText(text).then(() => flashCopied(btn));
     }
+
     function copyCode(btn, text) {
-      navigator.clipboard.writeText(text).then(() => {
-        btn.innerHTML = checkSvg;
-        btn.classList.add('copied');
-        setTimeout(() => { btn.innerHTML = clipboardSvg; btn.classList.remove('copied'); }, 1500);
+      navigator.clipboard.writeText(text).then(() => flashCopied(btn));
+    }
+
+    // Hero video placeholder — scroll into view on click so the user can see
+    // what will become the actual demo video once it's dropped in.
+    const placeholder = document.getElementById('videoPlaceholder');
+    if (placeholder) {
+      placeholder.querySelector('.play')?.addEventListener('click', () => {
+        placeholder.style.opacity = '0.6';
+        setTimeout(() => { placeholder.style.opacity = '1'; }, 400);
       });
     }
   </script>

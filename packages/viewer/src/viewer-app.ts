@@ -11,6 +11,12 @@ import './components/comment-thread.js';
 import { fetchComments, createComment, addReply, updateComment, type Comment } from './utils/comment-api.js';
 import { SLIDE_WIDTH, SLIDE_HEIGHT } from './constants.js';
 
+interface HeadEntry {
+  tag: 'link' | 'script' | 'style';
+  attrs?: Record<string, string>;
+  body?: string;
+}
+
 interface Deck {
   deck_id: string;
   title: string;
@@ -18,6 +24,8 @@ interface Deck {
   body_font?: string | null;
   accent_color?: string | null;
   agent_name?: string | null;
+  stylesheet?: string | null;
+  head?: HeadEntry[] | null;
   slides: Array<{ layout: string; slide_id?: string; content: Record<string, unknown> }>;
   edit_key?: string;
   created_at: string;
@@ -323,6 +331,24 @@ export class ViewerApp extends LitElement {
     this.setBodyScroll(this.isMobile);
   };
 
+  private injectedHeadKeys = new Set<string>();
+  private injectHeadEntry(entry: HeadEntry) {
+    if (!entry || !entry.tag) return;
+    const key = JSON.stringify({ tag: entry.tag, attrs: entry.attrs ?? {}, body: entry.body ?? '' });
+    if (this.injectedHeadKeys.has(key)) return;
+    this.injectedHeadKeys.add(key);
+
+    const el = document.createElement(entry.tag);
+    el.setAttribute('data-deckpipe-head', '');
+    if (entry.attrs) {
+      for (const [k, v] of Object.entries(entry.attrs)) {
+        el.setAttribute(k, v);
+      }
+    }
+    if (entry.body) el.textContent = entry.body;
+    document.head.appendChild(el);
+  }
+
   private setBodyScroll(mobile: boolean) {
     const overflow = mobile ? 'auto' : 'hidden';
     document.documentElement.style.overflow = overflow;
@@ -458,6 +484,13 @@ export class ViewerApp extends LitElement {
         link.rel = 'stylesheet';
         link.href = fontUrl;
         document.head.appendChild(link);
+      }
+
+      // Inject deck-level head entries (link/script/style) for canvas slides.
+      if (Array.isArray(this.deck.head)) {
+        for (const entry of this.deck.head) {
+          this.injectHeadEntry(entry);
+        }
       }
 
       // Load comments
@@ -792,11 +825,12 @@ export class ViewerApp extends LitElement {
               <slide-renderer
                 .slide=${slide}
                 .editable=${this.editMode}
+                .deckStylesheet=${this.deck.stylesheet ?? ''}
                 @slide-content-changed=${this.onSlideContentChanged}
                 @show-tooltip=${this.onShowTooltip}
                 @hide-tooltip=${this.onHideTooltip}
               ></slide-renderer>
-              ${this.editMode && slide.layout !== 'section_break' ? html`
+              ${this.editMode && slide.layout !== 'section_break' && slide.layout !== 'canvas' ? html`
                 <image-drop-zone
                   .hasImage=${!!(slide.content as Record<string, unknown>).image_url}
                   @image-uploaded=${this.onImageUploaded}
@@ -886,7 +920,7 @@ export class ViewerApp extends LitElement {
       <div class="presenter-layout main-area">
         <div class="slide-wrapper" style="width:${this.slideWidth}px;height:${this.slideHeight}px">
           <div class="slide-container" style="transform:scale(${scaleFactor});${customVars}">
-            <slide-renderer .slide=${slide} .editable=${false}></slide-renderer>
+            <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deck?.stylesheet ?? ''}></slide-renderer>
           </div>
         </div>
         <div class="presenter-counter">
@@ -904,7 +938,7 @@ export class ViewerApp extends LitElement {
         ${this.deck.slides.map(slide => html`
           <div class="mobile-slide">
             <div class="slide-container" style="zoom:${(window.innerWidth * 0.95) / SLIDE_WIDTH};${customVars}">
-              <slide-renderer .slide=${slide} .editable=${false}></slide-renderer>
+              <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deck?.stylesheet ?? ''}></slide-renderer>
             </div>
           </div>
         `)}
@@ -920,7 +954,7 @@ export class ViewerApp extends LitElement {
         ${this.deck.slides.map(slide => html`
           <div class="slide-wrapper print-mode">
             <div class="slide-container" style="${customVars}">
-              <slide-renderer .slide=${slide} .editable=${false}></slide-renderer>
+              <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deck?.stylesheet ?? ''}></slide-renderer>
             </div>
           </div>
         `)}

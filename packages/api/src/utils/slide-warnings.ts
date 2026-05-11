@@ -29,6 +29,7 @@ const LAYOUT_FIELDS: Record<string, string[]> = {
   quadrant:          ['title', 'body', 'bullets', 'x_label', 'y_label', 'quadrant_labels', 'items'],
   venn_diagram:      ['title', 'body', 'circles', 'overlaps'],
   chart:             ['title', 'chart_type', 'data'],
+  canvas:            ['html', 'css', 'js', 'static_render_only'],
 };
 
 // Pre-compute sets for fast lookup

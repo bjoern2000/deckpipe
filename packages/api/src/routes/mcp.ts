@@ -31,7 +31,16 @@ RICH BULLETS
 
 CUSTOMIZATION
 - heading_font / body_font: any Google Font name (default: DM Sans).
-- accent_color: hex color like "#ff6600" (default: #7c3aed purple).`;
+- accent_color: hex color like "#ff6600" (default: #7c3aed purple).
+
+CANVAS LAYOUT (agent-authored HTML)
+- Beyond the 25 templated layouts, the "canvas" layout lets you write a slide as raw HTML/CSS/JS — full design freedom inside a 960×540 box.
+- Fields: { html (required), css?, js?, static_render_only? }. The slide renders in a shadow root, so your CSS is scoped automatically; styles cannot leak in or out.
+- Deck-level "stylesheet" is global CSS adopted by every canvas slide — define your design system once (typography, spacing, colors, components) and reference it from each slide's html.
+- Deck-level "head" is an array of { tag, attrs?, body? } entries injected into the page head (e.g. { tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } } to enable Tailwind utilities, or { tag: "link", attrs: { rel: "stylesheet", href: "..." } } for icon fonts).
+- CSS variables --dp-accent, --dp-text-title, --dp-font-heading, --dp-font-body are forwarded into every canvas slide — prefer them over hardcoded colors so accent_color stays consistent.
+- For commenting: mark elements you want feedback on with data-dp-anchor="<stable-name>" (e.g. data-dp-anchor="hero-title"). Preserve these IDs across edits — they keep comment threads attached.
+- "js" runs as a module on slide enter with (root, slide) in scope; return a function to clean up on slide exit. Skipped in print mode if static_render_only is true.`;
 
 function registerTools(server: McpServer) {
   server.tool(
@@ -64,6 +73,7 @@ function registerTools(server: McpServer) {
 - venn_diagram: { title?, body?, circles[]: { label, items?[] } (2-3 circles, required), overlaps?[]: { sets: [circle indices], label } (max 4) }
 - chart: { chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title? }
 - closing: { heading?, subheading?, contact_lines?[], image_url? }
+- canvas: { html (required, agent-authored HTML), css?, js?, static_render_only? } — full design freedom in a shadow-root sandbox. Use deck-level stylesheet + head for shared CSS and CDN libraries (e.g. Tailwind). Mark commentable elements with data-dp-anchor="<id>".
 
 IMPORTANT:
 - To modify this deck later, use update_deck. NEVER create a new deck to make changes — it loses the URL and comment history.
@@ -76,6 +86,12 @@ IMPORTANT:
       body_font: z.string().optional().describe('Google Font for body text (e.g. "Inter"). Default: DM Sans.'),
       accent_color: z.string().optional().describe('Hex color (e.g. "#ff6600"). Overrides default purple accent.'),
       agent_name: z.string().optional().describe('Your agent name (e.g. "Acme Strategy Agent"). Shown as author on comments you post. Set this once at deck creation.'),
+      stylesheet: z.string().optional().describe('Optional global CSS string adopted by every canvas slide. Define your design system once (typography, components, color tokens) and reference classes from each slide. Ignored by non-canvas layouts.'),
+      head: z.array(z.object({
+        tag: z.enum(['link', 'script', 'style']),
+        attrs: z.record(z.string()).optional(),
+        body: z.string().optional(),
+      })).optional().describe('Optional <link>/<script>/<style> entries injected into the page head — used by canvas slides. Example: [{ tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } }] to enable Tailwind.'),
       slides: z.array(z.object({
         layout: z.enum(LayoutNames),
         content: z.record(z.unknown()).describe('Content fields (vary by layout). All layouts support optional key_takeaway.'),
@@ -144,6 +160,12 @@ slides (content edit) examples:
       heading_font: z.string().optional().describe('Google Font for headings (e.g. "Playfair Display")'),
       body_font: z.string().optional().describe('Google Font for body text (e.g. "Inter")'),
       accent_color: z.string().optional().describe('Hex color (e.g. "#ff6600")'),
+      stylesheet: z.string().nullable().optional().describe('Replace the deck-level global CSS string used by canvas slides. Pass null to clear.'),
+      head: z.array(z.object({
+        tag: z.enum(['link', 'script', 'style']),
+        attrs: z.record(z.string()).optional(),
+        body: z.string().optional(),
+      })).nullable().optional().describe('Replace the deck-level head entries. Pass null to clear.'),
       slide_operations: z.array(z.object({
         op: z.enum(['delete', 'insert', 'move', 'replace']).describe('Operation type: "insert" adds a new slide, "delete" removes one, "move" reorders, "replace" swaps layout+content'),
         index: z.number().optional().describe('Target slide index. Required for insert (position to insert at), delete, and replace.'),
@@ -277,14 +299,27 @@ For image_gallery: pass an array of IDs as image_refs instead of images.`,
         { name: 'venn_diagram', description: 'Venn diagram with 2 or 3 overlapping circles. Centered when no text; text-left/diagram-right when title/body provided.', fields: 'circles[]: { label, items?[] } (2-3 items, required), overlaps?[]: { sets: [circle indices], label } (max 4), title?, body?, key_takeaway?' },
         { name: 'chart', description: 'Bar, line, pie, or donut chart from structured data.', fields: 'chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title?, key_takeaway?' },
         { name: 'closing', description: 'Thank you / contact info slide. Use as final slide.', fields: 'heading?, subheading?, contact_lines?[], image_url?, key_takeaway?' },
+        { name: 'canvas', description: 'Agent-authored HTML/CSS/JS slide. Full design freedom in a 960×540 shadow-rooted sandbox. Use for custom visualizations, interactive elements, or designs the templated layouts cannot express.', fields: 'html (required, agent-authored HTML), css?, js?, static_render_only?, key_takeaway?' },
       ];
       const customization = {
         heading_font: 'Optional Google Font for headings (e.g. "Playfair Display"). Default: DM Sans.',
         body_font: 'Optional Google Font for body text (e.g. "Inter"). Default: DM Sans.',
         accent_color: 'Optional hex color (e.g. "#ff6600"). Default: #7c3aed (purple).',
+        stylesheet: 'Optional deck-level global CSS string. Adopted by every canvas slide via shadow-root adoptedStyleSheets. Define your design system once and reference it from each slide. Up to 100KB.',
+        head: 'Optional deck-level <link>/<script>/<style> entries injected into the page head. Use to load CDN libraries (Tailwind, Chart.js, etc.) or external fonts/icon sets that canvas slides depend on.',
       };
       const style_guide = {
         images: 'image_gallery works best with 2-5 portrait images of consistent aspect ratio. full_image needs high-res landscape images. Use search_images with orientation "landscape" for full_image/image_and_text, "portrait" for image_gallery.',
+        canvas: [
+          'Render area is 960×540 — design at that fixed size; the viewer scales the slide to fit.',
+          'Each canvas slide is mounted into an open shadow root, so your CSS is auto-scoped — no need for BEM/prefixes.',
+          'Prefer Tailwind for fast layout: enable it once via deck.head: [{ tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } }]. Then write utility-class HTML.',
+          'Use CSS variables already provided: var(--dp-accent), var(--dp-text-title), var(--dp-text-body), var(--dp-font-heading), var(--dp-font-body). This keeps canvas slides consistent with the deck theme and accent_color.',
+          'Define reusable styles once in deck.stylesheet (e.g. .dp-hero, .dp-stat-card) instead of duplicating CSS in every slide.css.',
+          'Mark commentable elements with data-dp-anchor="<stable-id>" (e.g. <h1 data-dp-anchor="hero-title">). Preserve these IDs across edits so comment threads remain attached. Comments without an anchor target fall back to slide-level.',
+          'js runs when the slide enters view. Signature: (root, slide) => optional cleanup function. Use for animations, interactivity. Set static_render_only: true to skip JS in print/PDF.',
+          'Do NOT load arbitrary user-controlled scripts; the canvas runs in the parent JS context, not an iframe.',
+        ],
       };
       return { content: [{ type: 'text' as const, text: JSON.stringify({ layouts, customization, style_guide }, null, 2) }] };
     }
@@ -409,7 +444,7 @@ mcpRouter.post('/', async (req, res) => {
       if (transport.sessionId) transports.delete(transport.sessionId);
     };
 
-    const mcpServer = new McpServer({ name: 'deckpipe', version: '0.2.15' }, { instructions: INSTRUCTIONS });
+    const mcpServer = new McpServer({ name: 'deckpipe', version: '0.3.0' }, { instructions: INSTRUCTIONS });
     registerTools(mcpServer);
     await mcpServer.connect(transport);
     await transport.handleRequest(req, res);

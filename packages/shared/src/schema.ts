@@ -324,6 +324,15 @@ const VennDiagramContentSchema = z.object({
   overlaps: z.array(VennOverlapSchema).max(4).optional(),
 });
 
+// --- Canvas (agent-authored HTML/CSS/JS) ---
+const CanvasContentSchema = z.object({
+  ...BaseContentFields,
+  html: z.string().min(1).max(200_000),
+  css: z.string().max(50_000).optional(),
+  js: z.string().max(50_000).optional(),
+  static_render_only: z.boolean().optional(),
+});
+
 // --- Chart ---
 const ChartDatasetSchema = z.object({
   label: z.string().optional(),
@@ -374,6 +383,7 @@ export const SlideSchema = z.discriminatedUnion('layout', [
   z.object({ layout: z.literal('quadrant'), ...SlideIdField, content: QuadrantContentSchema }),
   z.object({ layout: z.literal('venn_diagram'), ...SlideIdField, content: VennDiagramContentSchema }),
   z.object({ layout: z.literal('chart'), ...SlideIdField, content: ChartContentSchema }),
+  z.object({ layout: z.literal('canvas'), ...SlideIdField, content: CanvasContentSchema }),
 ]);
 export type Slide = z.infer<typeof SlideSchema>;
 
@@ -384,8 +394,17 @@ export const LayoutNames = [
   'timeline', 'comparison', 'code', 'callout',
   'icons_and_text', 'team', 'embed', 'pros_and_cons',
   'agenda', 'swot', 'quadrant', 'venn_diagram', 'chart', 'closing',
+  'canvas',
 ] as const;
 export type Layout = typeof LayoutNames[number];
+
+// --- Head entry (extra <link>/<script>/<style> tags injected into the deck container) ---
+export const HeadEntrySchema = z.object({
+  tag: z.enum(['link', 'script', 'style']),
+  attrs: z.record(z.string()).optional(),
+  body: z.string().max(50_000).optional(),
+});
+export type HeadEntry = z.infer<typeof HeadEntrySchema>;
 
 // --- Deck creation ---
 export const CreateDeckSchema = z.object({
@@ -394,6 +413,8 @@ export const CreateDeckSchema = z.object({
   body_font: z.string().min(1).max(100).optional(),
   accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   agent_name: z.string().min(1).max(100).optional(),
+  stylesheet: z.string().max(100_000).optional(),
+  head: z.array(HeadEntrySchema).max(20).optional(),
   slides: z.array(SlideSchema).min(1).max(50),
 });
 export type CreateDeckInput = z.infer<typeof CreateDeckSchema>;
@@ -422,10 +443,12 @@ export const UpdateDeckSchema = z.object({
   heading_font: z.string().min(1).max(100).optional(),
   body_font: z.string().min(1).max(100).optional(),
   accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  stylesheet: z.string().max(100_000).nullable().optional(),
+  head: z.array(HeadEntrySchema).max(20).nullable().optional(),
   slides: z.array(SlideUpdateSchema).optional(),
   slide_operations: z.array(SlideOperationSchema).max(50).optional(),
 }).refine(
-  (data) => data.title !== undefined || data.heading_font !== undefined || data.body_font !== undefined || data.accent_color !== undefined || data.slides !== undefined || data.slide_operations !== undefined,
+  (data) => data.title !== undefined || data.heading_font !== undefined || data.body_font !== undefined || data.accent_color !== undefined || data.stylesheet !== undefined || data.head !== undefined || data.slides !== undefined || data.slide_operations !== undefined,
   { message: 'At least one field must be provided for update' }
 );
 export type UpdateDeckInput = z.infer<typeof UpdateDeckSchema>;
@@ -438,6 +461,8 @@ export const DeckResponseSchema = z.object({
   body_font: z.string().nullable().optional(),
   accent_color: z.string().nullable().optional(),
   agent_name: z.string().nullable().optional(),
+  stylesheet: z.string().nullable().optional(),
+  head: z.array(HeadEntrySchema).nullable().optional(),
   slides: z.array(SlideSchema),
   created_at: z.string(),
   updated_at: z.string(),

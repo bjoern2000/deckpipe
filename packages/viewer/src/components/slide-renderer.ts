@@ -25,6 +25,7 @@ import './slide-swot.js';
 import './slide-quadrant.js';
 import './slide-venn-diagram.js';
 import './slide-chart.js';
+import './slide-canvas.js';
 
 interface SlideData {
   layout: string;
@@ -43,6 +44,7 @@ export class SlideRenderer extends LitElement {
 
   @property({ type: Object }) slide: SlideData = { layout: 'title', content: {} };
   @property({ type: Boolean }) editable = false;
+  @property() deckStylesheet = '';
 
   render() {
     const { layout, content } = this.slide;
@@ -304,6 +306,15 @@ export class SlideRenderer extends LitElement {
           key-takeaway=${c.key_takeaway || ''}
           .editable=${this.editable}
         ></slide-chart>`;
+
+      case 'canvas':
+        return html`<slide-canvas
+          .html=${(c.html as string) || ''}
+          .css=${(c.css as string) || ''}
+          .js=${(c.js as string) || ''}
+          ?static-render-only=${!!c.static_render_only}
+          .deckStylesheet=${this.deckStylesheet}
+        ></slide-canvas>`;
 
       default:
         return html`<div style="padding:48px;color:#c00">Unknown layout: ${layout}</div>`;

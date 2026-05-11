@@ -35,6 +35,15 @@ CUSTOMIZATION
 - heading_font / body_font: any Google Font name (default: DM Sans).
 - accent_color: hex color like "#ff6600" (default: #7c3aed purple).
 
+CANVAS LAYOUT (agent-authored HTML)
+- Beyond the 25 templated layouts, the "canvas" layout lets you write a slide as raw HTML/CSS/JS — full design freedom inside a 960×540 box.
+- Fields: { html (required), css?, js?, static_render_only? }. The slide renders in a shadow root, so your CSS is scoped automatically; styles cannot leak in or out.
+- Deck-level "stylesheet" is global CSS adopted by every canvas slide — define your design system once (typography, spacing, colors, components) and reference it from each slide's html.
+- Deck-level "head" is an array of { tag, attrs?, body? } entries injected into the page head (e.g. { tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } } to enable Tailwind utilities, or { tag: "link", attrs: { rel: "stylesheet", href: "..." } } for icon fonts).
+- CSS variables --dp-accent, --dp-text-title, --dp-font-heading, --dp-font-body are forwarded into every canvas slide — prefer them over hardcoded colors so accent_color stays consistent.
+- For commenting: mark elements you want feedback on with data-dp-anchor="<stable-name>" (e.g. data-dp-anchor="hero-title"). Preserve these IDs across edits — they keep comment threads attached.
+- "js" runs as a module on slide enter with (root, slide) in scope; return a function to clean up on slide exit. Skipped in print mode if static_render_only is true.
+
 ---
 
 ## create_deck
@@ -69,6 +78,7 @@ Create a new slide deck. Returns viewer_url (owner link with edit key) and share
 - venn_diagram: { title?, body?, circles[]: { label, items?[] } (2-3 circles, required), overlaps?[]: { sets: [circle indices], label } (max 4) }
 - chart: { chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title? }
 - closing: { heading?, subheading?, contact_lines?[], image_url? }
+- canvas: { html (required, agent-authored HTML), css?, js?, static_render_only? } — full design freedom in a shadow-root sandbox. Use deck-level stylesheet + head for shared CSS and CDN libraries (e.g. Tailwind). Mark commentable elements with data-dp-anchor="<id>".
 
 ### Parameters
 
@@ -79,8 +89,10 @@ Create a new slide deck. Returns viewer_url (owner link with edit key) and share
 | `body_font` | string | no | Google Font for body text (e.g. "Inter"). Default: DM Sans. |
 | `accent_color` | string | no | Hex color (e.g. "#ff6600"). Overrides default purple accent. |
 | `agent_name` | string | no | Your agent name (e.g. "Acme Strategy Agent"). Shown as author on comments you post. Set this once at deck creation. |
+| `stylesheet` | string | no | Global CSS adopted by every canvas slide. Define a design system once and reference it from each slide. Up to 100KB. |
+| `head` | array | no | `<link>`/`<script>`/`<style>` entries injected into the page head. Use to load CDN libraries (Tailwind, Chart.js, etc.). |
 | `slides` | array | yes | Array of slides |
-| `slides[].layout` | enum | yes | One of the 25 layout types |
+| `slides[].layout` | enum | yes | One of the 26 layout types (25 templated + canvas) |
 | `slides[].content` | object | yes | Content fields (vary by layout). All layouts support optional key_takeaway. |
 
 ---
@@ -130,6 +142,8 @@ slides (content edit) examples:
 | `heading_font` | string | no | Google Font for headings (e.g. "Playfair Display") |
 | `body_font` | string | no | Google Font for body text (e.g. "Inter") |
 | `accent_color` | string | no | Hex color (e.g. "#ff6600") |
+| `stylesheet` | string \| null | no | Replace deck-level global CSS for canvas slides. Pass null to clear. |
+| `head` | array \| null | no | Replace deck-level head entries. Pass null to clear. |
 | `slide_operations` | array | no | Structural changes: add, remove, reorder, or replace slides. |
 | `slide_operations[].op` | enum | yes | "insert", "delete", "move", or "replace" |
 | `slide_operations[].index` | number | no | Target slide index. Required for insert, delete, replace. |

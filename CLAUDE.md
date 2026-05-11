@@ -89,10 +89,21 @@ All MCP tool descriptions, parameter schemas, and the server instructions string
 
 When you update an MCP tool:
 1. Edit `packages/mcp-core/src/index.ts`.
-2. Bump the `MCP_VERSION` in `packages/api/src/routes/mcp.ts` and the `version` in `packages/mcp/src/index.ts` + `packages/mcp/package.json` if the change is user-facing.
+2. Bump the `MCP_VERSION` in `packages/api/src/routes/mcp.ts` and the `version` in `packages/mcp/src/index.ts` + `packages/mcp/package.json` + `packages/mcp-core/package.json` if the change is user-facing.
 3. Mirror any agent-facing copy changes to `docs/mcp-agent-instructions.md` (review-friendly markdown copy).
 
 There is no second file to keep in sync.
+
+### Publishing `deckpipe-mcp` to npm
+
+`packages/mcp` uses esbuild (`build.mjs`) to bundle `@deckpipe/mcp-core` inline into `dist/index.js` — the published tarball has no workspace specifier and runtime deps are limited to `@modelcontextprotocol/sdk` and `zod`. `prepublishOnly` builds mcp-core first, then runs the bundle.
+
+```bash
+npm run -w packages/mcp build     # produces self-contained dist/index.js
+cd packages/mcp && npm publish    # prepublishOnly handles the chain
+```
+
+To smoke-test the published artifact without actually publishing: `npm pack /path/to/packages/mcp` and `npm install` the resulting tarball in a scratch directory.
 
 ## Licensing
 

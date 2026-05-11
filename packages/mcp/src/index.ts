@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * deckpipe-mcp — standalone MCP server.
  *

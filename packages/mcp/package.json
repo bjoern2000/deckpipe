@@ -8,9 +8,9 @@
     "deckpipe-mcp": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "node build.mjs",
     "dev": "tsx watch src/index.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run -w @deckpipe/mcp-core build && npm run build"
   },
   "keywords": [
     "mcp",
@@ -23,12 +23,13 @@
   ],
   "license": "FSL-1.1-Apache-2.0",
   "dependencies": {
-    "@deckpipe/mcp-core": "*",
     "@modelcontextprotocol/sdk": "^1.28.0",
     "zod": "^3.24.3"
   },
   "devDependencies": {
+    "@deckpipe/mcp-core": "*",
     "@types/node": "^25.5.0",
+    "esbuild": "^0.25.12",
     "tsx": "^4.19.3"
   },
   "files": [

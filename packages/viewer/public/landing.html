@@ -4,16 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>deckpipe — slide decks at prompt speed</title>
-  <meta name="description" content="deckpipe is the agent-first slide deck engine. your agent describes slides as json; deckpipe renders, themes, and exports them. MCP server for claude, cursor, and claude code." />
+  <meta name="description" content="deckpipe is the agent-first slide deck engine. your agent designs each slide as HTML, CSS, and JavaScript on a sandboxed canvas; deckpipe themes, hosts, and renders every deck at a shareable URL. MCP server for any AI agent." />
   <meta name="keywords" content="AI slide deck, MCP server, AI presentations, Claude slides, agent-first, slide deck API, AI presentation tool, deckpipe" />
   <link rel="canonical" href="https://deckpipe.dev" />
   <meta property="og:title" content="deckpipe — slide renderer for agents" />
-  <meta property="og:description" content="agent-first slide deck engine. connect the MCP, prompt your agent, get a deck." />
+  <meta property="og:description" content="agent-first slide canvas. connect the MCP, prompt your agent, get a deck." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://deckpipe.dev" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="deckpipe — slide renderer for agents" />
-  <meta name="twitter:description" content="agent-first slide deck engine. connect the MCP, prompt your agent, get a deck." />
+  <meta name="twitter:description" content="agent-first slide canvas. connect the MCP, prompt your agent, get a deck." />
   <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
@@ -27,7 +27,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "deckpipe",
-    "description": "agent-first slide deck renderer. AI agents describe slides as json; deckpipe renders, themes, and exports them. available as an MCP server for claude, cursor, and other AI tools.",
+    "description": "agent-first slide deck renderer. AI agents design each slide as HTML, CSS, and JavaScript on a sandboxed canvas; deckpipe themes, hosts, and renders them. available as an MCP server for any AI agent.",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Any",
     "url": "https://deckpipe.dev",
@@ -946,7 +946,7 @@
       </div>
       <div class="nav-links">
         <a href="#connect">connect</a>
-        <a href="#layouts" class="hide-sm">layouts</a>
+        <a href="#canvas" class="hide-sm">canvas</a>
 <a href="https://github.com/bjoern2000/deckpipe-mcp" target="_blank" rel="noopener">github</a>
       </div>
     </nav>
@@ -961,7 +961,7 @@
       </h1>
 
       <p class="subtagline reveal reveal-3">
-        deckpipe is an MCP server that gives your AI agent tools to create and edit compelling slide decks.
+        deckpipe gives your agent a free canvas for slides. HTML, CSS, JS — no templates, no layouts, no limits.
       </p>
 
       <div class="cta-row reveal reveal-4">
@@ -994,29 +994,29 @@
       <div class="section-label"><span class="num">01</span> what it does</div>
       <h2 class="section-title"><span class="hl">rendering engine for agents.</span></h2>
       <p class="section-lede">
-        your agent describes a deck as json. deckpipe handles layout, typography, and hosting.
+        your agent writes each slide as HTML, CSS, and JS. deckpipe sandboxes, themes, and hosts the deck.
       </p>
 
       <div class="features">
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 01</span></div>
-          <h3 class="feat-title">layouts</h3>
-          <p class="feat-body">title, bullets, stats, quotes, timelines, SWOT, charts, galleries. your agent chooses a layout. deckpipe handles the styling.</p>
+          <h3 class="feat-title">code canvas</h3>
+          <p class="feat-body">every slide is HTML, CSS, and JS in a sandboxed 1920×1080 shadow root. your agent designs pixel-perfect — no template lock-in.</p>
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 02</span></div>
           <h3 class="feat-title">MCP native</h3>
-          <p class="feat-body">remote server at <code>/mcp</code> for claude.ai and cursor. local install via <code>npx deckpipe-mcp</code> for claude code.</p>
+          <p class="feat-body">remote server at <code>/mcp</code> for any MCP-aware agent. local install via <code>npx deckpipe-mcp</code> for stdio transport.</p>
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 03</span></div>
-          <h3 class="feat-title">theming</h3>
-          <p class="feat-body">any google font, any accent color, per-slide takeaways. your agent changes one field; the whole deck re-renders.</p>
+          <h3 class="feat-title">design tokens</h3>
+          <p class="feat-body">deck-level <code>stylesheet</code> plus <code>--dp-font-*</code> variables flow into every slide. change one field; the deck re-renders.</p>
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 04</span></div>
           <h3 class="feat-title">live editing</h3>
-          <p class="feat-body">PATCH with deep merge. <code>insert</code>, <code>delete</code>, <code>move</code>, <code>replace</code> operations. your agent edits one bullet without re-sending the deck.</p>
+          <p class="feat-body">click any text in a canvas slide to edit it. structural changes via <code>insert</code>, <code>delete</code>, <code>move</code>, <code>replace</code>. your agent patches one element without re-sending the deck.</p>
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 05</span></div>
@@ -1025,8 +1025,8 @@
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 06</span></div>
-          <h3 class="feat-title">stock photos</h3>
-          <p class="feat-body">your agent searches unsplash and drops photos into slides. attribution and re-hosting are automatic.</p>
+          <h3 class="feat-title">load any library</h3>
+          <p class="feat-body">declare <code>&lt;script&gt;</code> or <code>&lt;link&gt;</code> entries on the deck <code>head</code>. Tailwind, Chart.js, lucide, icon fonts — wherever your agent needs them.</p>
         </div>
       </div>
     </section>
@@ -1162,49 +1162,47 @@
       </div>
     </section>
 
-    <!-- ═══ LAYOUTS ═══ -->
-    <section id="layouts">
-      <div class="section-label"><span class="num">06</span> layouts</div>
-      <h2 class="section-title"><span class="hl">layouts your agent can use.</span></h2>
+    <!-- ═══ CANVAS ═══ -->
+    <section id="canvas">
+      <div class="section-label"><span class="num">06</span> canvas</div>
+      <h2 class="section-title"><span class="hl">the slide is code.</span></h2>
       <p class="section-lede">
-        each layout has its own typed content shape. your agent chooses the layout that fits the slide.
+        every slide is <code class="ic">{ html, css?, js? }</code>. mounted in a shadow root, themed by the deck, addressable by comments.
       </p>
       <div class="pill-group">
-        <div class="pill">title</div>
-        <div class="pill">title_and_body</div>
-        <div class="pill">title_and_bullets</div>
-        <div class="pill">title_and_table</div>
-        <div class="pill">two_columns</div>
-        <div class="pill">section_break</div>
-        <div class="pill">image_and_text</div>
-        <div class="pill">image_gallery</div>
-        <div class="pill">stats</div>
-        <div class="pill">quote</div>
-        <div class="pill">full_image</div>
-        <div class="pill">timeline</div>
-        <div class="pill">comparison</div>
-        <div class="pill">code</div>
-        <div class="pill">callout</div>
-        <div class="pill">icons_and_text</div>
-        <div class="pill">team</div>
-        <div class="pill">embed</div>
-        <div class="pill">pros_and_cons</div>
-        <div class="pill">agenda</div>
-        <div class="pill">swot</div>
-        <div class="pill">quadrant</div>
-        <div class="pill">venn_diagram</div>
-        <div class="pill">chart</div>
-        <div class="pill">closing</div>
+        <div class="pill with-desc">
+          <span class="name">html</span>
+          <span class="desc">slide markup, designed at 1920×1080</span>
+        </div>
+        <div class="pill with-desc">
+          <span class="name">css</span>
+          <span class="desc">scoped to this slide, adopted into the shadow root</span>
+        </div>
+        <div class="pill with-desc">
+          <span class="name">js</span>
+          <span class="desc">runs on slide enter with (root, slide); returns a cleanup function</span>
+        </div>
+        <div class="pill with-desc">
+          <span class="name">stylesheet <em style="font-style: normal; color: var(--fg-mute); font-weight: 400;">(deck)</em></span>
+          <span class="desc">global CSS adopted by every canvas slide</span>
+        </div>
+        <div class="pill with-desc">
+          <span class="name">head <em style="font-style: normal; color: var(--fg-mute); font-weight: 400;">(deck)</em></span>
+          <span class="desc">&lt;script&gt; / &lt;link&gt; entries injected on the page</span>
+        </div>
+        <div class="pill with-desc">
+          <span class="name">static_render_only</span>
+          <span class="desc">skip JS in print / PDF export</span>
+        </div>
       </div>
-      <p class="see-all">▸ <a href="https://deckpipe.dev/d/dk_KRtXiuKV/the-clean-energy-transition-2026-outlook" target="_blank" rel="noopener">see every layout in one deck</a></p>
     </section>
 
     <!-- ═══ CUSTOMIZATION ═══ -->
     <section id="customization">
-      <div class="section-label"><span class="num">07</span> theming</div>
-      <h2 class="section-title"><span class="hl">theming.</span></h2>
+      <div class="section-label"><span class="num">07</span> design system</div>
+      <h2 class="section-title"><span class="hl">design system.</span></h2>
       <p class="section-lede">
-        theme settings live on the deck. your agent can change them at any time and the whole deck re-renders.
+        theming lives on the deck. tokens forward into every slide via CSS custom properties. change one field, the deck re-renders.
       </p>
       <div class="pill-group">
         <div class="pill with-desc">
@@ -1216,17 +1214,16 @@
           <span class="desc">any google font for body text</span>
         </div>
         <div class="pill with-desc">
-          <span class="name">accent_color</span>
-          <span class="desc">hex color, applied across the deck</span>
+          <span class="name">stylesheet</span>
+          <span class="desc">deck-level CSS adopted by every slide</span>
         </div>
         <div class="pill with-desc">
-          <span class="name">key_takeaway</span>
-          <span class="desc">per-slide highlight box</span>
+          <span class="name">head</span>
+          <span class="desc">inject CDN scripts and stylesheets</span>
         </div>
       </div>
       <p class="see-all" style="margin-top: 36px;">
-        the <span class="ic">icons_and_text</span> layout takes any <a href="https://lucide.dev/icons/" target="_blank" rel="noopener">lucide icon</a> by name
-        (e.g. <span class="ic">"clock"</span>, <span class="ic">"database"</span>) or any emoji.
+        on a canvas slide your agent can drop any <a href="https://lucide.dev/icons/" target="_blank" rel="noopener">lucide icon</a>, any emoji, or any image — it's just HTML.
       </p>
     </section>
 

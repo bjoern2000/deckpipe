@@ -311,7 +311,7 @@ export class ViewerApp extends LitElement {
           this.slideWidth = byHeight.w;
           this.slideHeight = byHeight.h;
         }
-        console.log(`[deckpipe] resize: ${this.slideWidth.toFixed(0)}x${this.slideHeight.toFixed(0)}, scale=${(this.slideWidth/960).toFixed(2)}`);
+        console.log(`[deckpipe] resize: ${this.slideWidth.toFixed(0)}x${this.slideHeight.toFixed(0)}, scale=${(this.slideWidth/SLIDE_WIDTH).toFixed(2)}`);
       });
       this.resizeObserver.observe(mainArea);
     }

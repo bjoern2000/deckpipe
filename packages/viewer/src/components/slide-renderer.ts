@@ -45,6 +45,7 @@ export class SlideRenderer extends LitElement {
   @property({ type: Object }) slide: SlideData = { layout: 'title', content: {} };
   @property({ type: Boolean }) editable = false;
   @property() deckStylesheet = '';
+  @property({ type: Boolean }) disableJs = false;
 
   render() {
     const { layout, content } = this.slide;
@@ -313,6 +314,8 @@ export class SlideRenderer extends LitElement {
           .css=${(c.css as string) || ''}
           .js=${(c.js as string) || ''}
           ?static-render-only=${!!c.static_render_only}
+          .disableJs=${this.disableJs}
+          .editable=${this.editable}
           .deckStylesheet=${this.deckStylesheet}
         ></slide-canvas>`;
 

@@ -3,99 +3,91 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { Router } from 'express';
-import { LayoutNames } from '@deckpipe/shared';
 import { config } from '../config.js';
 
-const INSTRUCTIONS = `Deckpipe is a slide deck rendering engine. You describe slides as JSON (layout + content); Deckpipe renders, themes, and exports them. Each deck gets a shareable viewer URL.
+const INSTRUCTIONS = `Deckpipe is a slide deck rendering engine. You author each slide as HTML/CSS/JS — Deckpipe renders it inside a sandboxed 1920×1080 shadow root, themes it via deck-level CSS variables, and gives every deck a shareable viewer URL with built-in commenting.
 
 WORKFLOW
 - Use create_deck for NEW decks. Use update_deck to modify EXISTING decks.
 - NEVER recreate a deck to make changes. Recreating loses the URL, edit key, and comment history. Always update in place.
-- To iterate on a deck: get_deck (read current state + comments) → update_deck (make changes) → reply_to_comment (explain what you changed).
+- To iterate: get_deck (read current state + comments) → update_deck (make changes) → reply_to_comment (explain what you changed).
 - Check the "warnings" array in every create/update response. Fix unrecognized fields or unreachable image URLs with a follow-up update_deck call.
+
+THE CANVAS LAYOUT
+- Every slide is { layout: "canvas", content: { html (required), css?, js?, static_render_only?, key_takeaway? } }.
+- "html" is the full slide markup. Design at 1920×1080 — the viewer scales the slide to fit. CSS in "css" is scoped to this slide only; for shared styles use deck.stylesheet.
+- Each slide mounts in an open shadow root, so your CSS is auto-scoped — no need for BEM or class prefixes.
+- CSS variables forwarded into every slide: var(--dp-accent), var(--dp-text-title), var(--dp-text-body), var(--dp-font-heading), var(--dp-font-body). Use these so accent_color and font choices stay consistent across the deck.
+- "js" runs on slide enter with (root, slide) in scope. Return a cleanup function to run on slide exit (clear timers, detach listeners). Set static_render_only: true to skip JS in print/PDF.
+
+DECK-LEVEL THEMING
+- stylesheet: global CSS string adopted by every canvas slide. Define your design system once (typography, color tokens, reusable card/grid classes) and reference it from each slide's html. Up to 100KB.
+- head: array of { tag, attrs?, body? } entries injected into the page head. Use to load CDN libraries (Tailwind, Chart.js, icon fonts) that canvas slides depend on. Example: [{ tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } }].
+- accent_color / heading_font / body_font are forwarded as CSS variables.
+
+COMMENTING
+- Reviewers can leave comments on ANY DOM element in a canvas slide — Deckpipe auto-assigns a content_path to every element at render time.
+- To make a comment thread STABLE across edits, mark the target element with data-dp-anchor="<stable-name>" (e.g. data-dp-anchor="hero-title"). Preserve those IDs across updates so the thread stays attached.
+- Comments on unmarked elements use auto:<index> paths that are stable within a render but may shift if you restructure the HTML. Use anchors for anything you'll iterate on.
+
+INLINE EDITS
+- The viewer's edit mode makes text-bearing leaf elements (h1, p, span, etc.) contenteditable. On blur the full html is saved back via PATCH.
+- Your "js" should be resilient to text changes — don't rely on exact text strings to find elements; use selectors or data attributes.
+
+IMAGES
+- Use search_images to find stock photos (Unsplash). The returned id is for use as image_ref via REST; in canvas slides, also fine to use the returned url directly in your <img src>. Attribution/download tracking still applies — include a credit caption.
+- Use upload_image to host your own images (PNG/JPG/WebP, base64-encoded). Returns a hosted URL you can put in <img src>.
 
 CONTENT STYLE
 - Keep text short, crisp, and scannable. Use shorthand phrases, not full sentences.
-- Bullets: 5-8 words max. Stats: abbreviate ("2.4M" not "2,400,000"). Quotes: under 30 words.
-- All text fields support markdown: **bold**, *italic*, \`code\`, [links](url), lists. Body fields support full block markdown.
+- Stats: abbreviate ("2.4M" not "2,400,000"). Quotes: under 30 words. Headlines: ≤ 8 words.
+- All text fields support markdown in key_takeaway. The html field is raw HTML.
 
-IMAGES
-- Use search_images to find stock photos (Unsplash). It returns image IDs — use them as image_ref in your slides. Attribution, URLs, and download tracking are handled automatically.
-- Use search_images with multiple queries in one call to find images for several slides at once, rather than making separate calls per slide.
-- Use upload_image to host your own images (PNG/JPG/WebP, base64-encoded).
-- Use image_prompt instead of image_url to suggest an image the user should provide. Renders as a placeholder box with your descriptive text.
-
-RICH BULLETS
-- In layouts with bullets (title_and_bullets, comparison, swot, pros_and_cons, quadrant), bullets can be strings or objects: { text, detail?, sources?: [{ label, url? }] }.
-- "detail" adds a hover tooltip (info icon). "sources" adds footnote citations (superscript numbers).
-
-CUSTOMIZATION
-- heading_font / body_font: any Google Font name (default: DM Sans).
-- accent_color: hex color like "#ff6600" (default: #7c3aed purple).
-
-CANVAS LAYOUT (agent-authored HTML)
-- Beyond the 25 templated layouts, the "canvas" layout lets you write a slide as raw HTML/CSS/JS — full design freedom inside a 960×540 box.
-- Fields: { html (required), css?, js?, static_render_only? }. The slide renders in a shadow root, so your CSS is scoped automatically; styles cannot leak in or out.
-- Deck-level "stylesheet" is global CSS adopted by every canvas slide — define your design system once (typography, spacing, colors, components) and reference it from each slide's html.
-- Deck-level "head" is an array of { tag, attrs?, body? } entries injected into the page head (e.g. { tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } } to enable Tailwind utilities, or { tag: "link", attrs: { rel: "stylesheet", href: "..." } } for icon fonts).
-- CSS variables --dp-accent, --dp-text-title, --dp-font-heading, --dp-font-body are forwarded into every canvas slide — prefer them over hardcoded colors so accent_color stays consistent.
-- For commenting: mark elements you want feedback on with data-dp-anchor="<stable-name>" (e.g. data-dp-anchor="hero-title"). Preserve these IDs across edits — they keep comment threads attached.
-- "js" runs as a module on slide enter with (root, slide) in scope; return a function to clean up on slide exit. Skipped in print mode if static_render_only is true.`;
+LEGACY LAYOUTS
+- 25 templated layouts (title, title_and_bullets, stats, chart, swot, …) are deprecated and not advertised here. Existing decks using them still render unchanged. New slides should always use the "canvas" layout.`;
 
 function registerTools(server: McpServer) {
   server.tool(
     'create_deck',
     `Create a new slide deck. Returns viewer_url (owner link with edit key) and share_url (read-only).
 
-25 layouts — call list_layouts for full details, descriptions, and style guide. Content fields per layout (all support optional key_takeaway):
-- title: { title, subtitle?, image_url? }
-- title_and_body: { title, body, image_url?, image_prompt? }
-- title_and_bullets: { title, bullets[], image_url?, image_prompt? }
-- title_and_table: { title, table: { headers[], rows[][], highlight_column? } }
-- two_columns: { title, left: { heading, body }, right: { heading, body }, image_url?, image_prompt? }
-- section_break: { title }
-- image_and_text: { title, body, image_url (required unless image_prompt provided), image_prompt? }
-- image_gallery: { title?, caption?, images[] (2-5 URLs, required unless image_prompt provided), image_details?[], image_prompt? }
-- stats: { title?, metrics[]: { value, label } (2-4 items) }
-- quote: { quote, attribution?, image_url? }
-- full_image: { image_url (required unless image_prompt provided), image_prompt?, title?, subtitle? }
-- timeline: { title?, events[]: { label, title, description?, position?: 0-1 } (3-6 items) }
-- comparison: { title?, left: { heading, bullets[] }, right: { heading, bullets[] }, verdict? }
-- code: { title?, code (required), language?, caption? }
-- callout: { title?, value (required), label?, body? }
-- icons_and_text: { title?, items[]: { icon, heading, description? } (3-6 items) }
-- team: { title?, members[]: { name, role, bio?, image_url? } (1-6 items) }
-- embed: { title?, url (required), caption?, aspect_ratio?: "16:9"|"4:3"|"1:1" }
-- pros_and_cons: { title?, pros_heading?, cons_heading?, pros[], cons[] }
-- agenda: { title?, items[]: { topic, duration?, description? } (1-10 items) }
-- swot: { title?, strengths[], weaknesses[], opportunities[], threats[] (1-5 items each) }
-- quadrant: { title?, body?, bullets?[], x_label?, y_label?, quadrant_labels?[4] (order: [top-left, top-right, bottom-left, bottom-right]), items[]: { label, x: 0-1, y: 0-1 } (1-12 items) }
-- venn_diagram: { title?, body?, circles[]: { label, items?[] } (2-3 circles, required), overlaps?[]: { sets: [circle indices], label } (max 4) }
-- chart: { chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title? }
-- closing: { heading?, subheading?, contact_lines?[], image_url? }
-- canvas: { html (required, agent-authored HTML), css?, js?, static_render_only? } — full design freedom in a shadow-root sandbox. Use deck-level stylesheet + head for shared CSS and CDN libraries (e.g. Tailwind). Mark commentable elements with data-dp-anchor="<id>".
+Each slide is a canvas slide — you write the HTML/CSS/JS directly. Slide shape:
+{ layout: "canvas", content: { html (required), css?, js?, static_render_only?, key_takeaway? } }
+
+Design checklist:
+- Design at 1920×1080. The viewer scales to fit.
+- Define shared styles ONCE in deck.stylesheet (typography, color tokens, .card/.grid/.hero classes). Reference them from each slide's html.
+- Use CSS variables already provided: var(--dp-accent), var(--dp-text-title), var(--dp-text-body), var(--dp-font-heading), var(--dp-font-body). Don't hardcode the accent color — it's set by the accent_color field.
+- For Tailwind: add { tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } } to deck.head. Other CDN libs (Chart.js, Lottie, icon fonts) go in head too.
+- Mark commentable elements with data-dp-anchor="<stable-id>" so feedback threads survive edits.
+- Optional "js" runs (root, slide) on slide enter — return a cleanup function. Set static_render_only: true to skip JS in PDF export.
 
 IMPORTANT:
 - To modify this deck later, use update_deck. NEVER create a new deck to make changes — it loses the URL and comment history.
 - To iterate: get_deck (read current state + comments) → update_deck (make changes) → reply_to_comment (explain what you changed). The user resolves comments once satisfied.
-- Check the "warnings" array in the response and fix any issues with a follow-up update_deck call.
-- Use search_images to find stock photos — use the returned id as image_ref in your slides. For image_gallery, use image_refs (array of IDs).`,
+- Check the "warnings" array in the response and fix any issues with a follow-up update_deck call.`,
     {
       title: z.string().describe('Deck title'),
       heading_font: z.string().optional().describe('Google Font for headings (e.g. "Playfair Display"). Default: DM Sans.'),
       body_font: z.string().optional().describe('Google Font for body text (e.g. "Inter"). Default: DM Sans.'),
-      accent_color: z.string().optional().describe('Hex color (e.g. "#ff6600"). Overrides default purple accent.'),
+      accent_color: z.string().optional().describe('Hex color (e.g. "#ff6600"). Overrides default purple accent. Exposed to canvas slides as var(--dp-accent).'),
       agent_name: z.string().optional().describe('Your agent name (e.g. "Acme Strategy Agent"). Shown as author on comments you post. Set this once at deck creation.'),
-      stylesheet: z.string().optional().describe('Optional global CSS string adopted by every canvas slide. Define your design system once (typography, components, color tokens) and reference classes from each slide. Ignored by non-canvas layouts.'),
+      stylesheet: z.string().optional().describe('Global CSS adopted by every canvas slide via shadow-root adoptedStyleSheets. Define your design system once (typography, components, color tokens) and reference classes from each slide.'),
       head: z.array(z.object({
         tag: z.enum(['link', 'script', 'style']),
         attrs: z.record(z.string()).optional(),
         body: z.string().optional(),
-      })).optional().describe('Optional <link>/<script>/<style> entries injected into the page head — used by canvas slides. Example: [{ tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } }] to enable Tailwind.'),
+      })).optional().describe('Array of <link>/<script>/<style> entries injected into the page head. Use to load CDN libraries that canvas slides depend on. Example: [{ tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } }] to enable Tailwind.'),
       slides: z.array(z.object({
-        layout: z.enum(LayoutNames),
-        content: z.record(z.unknown()).describe('Content fields (vary by layout). All layouts support optional key_takeaway.'),
-      })).describe('Array of slides'),
+        layout: z.literal('canvas').describe('Always "canvas". (25 legacy templated layouts exist but are deprecated for new content — see CLAUDE.md to re-enable.)'),
+        content: z.object({
+          html: z.string().describe('Required. Slide markup. Designed at 1920×1080, mounted in a shadow root.'),
+          css: z.string().optional().describe('Optional per-slide CSS, scoped to this slide. For shared styles use deck.stylesheet instead.'),
+          js: z.string().optional().describe('Optional JS. Runs on slide enter with (root, slide). Return a cleanup function. Don\'t rely on exact text strings — reviewers can edit text inline.'),
+          static_render_only: z.boolean().optional().describe('If true, "js" is skipped in print/PDF mode. Use for animations that should freeze on export.'),
+          key_takeaway: z.string().optional().describe('Optional one-line summary surfaced in agent-facing comment context.'),
+        }).passthrough(),
+      })).describe('Array of canvas slides. Each slide is HTML/CSS/JS the agent authors.'),
     },
     { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     async (args) => {
@@ -142,18 +134,22 @@ Each slide includes a comments[] array with open comments. Each comment has: id,
     `Update an existing deck. Two parameters for two purposes:
 
 1. "slide_operations" — structural changes (insert, delete, move, replace). The ONLY way to add new slides.
-2. "slides" — content edits to existing slides by index (partial merge). Does NOT add slides.
+2. "slides" — content edits to existing slides by index (partial merge of the content object). Does NOT add slides.
 
 slide_operations execute first, then slides content edits apply to the resulting array.
 
 slide_operations examples:
-- Insert: { "op": "insert", "index": 5, "slide": { "layout": "title_and_bullets", "content": { "title": "New", "bullets": ["..."] } } }
+- Insert: { "op": "insert", "index": 5, "slide": { "layout": "canvas", "content": { "html": "<div class=\\"slide\\">...</div>", "css": "...", "js": "..." } } }
 - Delete: { "op": "delete", "index": 2 }
 - Move: { "op": "move", "from": 0, "to": 3 }
-- Replace: { "op": "replace", "index": 4, "slide": { "layout": "stats", "content": { "metrics": [...] } } }
+- Replace: { "op": "replace", "index": 4, "slide": { "layout": "canvas", "content": { "html": "..." } } }
 
 slides (content edit) examples:
-- Update title of slide 0: { "index": 0, "content": { "title": "New Title" } }`,
+- Replace the html of slide 0: { "index": 0, "content": { "html": "<div class=\\"slide\\">new markup</div>" } }
+- Tweak the css of slide 2: { "index": 2, "content": { "css": ".card { border-radius: 24px; }" } }
+- Both are PARTIAL merges into the existing content object — other fields (js, key_takeaway, etc.) are preserved.
+
+Editing existing decks that use the deprecated templated layouts is supported (the REST API still accepts them); just patch their content fields directly. New slides should be canvas.`,
     {
       deck_id: z.string().describe('Deck ID to update'),
       title: z.string().optional().describe('New deck title'),
@@ -172,9 +168,15 @@ slides (content edit) examples:
         from: z.number().optional().describe('Source index. Only for move.'),
         to: z.number().optional().describe('Destination index. Only for move.'),
         slide: z.object({
-          layout: z.enum(LayoutNames).describe('Slide layout type'),
-          content: z.record(z.unknown()).describe('Full slide content object with all required fields for the layout'),
-        }).optional().describe('The new slide to add. Required for insert and replace. Must include layout and content.'),
+          layout: z.literal('canvas').describe('New slides must use the canvas layout. Templated layouts are deprecated for new content.'),
+          content: z.object({
+            html: z.string().describe('Required slide markup, designed at 1920×1080.'),
+            css: z.string().optional(),
+            js: z.string().optional(),
+            static_render_only: z.boolean().optional(),
+            key_takeaway: z.string().optional(),
+          }).passthrough().describe('Canvas content object — { html, css?, js?, static_render_only?, key_takeaway? }.'),
+        }).optional().describe('The new slide to add. Required for insert and replace.'),
       })).optional().describe('Structural changes: add, remove, reorder, or replace slides. Use this to INSERT NEW SLIDES — do not recreate the deck.'),
       slides: z.array(z.object({
         index: z.number().describe('Zero-based slide index (post-operations)'),
@@ -269,59 +271,50 @@ For image_gallery: pass an array of IDs as image_refs instead of images.`,
 
   server.tool(
     'list_layouts',
-    'List all available slide layouts, their content fields, and themes. Use this to discover what is supported before creating a deck.',
+    'Describe the slide layouts and deck-level customization fields. New content uses a single layout — "canvas" — where you author HTML/CSS/JS directly.',
     {},
     { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     async () => {
       const layouts = [
-        { name: 'title', description: 'Large centered title slide.', fields: 'title (required), subtitle?, image_url?, key_takeaway?' },
-        { name: 'title_and_body', description: 'Title + paragraph.', fields: 'title (required), body (required), image_url?, image_prompt?, key_takeaway?' },
-        { name: 'title_and_bullets', description: 'Title + bullet list.', fields: 'title (required), bullets[] (required), image_url?, image_prompt?, key_takeaway?' },
-        { name: 'title_and_table', description: 'Title + data table.', fields: 'title (required), table: { headers[], rows[][], highlight_column? }, key_takeaway?' },
-        { name: 'two_columns', description: 'Title + two columns.', fields: 'title (required), left: { heading, body }, right: { heading, body }, image_url?, image_prompt?, key_takeaway?' },
-        { name: 'section_break', description: 'Bold section divider on accent bg.', fields: 'title (required), key_takeaway?' },
-        { name: 'image_and_text', description: 'Image-primary (~60%) + text.', fields: 'title (required), body (required), image_url or image_prompt (one required), key_takeaway?' },
-        { name: 'image_gallery', description: 'Horizontal row of portrait images — ideal for screenshot galleries.', fields: 'images[] (2-5 URLs, required), title?, caption?, key_takeaway?' },
-        { name: 'stats', description: 'Big metrics/numbers with labels.', fields: 'metrics[]: { value, label } (2-4 items, required), title?, key_takeaway?' },
-        { name: 'quote', description: 'Large pull-quote with optional attribution.', fields: 'quote (required), attribution?, image_url?, key_takeaway?' },
-        { name: 'full_image', description: 'Full-bleed background image with optional overlay text.', fields: 'image_url or image_prompt (one required), title?, subtitle?, key_takeaway?' },
-        { name: 'timeline', description: 'Horizontal timeline with 3-6 events.', fields: 'events[]: { label, title, description?, position?: 0-1 } (3-6 items, required), title?, key_takeaway?' },
-        { name: 'comparison', description: 'Side-by-side A vs B with optional verdict.', fields: 'left: { heading, bullets[], image_url? }, right: { heading, bullets[], image_url? } (required), title?, verdict?, key_takeaway?' },
-        { name: 'code', description: 'Styled code block with language badge.', fields: 'code (required), title?, language?, caption?, key_takeaway?' },
-        { name: 'callout', description: 'Hero number or statement with supporting text.', fields: 'value (required), title?, label?, body?, key_takeaway?' },
-        { name: 'icons_and_text', description: 'Grid of 3-6 items with emoji icon, heading, description.', fields: 'items[]: { icon, heading, description? } (3-6 items, required), title?, key_takeaway?' },
-        { name: 'team', description: 'People grid with photos, names, roles.', fields: 'members[]: { name, role, bio?, image_url? } (1-6 items, required), title?, key_takeaway?' },
-        { name: 'embed', description: 'Embedded iframe (YouTube, Figma, etc).', fields: 'url (required), title?, caption?, aspect_ratio? ("16:9"|"4:3"|"1:1"), key_takeaway?' },
-        { name: 'pros_and_cons', description: 'Two-column green/red pros and cons list.', fields: 'pros[] (required), cons[] (required), title?, pros_heading?, cons_heading?, key_takeaway?' },
-        { name: 'agenda', description: 'Numbered topic list with optional durations.', fields: 'items[]: { topic, duration?, description? } (1-10 items, required), title?, key_takeaway?' },
-        { name: 'swot', description: '2x2 SWOT analysis grid.', fields: 'strengths[], weaknesses[], opportunities[], threats[] (1-5 items each, all required), title?, key_takeaway?' },
-        { name: 'quadrant', description: 'X/Y positioning grid with labeled dots.', fields: 'items[]: { label, x: 0-1, y: 0-1 } (1-12 items, required), title?, body?, bullets?[], x_label?, y_label?, quadrant_labels?[4] (order: [top-left, top-right, bottom-left, bottom-right]), key_takeaway?' },
-        { name: 'venn_diagram', description: 'Venn diagram with 2 or 3 overlapping circles. Centered when no text; text-left/diagram-right when title/body provided.', fields: 'circles[]: { label, items?[] } (2-3 items, required), overlaps?[]: { sets: [circle indices], label } (max 4), title?, body?, key_takeaway?' },
-        { name: 'chart', description: 'Bar, line, pie, or donut chart from structured data.', fields: 'chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title?, key_takeaway?' },
-        { name: 'closing', description: 'Thank you / contact info slide. Use as final slide.', fields: 'heading?, subheading?, contact_lines?[], image_url?, key_takeaway?' },
-        { name: 'canvas', description: 'Agent-authored HTML/CSS/JS slide. Full design freedom in a 960×540 shadow-rooted sandbox. Use for custom visualizations, interactive elements, or designs the templated layouts cannot express.', fields: 'html (required, agent-authored HTML), css?, js?, static_render_only?, key_takeaway?' },
+        {
+          name: 'canvas',
+          description: 'Agent-authored HTML/CSS/JS rendered in a 1920×1080 shadow-rooted sandbox. The ONLY layout for new content.',
+          fields: 'html (required), css?, js?, static_render_only?, key_takeaway?',
+        },
       ];
       const customization = {
-        heading_font: 'Optional Google Font for headings (e.g. "Playfair Display"). Default: DM Sans.',
-        body_font: 'Optional Google Font for body text (e.g. "Inter"). Default: DM Sans.',
-        accent_color: 'Optional hex color (e.g. "#ff6600"). Default: #7c3aed (purple).',
-        stylesheet: 'Optional deck-level global CSS string. Adopted by every canvas slide via shadow-root adoptedStyleSheets. Define your design system once and reference it from each slide. Up to 100KB.',
-        head: 'Optional deck-level <link>/<script>/<style> entries injected into the page head. Use to load CDN libraries (Tailwind, Chart.js, etc.) or external fonts/icon sets that canvas slides depend on.',
+        heading_font: 'Google Font for headings (e.g. "Playfair Display"). Default: DM Sans. Forwarded as var(--dp-font-heading) into every canvas slide.',
+        body_font: 'Google Font for body text (e.g. "Inter"). Default: DM Sans. Forwarded as var(--dp-font-body).',
+        accent_color: 'Hex color (e.g. "#ff6600"). Default: #7c3aed. Forwarded as var(--dp-accent).',
+        stylesheet: 'Deck-level global CSS adopted by every canvas slide via shadow-root adoptedStyleSheets. Define your design system once and reference it from each slide. Up to 100KB.',
+        head: 'Array of <link>/<script>/<style> entries injected into the page head. Use to load CDN libraries (Tailwind, Chart.js, etc.) or external fonts/icon sets that canvas slides depend on.',
       };
       const style_guide = {
-        images: 'image_gallery works best with 2-5 portrait images of consistent aspect ratio. full_image needs high-res landscape images. Use search_images with orientation "landscape" for full_image/image_and_text, "portrait" for image_gallery.',
         canvas: [
-          'Render area is 960×540 — design at that fixed size; the viewer scales the slide to fit.',
+          'Design at 1920×1080 — the viewer scales the slide to fit.',
           'Each canvas slide is mounted into an open shadow root, so your CSS is auto-scoped — no need for BEM/prefixes.',
           'Prefer Tailwind for fast layout: enable it once via deck.head: [{ tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } }]. Then write utility-class HTML.',
-          'Use CSS variables already provided: var(--dp-accent), var(--dp-text-title), var(--dp-text-body), var(--dp-font-heading), var(--dp-font-body). This keeps canvas slides consistent with the deck theme and accent_color.',
+          'Use the forwarded CSS variables: var(--dp-accent), var(--dp-text-title), var(--dp-text-body), var(--dp-font-heading), var(--dp-font-body). This keeps slides consistent with accent_color and font choices.',
           'Define reusable styles once in deck.stylesheet (e.g. .dp-hero, .dp-stat-card) instead of duplicating CSS in every slide.css.',
-          'Mark commentable elements with data-dp-anchor="<stable-id>" (e.g. <h1 data-dp-anchor="hero-title">). Preserve these IDs across edits so comment threads remain attached. Comments without an anchor target fall back to slide-level.',
+          'Mark commentable elements with data-dp-anchor="<stable-id>" (e.g. <h1 data-dp-anchor="hero-title">). Preserve these IDs across edits so comment threads remain attached.',
+          'Reviewers can comment on ANY DOM element — unmarked elements get auto:<index> paths that are stable within a render but may shift across structural edits. Use anchors for anything you\'ll iterate on.',
+          'Reviewers can also edit text inline via the viewer\'s edit mode. Your js should not rely on exact text strings — use selectors or data attributes.',
           'js runs when the slide enters view. Signature: (root, slide) => optional cleanup function. Use for animations, interactivity. Set static_render_only: true to skip JS in print/PDF.',
           'Do NOT load arbitrary user-controlled scripts; the canvas runs in the parent JS context, not an iframe.',
         ],
+        images: 'Use search_images for Unsplash photos or upload_image for your own; in canvas slides, place the returned URL directly in <img src>. Include a credit caption near the image.',
       };
-      return { content: [{ type: 'text' as const, text: JSON.stringify({ layouts, customization, style_guide }, null, 2) }] };
+      const deprecated_layouts = {
+        note: 'These 25 templated layouts existed in Deckpipe 0.2 and earlier. They are deprecated for new content and intentionally hidden from this listing. Existing decks using them still render unchanged, and the REST API still accepts them. To re-enable them in the MCP surface, see CLAUDE.md → "Resurrecting deprecated layouts".',
+        names: [
+          'title', 'title_and_body', 'title_and_bullets', 'title_and_table',
+          'two_columns', 'section_break', 'image_and_text', 'image_gallery',
+          'stats', 'quote', 'full_image', 'timeline', 'comparison', 'code',
+          'callout', 'icons_and_text', 'team', 'embed', 'pros_and_cons',
+          'agenda', 'swot', 'quadrant', 'venn_diagram', 'chart', 'closing',
+        ],
+      };
+      return { content: [{ type: 'text' as const, text: JSON.stringify({ layouts, customization, style_guide, deprecated_layouts }, null, 2) }] };
     }
   );
 
@@ -444,7 +437,7 @@ mcpRouter.post('/', async (req, res) => {
       if (transport.sessionId) transports.delete(transport.sessionId);
     };
 
-    const mcpServer = new McpServer({ name: 'deckpipe', version: '0.3.0' }, { instructions: INSTRUCTIONS });
+    const mcpServer = new McpServer({ name: 'deckpipe', version: '0.3.1' }, { instructions: INSTRUCTIONS });
     registerTools(mcpServer);
     await mcpServer.connect(transport);
     await transport.handleRequest(req, res);

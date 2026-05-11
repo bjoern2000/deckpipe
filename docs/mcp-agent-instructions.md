@@ -9,40 +9,44 @@ All agent-facing text for Deckpipe MCP tools. This is a review document — the 
 
 ## Server Instructions (sent automatically on connect)
 
-Deckpipe is a slide deck rendering engine. You describe slides as JSON (layout + content); Deckpipe renders, themes, and exports them. Each deck gets a shareable viewer URL.
+Deckpipe is a slide deck rendering engine. You author each slide as HTML/CSS/JS — Deckpipe renders it inside a sandboxed 1920×1080 shadow root, themes it via deck-level CSS variables, and gives every deck a shareable viewer URL with built-in commenting.
 
 WORKFLOW
 - Use create_deck for NEW decks. Use update_deck to modify EXISTING decks.
 - NEVER recreate a deck to make changes. Recreating loses the URL, edit key, and comment history. Always update in place.
-- To iterate on a deck: get_deck (read current state + comments) → update_deck (make changes) → reply_to_comment (explain what you changed).
+- To iterate: get_deck (read current state + comments) → update_deck (make changes) → reply_to_comment (explain what you changed).
 - Check the "warnings" array in every create/update response. Fix unrecognized fields or unreachable image URLs with a follow-up update_deck call.
 
-CONTENT STYLE
-- Keep text short, crisp, and scannable. Use shorthand phrases, not full sentences.
-- Bullets: 5-8 words max. Stats: abbreviate ("2.4M" not "2,400,000"). Quotes: under 30 words.
-- All text fields support markdown: **bold**, *italic*, `code`, [links](url), lists. Body fields support full block markdown.
+THE CANVAS LAYOUT
+- Every slide is { layout: "canvas", content: { html (required), css?, js?, static_render_only?, key_takeaway? } }.
+- "html" is the full slide markup. Design at 1920×1080 — the viewer scales the slide to fit. CSS in "css" is scoped to this slide only; for shared styles use deck.stylesheet.
+- Each slide mounts in an open shadow root, so your CSS is auto-scoped — no need for BEM or class prefixes.
+- CSS variables forwarded into every slide: var(--dp-accent), var(--dp-text-title), var(--dp-text-body), var(--dp-font-heading), var(--dp-font-body). Use these so accent_color and font choices stay consistent across the deck.
+- "js" runs on slide enter with (root, slide) in scope. Return a cleanup function to run on slide exit (clear timers, detach listeners). Set static_render_only: true to skip JS in print/PDF.
+
+DECK-LEVEL THEMING
+- stylesheet: global CSS string adopted by every canvas slide. Define your design system once (typography, color tokens, reusable card/grid classes) and reference classes from each slide's html. Up to 100KB.
+- head: array of { tag, attrs?, body? } entries injected into the page head. Use to load CDN libraries (Tailwind, Chart.js, icon fonts). Example: [{ tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } }].
+- accent_color / heading_font / body_font are forwarded as CSS variables.
+
+COMMENTING
+- Reviewers can leave comments on ANY DOM element in a canvas slide — Deckpipe auto-assigns a content_path to every element at render time.
+- To make a comment thread STABLE across edits, mark the target element with data-dp-anchor="<stable-name>" (e.g. data-dp-anchor="hero-title"). Preserve those IDs across updates.
+- Comments on unmarked elements use auto:<index> paths that are stable within a render but may shift if you restructure the HTML.
+
+INLINE EDITS
+- The viewer's edit mode makes text-bearing leaf elements (h1, p, span, etc.) contenteditable. On blur the full html is saved back via PATCH.
+- Your "js" should be resilient to text changes — don't rely on exact text strings.
 
 IMAGES
-- Use search_images to find stock photos (Unsplash). You MUST include the returned image_attribution data when using any image from search results.
+- Use search_images to find stock photos (Unsplash). In canvas slides, place the returned url directly in <img src>. Include a credit caption near the image.
 - Use upload_image to host your own images (PNG/JPG/WebP, base64-encoded).
-- Use image_prompt instead of image_url to suggest an image the user should provide. Renders as a placeholder box with your descriptive text.
 
-RICH BULLETS
-- In layouts with bullets (title_and_bullets, comparison, swot, pros_and_cons, quadrant), bullets can be strings or objects: { text, detail?, sources?: [{ label, url? }] }.
-- "detail" adds a hover tooltip (info icon). "sources" adds footnote citations (superscript numbers).
+CONTENT STYLE
+- Keep text short, crisp, and scannable. Stats: abbreviate ("2.4M" not "2,400,000"). Quotes: under 30 words. Headlines: ≤ 8 words.
 
-CUSTOMIZATION
-- heading_font / body_font: any Google Font name (default: DM Sans).
-- accent_color: hex color like "#ff6600" (default: #7c3aed purple).
-
-CANVAS LAYOUT (agent-authored HTML)
-- Beyond the 25 templated layouts, the "canvas" layout lets you write a slide as raw HTML/CSS/JS — full design freedom inside a 960×540 box.
-- Fields: { html (required), css?, js?, static_render_only? }. The slide renders in a shadow root, so your CSS is scoped automatically; styles cannot leak in or out.
-- Deck-level "stylesheet" is global CSS adopted by every canvas slide — define your design system once (typography, spacing, colors, components) and reference it from each slide's html.
-- Deck-level "head" is an array of { tag, attrs?, body? } entries injected into the page head (e.g. { tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } } to enable Tailwind utilities, or { tag: "link", attrs: { rel: "stylesheet", href: "..." } } for icon fonts).
-- CSS variables --dp-accent, --dp-text-title, --dp-font-heading, --dp-font-body are forwarded into every canvas slide — prefer them over hardcoded colors so accent_color stays consistent.
-- For commenting: mark elements you want feedback on with data-dp-anchor="<stable-name>" (e.g. data-dp-anchor="hero-title"). Preserve these IDs across edits — they keep comment threads attached.
-- "js" runs as a module on slide enter with (root, slide) in scope; return a function to clean up on slide exit. Skipped in print mode if static_render_only is true.
+LEGACY LAYOUTS
+- 25 templated layouts (title, title_and_bullets, stats, chart, swot, …) are deprecated and not advertised. Existing decks using them still render. New slides should always use "canvas". See CLAUDE.md → "Resurrecting deprecated layouts" if you need to re-enable them in the MCP surface.
 
 ---
 
@@ -52,33 +56,16 @@ CANVAS LAYOUT (agent-authored HTML)
 
 Create a new slide deck. Returns viewer_url (owner link with edit key) and share_url (read-only).
 
-25 layouts — call list_layouts for full details, descriptions, and style guide. Content fields per layout (all support optional key_takeaway):
-- title: { title, subtitle?, image_url? }
-- title_and_body: { title, body, image_url?, image_prompt? }
-- title_and_bullets: { title, bullets[], image_url?, image_prompt? }
-- title_and_table: { title, table: { headers[], rows[][], highlight_column? } }
-- two_columns: { title, left: { heading, body }, right: { heading, body }, image_url?, image_prompt? }
-- section_break: { title }
-- image_and_text: { title, body, image_url (required unless image_prompt provided), image_prompt? }
-- image_gallery: { title?, caption?, images[] (2-5 URLs, required unless image_prompt provided), image_details?[], image_prompt? }
-- stats: { title?, metrics[]: { value, label } (2-4 items) }
-- quote: { quote, attribution?, image_url? }
-- full_image: { image_url (required unless image_prompt provided), image_prompt?, title?, subtitle? }
-- timeline: { title?, events[]: { label, title, description?, position?: 0-1 } (3-6 items) }
-- comparison: { title?, left: { heading, bullets[] }, right: { heading, bullets[] }, verdict? }
-- code: { title?, code (required), language?, caption? }
-- callout: { title?, value (required), label?, body? }
-- icons_and_text: { title?, items[]: { icon, heading, description? } (3-6 items) }
-- team: { title?, members[]: { name, role, bio?, image_url? } (1-6 items) }
-- embed: { title?, url (required), caption?, aspect_ratio?: "16:9"|"4:3"|"1:1" }
-- pros_and_cons: { title?, pros_heading?, cons_heading?, pros[], cons[] }
-- agenda: { title?, items[]: { topic, duration?, description? } (1-10 items) }
-- swot: { title?, strengths[], weaknesses[], opportunities[], threats[] (1-5 items each) }
-- quadrant: { title?, body?, bullets?[], x_label?, y_label?, quadrant_labels?[4] (order: [top-left, top-right, bottom-left, bottom-right]), items[]: { label, x: 0-1, y: 0-1 } (1-12 items) }
-- venn_diagram: { title?, body?, circles[]: { label, items?[] } (2-3 circles, required), overlaps?[]: { sets: [circle indices], label } (max 4) }
-- chart: { chart_type: "bar"|"line"|"pie"|"donut" (required), data: { labels[] (2-12 strings), datasets[]: { label?, values: number[], color? } (1-5 datasets) } (required), title? }
-- closing: { heading?, subheading?, contact_lines?[], image_url? }
-- canvas: { html (required, agent-authored HTML), css?, js?, static_render_only? } — full design freedom in a shadow-root sandbox. Use deck-level stylesheet + head for shared CSS and CDN libraries (e.g. Tailwind). Mark commentable elements with data-dp-anchor="<id>".
+Each slide is a canvas slide — you write HTML/CSS/JS directly:
+`{ layout: "canvas", content: { html (required), css?, js?, static_render_only?, key_takeaway? } }`
+
+Design checklist:
+- Design at 1920×1080. The viewer scales to fit.
+- Define shared styles ONCE in deck.stylesheet (typography, color tokens, reusable classes).
+- Use forwarded CSS variables: var(--dp-accent), var(--dp-text-title), var(--dp-text-body), var(--dp-font-heading), var(--dp-font-body).
+- For Tailwind: add `{ tag: "script", attrs: { src: "https://cdn.tailwindcss.com" } }` to deck.head.
+- Mark commentable elements with `data-dp-anchor="<stable-id>"`.
+- Optional "js" runs `(root, slide)` on slide enter — return a cleanup function.
 
 ### Parameters
 
@@ -91,9 +78,13 @@ Create a new slide deck. Returns viewer_url (owner link with edit key) and share
 | `agent_name` | string | no | Your agent name (e.g. "Acme Strategy Agent"). Shown as author on comments you post. Set this once at deck creation. |
 | `stylesheet` | string | no | Global CSS adopted by every canvas slide. Define a design system once and reference it from each slide. Up to 100KB. |
 | `head` | array | no | `<link>`/`<script>`/`<style>` entries injected into the page head. Use to load CDN libraries (Tailwind, Chart.js, etc.). |
-| `slides` | array | yes | Array of slides |
-| `slides[].layout` | enum | yes | One of the 26 layout types (25 templated + canvas) |
-| `slides[].content` | object | yes | Content fields (vary by layout). All layouts support optional key_takeaway. |
+| `slides` | array | yes | Array of canvas slides |
+| `slides[].layout` | literal | yes | Always `"canvas"`. (Templated layouts deprecated — see CLAUDE.md to re-enable.) |
+| `slides[].content.html` | string | yes | Slide markup, designed at 1920×1080 |
+| `slides[].content.css` | string | no | Per-slide CSS (scoped to this slide). For shared styles use deck.stylesheet. |
+| `slides[].content.js` | string | no | Runs on slide enter; receives `(root, slide)`. Return a cleanup function. |
+| `slides[].content.static_render_only` | boolean | no | Skip JS in print/PDF mode. |
+| `slides[].content.key_takeaway` | string | no | One-line summary surfaced in agent-facing comment context. |
 
 ---
 
@@ -125,13 +116,15 @@ Update an existing deck. Two parameters for two purposes:
 slide_operations execute first, then slides content edits apply to the resulting array.
 
 slide_operations examples:
-- Insert: { "op": "insert", "index": 5, "slide": { "layout": "title_and_bullets", "content": { "title": "New", "bullets": ["..."] } } }
+- Insert: { "op": "insert", "index": 5, "slide": { "layout": "canvas", "content": { "html": "<div class=\"slide\">...</div>" } } }
 - Delete: { "op": "delete", "index": 2 }
 - Move: { "op": "move", "from": 0, "to": 3 }
-- Replace: { "op": "replace", "index": 4, "slide": { "layout": "stats", "content": { "metrics": [...] } } }
+- Replace: { "op": "replace", "index": 4, "slide": { "layout": "canvas", "content": { "html": "..." } } }
 
 slides (content edit) examples:
-- Update title of slide 0: { "index": 0, "content": { "title": "New Title" } }
+- Replace the html of slide 0: { "index": 0, "content": { "html": "<div class=\"slide\">new markup</div>" } }
+- Tweak the css of slide 2: { "index": 2, "content": { "css": ".card { border-radius: 24px; }" } }
+- Editing existing decks that use the deprecated templated layouts is supported (the REST API still accepts them); just patch their content fields directly.
 
 ### Parameters
 

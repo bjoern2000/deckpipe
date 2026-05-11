@@ -33,10 +33,11 @@ export class ThumbnailStrip extends LitElement {
     }
 
     .thumbnail-inner {
-      width: 960px;
-      height: 540px;
+      width: 1920px;
+      height: 1080px;
       transform-origin: top left;
       pointer-events: none;
+      font-size: 32px;
     }
 
     .thumb-number {
@@ -54,9 +55,10 @@ export class ThumbnailStrip extends LitElement {
   @property() headingFont = '';
   @property() bodyFont = '';
   @property() accentColor = '';
+  @property() deckStylesheet = '';
 
   private getScale(el: HTMLElement): number {
-    // Scale the 960px inner to fit the thumbnail's actual width
+    // Scale the 1920px inner to fit the thumbnail's actual width
     return el.clientWidth / SLIDE_WIDTH;
   }
 
@@ -100,7 +102,7 @@ export class ThumbnailStrip extends LitElement {
         >
           <span class="thumb-number">${i + 1}</span>
           <div class="thumbnail-inner">
-            <slide-renderer .slide=${slide} .editable=${false}></slide-renderer>
+            <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deckStylesheet} .disableJs=${true}></slide-renderer>
           </div>
         </div>
       `)}

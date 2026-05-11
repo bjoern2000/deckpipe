@@ -75,7 +75,7 @@ export class ViewerApp extends LitElement {
       justify-content: space-between;
       align-items: center;
       width: 100%;
-      max-width: 960px;
+      max-width: 1920px;
       padding: 0 0 12px 0;
     }
 
@@ -94,12 +94,13 @@ export class ViewerApp extends LitElement {
     }
 
     .slide-container {
-      width: 960px;
-      height: 540px;
+      width: 1920px;
+      height: 1080px;
       transform-origin: top left;
       background: white;
       border-radius: 8px;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      font-size: 32px;
     }
 
 
@@ -114,7 +115,7 @@ export class ViewerApp extends LitElement {
       justify-content: flex-end;
       align-items: center;
       width: 100%;
-      max-width: 960px;
+      max-width: 1920px;
       padding: 8px 0;
     }
 
@@ -215,8 +216,8 @@ export class ViewerApp extends LitElement {
     }
 
     .mobile-layout .mobile-slide .slide-container {
-      width: 960px;
-      height: 540px;
+      width: 1920px;
+      height: 1080px;
     }
 
     /* Presenter mode */
@@ -796,6 +797,7 @@ export class ViewerApp extends LitElement {
             .headingFont=${this.deck.heading_font ?? ''}
             .bodyFont=${this.deck.body_font ?? ''}
             .accentColor=${this.deck.accent_color ?? ''}
+            .deckStylesheet=${this.deck.stylesheet ?? ''}
             @thumbnail-click=${this.onThumbnailClick}
           ></thumbnail-strip>
         </div>

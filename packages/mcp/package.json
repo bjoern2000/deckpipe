@@ -1,0 +1,44 @@
+{
+  "name": "deckpipe-mcp",
+  "version": "0.3.2",
+  "description": "MCP server for Deckpipe — author slides as HTML/CSS/JS from any AI agent",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "deckpipe-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "slides",
+    "presentations",
+    "ai",
+    "agent",
+    "canvas"
+  ],
+  "license": "FSL-1.1-Apache-2.0",
+  "dependencies": {
+    "@deckpipe/mcp-core": "*",
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsx": "^4.19.3"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bjoern2000/deckpipe",
+    "directory": "packages/mcp"
+  }
+}

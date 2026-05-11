@@ -9,6 +9,7 @@
     "migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
+    "@deckpipe/mcp-core": "*",
     "@deckpipe/shared": "*",
     "@modelcontextprotocol/sdk": "^1.28.0",
     "cors": "^2.8.5",

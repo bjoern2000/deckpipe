@@ -28,9 +28,13 @@ npm run build:shared        # Just shared (others depend on it)
 
 **`packages/shared`** — Zod schemas, TypeScript types, ID generators, error types. Every other package depends on this. `schema.ts` defines the discriminated union of slide layouts (`canvas` plus 25 deprecated templated layouts kept for backward compatibility) and is the single source of truth for the data model. Deck-level `stylesheet` and `head` fields live here too.
 
-**`packages/api`** — Express REST API on `/v1/decks` and `/v1/images`. PostgreSQL with JSONB for slide data plus `stylesheet TEXT` and `head JSONB` columns. Image uploads stored to disk at `IMAGE_STORAGE_PATH`. External image URLs in slides are automatically re-hosted on deck creation. Rate limiting per-endpoint. The REST API still accepts all layouts so legacy decks remain editable.
+**`packages/mcp-core`** — MCP tool definitions (`registerTools(server, { apiUrl })`), `INSTRUCTIONS` constant, deprecated-layout list. Single source of truth shared by the remote MCP (mounted inside the API at `/mcp`) and the standalone npm package (`deckpipe-mcp`). If you're updating a tool description or parameter schema, this is the only file you touch.
+
+**`packages/api`** — Express REST API on `/v1/decks` and `/v1/images`, plus the remote MCP transport at `/mcp` that calls `registerTools` from `@deckpipe/mcp-core`. PostgreSQL with JSONB for slide data plus `stylesheet TEXT` and `head JSONB` columns. Image uploads stored to disk at `IMAGE_STORAGE_PATH`. External image URLs in slides are automatically re-hosted on deck creation. Rate limiting per-endpoint. The REST API still accepts all layouts so legacy decks remain editable.
 
 **`packages/viewer`** — Lit web components. `viewer-app.ts` is the top-level shell (deck loading, navigation state, edit mode, auto-save, head-entry injection). `slide-renderer.ts` is a factory that routes `layout` to a component — `canvas` → `<slide-canvas>` (open shadow root, adopts deck stylesheet + slide css, runs slide js on enter), everything else → the legacy `<slide-*>` components. Slide dimensions computed via ResizeObserver to fit 16:9 in available space.
+
+**`packages/mcp`** — Standalone MCP server published to npm as `deckpipe-mcp`. Stdio transport for local agents (`npx deckpipe-mcp`), HTTP transport when `PORT` is set. Pure transport plumbing — all tool logic lives in `@deckpipe/mcp-core`. Configured via `DECKPIPE_API_URL` env var (defaults to `https://deckpipe.dev`).
 
 ## Key Patterns
 
@@ -68,15 +72,22 @@ To bring the templated layouts back into the agent-facing surface:
 
 Nothing else needs to change — the schema, viewer components, and REST API are unchanged.
 
-## Related Repository
+## MCP tool definitions — single source
 
-**`deckpipe-mcp`** (`/Users/bjornschefzyk/Projects/deckpipe-mcp`) — The MCP server package (`deckpipe-mcp` on npm). Nine tools (`create_deck`, `get_deck`, `update_deck`, `delete_deck`, `upload_image`, `list_layouts`, `list_comments`, `reply_to_comment`, `resolve_comment`) that wrap the REST API. Separate repo with its own build and release cycle.
+All MCP tool descriptions, parameter schemas, and the server instructions string live in **one place**: `packages/mcp-core/src/index.ts`. Both the remote MCP server (mounted at `/mcp` by `packages/api`) and the standalone npm package (`packages/mcp`, published as `deckpipe-mcp`) import `registerTools(server, { apiUrl })` and `INSTRUCTIONS` from `@deckpipe/mcp-core`.
 
-**Important:** MCP tool definitions exist in **two places** that must be kept in sync:
-1. `packages/api/src/routes/mcp.ts` — the remote MCP server (served at `/mcp`, used by Claude.ai and other remote clients)
-2. `/Users/bjornschefzyk/Projects/deckpipe-mcp/src/index.ts` — the standalone npm package (used via `npx deckpipe-mcp`)
+When you update an MCP tool:
+1. Edit `packages/mcp-core/src/index.ts`.
+2. Bump the `MCP_VERSION` in `packages/api/src/routes/mcp.ts` and the `version` in `packages/mcp/src/index.ts` + `packages/mcp/package.json` if the change is user-facing.
+3. Mirror any agent-facing copy changes to `docs/mcp-agent-instructions.md` (review-friendly markdown copy).
 
-When updating MCP tools, **always update both files**. This includes: tool descriptions, parameter schemas, parameter `.describe()` hints, `list_layouts` response data (layout names, descriptions, fields, style_guide), and version strings. A review-friendly copy of all agent-facing text lives in `docs/mcp-agent-instructions.md` — update it too after any description change.
+There is no second file to keep in sync.
+
+## Licensing
+
+Code is licensed under **FSL-1.1-Apache-2.0** (Functional Source License, Apache 2.0 Future License): free for self-hosting, internal use, education, research; commercial use to offer Deckpipe as a competing hosted service is prohibited until the change date (2030-05-11), after which the entire repo auto-converts to Apache 2.0. Full text in `LICENSE` at the repo root.
+
+The "Deckpipe" name is trademark-reserved separately — forks must rename.
 
 ## Environment
 

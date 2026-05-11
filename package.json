@@ -2,12 +2,13 @@
   "name": "deckpipe",
   "version": "0.1.0",
   "private": true,
+  "license": "FSL-1.1-Apache-2.0",
   "type": "module",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w packages/shared && npm run build -w packages/api && npm run build -w packages/viewer",
+    "build": "npm run build -w packages/shared && npm run build -w packages/mcp-core && npm run build -w packages/api && npm run build -w packages/viewer && npm run build -w packages/mcp",
     "build:shared": "npm run build -w packages/shared",
     "dev:api": "npm run dev -w packages/api",
     "dev:viewer": "npm run dev -w packages/viewer",

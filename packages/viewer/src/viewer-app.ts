@@ -537,10 +537,28 @@ export class ViewerApp extends LitElement {
 
       // Signal headless-render readiness (print / screenshot pipelines).
       if (this.printMode || this.screenshotMode) {
-        // Wait two rAFs + document.fonts.ready so canvas slides have mounted,
-        // adopted stylesheets, and fonts have settled before puppeteer captures.
+        // Wait for: shadow roots mounted, fonts loaded, images decoded — then
+        // two rAFs to let any post-paint adjustment land before puppeteer captures.
+        const collectImages = (root: ParentNode, acc: HTMLImageElement[] = []): HTMLImageElement[] => {
+          root.querySelectorAll('img').forEach((img) => acc.push(img as HTMLImageElement));
+          root.querySelectorAll('*').forEach((el) => {
+            const sr = (el as Element & { shadowRoot?: ShadowRoot | null }).shadowRoot;
+            if (sr) collectImages(sr, acc);
+          });
+          return acc;
+        };
         const signal = async () => {
+          // Two rAFs first so Lit has mounted the slide-canvas shadow root.
+          await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
           try { await (document as Document & { fonts?: FontFaceSet }).fonts?.ready; } catch { /* ignore */ }
+          const imgs = collectImages(document);
+          await Promise.all(imgs.map((img) =>
+            img.complete ? Promise.resolve() : new Promise<void>((r) => {
+              img.addEventListener('load', () => r(), { once: true });
+              img.addEventListener('error', () => r(), { once: true });
+            }),
+          ));
+          await Promise.all(imgs.map((img) => img.decode().catch(() => {})));
           requestAnimationFrame(() => requestAnimationFrame(() => {
             document.documentElement.setAttribute('data-ready', 'true');
           }));

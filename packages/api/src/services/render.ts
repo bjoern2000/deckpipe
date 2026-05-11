@@ -131,43 +131,47 @@ export async function renderSlide(opts: RenderOptions): Promise<RenderResult> {
       });
     });
 
+    // Both page.evaluate callbacks below are passed as strings so the
+    // TypeScript transpiler (tsx/esbuild) doesn't inject helpers like
+    // __name that don't exist in the browser context.
+
     // Collect font load status (best-effort).
-    const fontInfo = await page.evaluate(() => {
-      const loaded: string[] = [];
-      const missing: string[] = [];
+    const fontInfo = await page.evaluate(`(() => {
+      const loaded = [];
+      const missing = [];
       try {
         for (const f of document.fonts) {
-          const label = `${f.family} ${f.weight} ${f.style}`.trim();
+          const label = (f.family + ' ' + f.weight + ' ' + f.style).trim();
           (f.status === 'loaded' ? loaded : missing).push(label);
         }
-      } catch { /* ignore */ }
-      return { loaded, missing };
-    });
+      } catch (e) { /* ignore */ }
+      return { loaded: loaded, missing: missing };
+    })()`) as { loaded: string[]; missing: string[] };
     report.fonts_loaded = fontInfo.loaded;
     report.fonts_missing = fontInfo.missing;
 
     // Collect overflow info, walking shadow roots since the slide lives inside Lit.
-    const overflows = await page.evaluate(() => {
-      const out: Array<{ selector: string; overflow_x_px: number; overflow_y_px: number; text_preview: string }> = [];
-      const visit = (root: ParentNode) => {
+    const overflows = await page.evaluate(`(() => {
+      const out = [];
+      function visit(root) {
         const all = root.querySelectorAll('*');
-        for (const el of all) {
+        for (let i = 0; i < all.length; i++) {
+          const el = all[i];
           if (!(el instanceof HTMLElement)) continue;
           const overflowX = el.scrollWidth - el.clientWidth;
           const overflowY = el.scrollHeight - el.clientHeight;
           if ((overflowX > 1 || overflowY > 1) && (el.clientWidth > 0 || el.clientHeight > 0)) {
-            // Skip the page-level scrolling container.
             if (el.tagName === 'HTML' || el.tagName === 'BODY') continue;
-            const path: string[] = [];
-            let node: Element | null = el;
-            for (let i = 0; i < 4 && node; i++) {
+            const path = [];
+            let node = el;
+            for (let j = 0; j < 4 && node; j++) {
               const tag = node.tagName.toLowerCase();
-              const id = node.id ? `#${node.id}` : '';
-              const cls = node.classList[0] ? `.${node.classList[0]}` : '';
-              path.unshift(`${tag}${id}${cls}`);
+              const id = node.id ? '#' + node.id : '';
+              const cls = node.classList[0] ? '.' + node.classList[0] : '';
+              path.unshift(tag + id + cls);
               node = node.parentElement;
             }
-            const txt = (el.textContent ?? '').trim().slice(0, 60);
+            const txt = (el.textContent || '').trim().slice(0, 60);
             out.push({
               selector: path.join(' > '),
               overflow_x_px: Math.max(0, overflowX),
@@ -177,15 +181,15 @@ export async function renderSlide(opts: RenderOptions): Promise<RenderResult> {
           }
           if (el.shadowRoot) visit(el.shadowRoot);
         }
-      };
+      }
       visit(document);
-      const seenSel = new Set<string>();
-      return out.filter(o => {
+      const seenSel = new Set();
+      return out.filter(function (o) {
         if (seenSel.has(o.selector)) return false;
         seenSel.add(o.selector);
         return true;
       }).slice(0, 20);
-    });
+    })()`) as Array<{ selector: string; overflow_x_px: number; overflow_y_px: number; text_preview: string }>;
     report.overflows = overflows;
 
     // Screenshot just the viewport — viewer renders the slide flush at (0,0)

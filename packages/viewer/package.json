@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/copy-skill.mjs",
     "build": "vite build",
+    "predev": "node scripts/copy-skill.mjs",
     "dev": "vite"
   },
   "dependencies": {

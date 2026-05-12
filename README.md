@@ -49,8 +49,6 @@ Add `https://deckpipe.dev/mcp` as a custom remote MCP server. No auth.
 claude mcp add deckpipe -- npx deckpipe-mcp
 ```
 
-Optional: this repo ships a Claude Code skill at `.claude/skills/deckpipe-design/SKILL.md` that adds richer design guidance (brief-clarification questions, density rules, reference-style cheatsheet, iteration loop). It auto-loads when you work on a deck inside this repo. To use it in a consumer project, copy the `deckpipe-design` folder into that project's `.claude/skills/` directory.
-
 ### Manual MCP config
 
 ```json
@@ -65,6 +63,23 @@ Optional: this repo ships a Claude Code skill at `.claude/skills/deckpipe-design
 ```
 
 Then ask the agent to "build a deck about X". The agent gets back a viewer URL you can open and comment on.
+
+## Skill for Claude Code
+
+The MCP `INSTRUCTIONS` your agent receives are intentionally tight. The richer design guidance — brief-clarification questions, density rules, reference-style cheatsheet, the layout-safety pattern, post-create overflow sweep — lives in a Claude Code [skill](https://deckpipe.dev/skill.md).
+
+Read it: **<https://deckpipe.dev/skill.md>**
+
+Install in any project so your Claude Code agent auto-loads it:
+
+```bash
+mkdir -p .claude/skills/deckpipe-design
+curl -o .claude/skills/deckpipe-design/SKILL.md https://deckpipe.dev/skill.md
+```
+
+For Cursor, Windsurf, or any other MCP client — paste the skill content into your system prompt or rules file. It's plain markdown.
+
+The canonical source lives in this repo at [`.claude/skills/deckpipe-design/SKILL.md`](.claude/skills/deckpipe-design/SKILL.md).
 
 ## Self-host
 

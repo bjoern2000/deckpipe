@@ -946,8 +946,9 @@
       </div>
       <div class="nav-links">
         <a href="#connect">connect</a>
+        <a href="#skill" class="hide-sm">skill</a>
         <a href="#canvas" class="hide-sm">canvas</a>
-<a href="https://github.com/bjoern2000/deckpipe" target="_blank" rel="noopener">github</a>
+        <a href="https://github.com/bjoern2000/deckpipe" target="_blank" rel="noopener">github</a>
       </div>
     </nav>
 
@@ -1008,8 +1009,8 @@
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 03</span></div>
-          <h3 class="feat-title">design tokens</h3>
-          <p class="feat-body">deck-level <code>stylesheet</code> plus <code>--dp-font-*</code> variables flow into every slide. change one field; the deck re-renders.</p>
+          <h3 class="feat-title">design system</h3>
+          <p class="feat-body">a deck-level <code>stylesheet</code> is adopted by every slide — your design system, written once. <code>head</code> loads Google Fonts, CDN scripts, icon libraries.</p>
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 04</span></div>
@@ -1023,52 +1024,15 @@
         </div>
         <div class="feat">
           <div class="feat-num"><span>feature</span><span class="count">/ 06</span></div>
-          <h3 class="feat-title">load any library</h3>
-          <p class="feat-body">declare <code>&lt;script&gt;</code> or <code>&lt;link&gt;</code> entries on the deck <code>head</code>. Tailwind, Chart.js, lucide, icon fonts — wherever your agent needs them.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ FLOW ═══ -->
-    <section id="flow">
-      <div class="section-label"><span class="num">02</span> flow</div>
-      <h2 class="section-title"><span class="hl">how-to.</span></h2>
-      <p class="section-lede">
-        a typical workflow.
-      </p>
-
-      <div class="flow">
-        <div class="flow-step">
-          <div class="step-num">01</div>
-          <div class="step-name">jam</div>
-          <div class="step-desc">jam with your AI on a topic.</div>
-        </div>
-        <div class="flow-step">
-          <div class="step-num">02</div>
-          <div class="step-name">generate</div>
-          <div class="step-desc">ask your agent to make a deck.</div>
-        </div>
-        <div class="flow-step">
-          <div class="step-num">03</div>
-          <div class="step-name">review</div>
-          <div class="step-desc">comments from you or collaborators. or feedback straight to your agent.</div>
-        </div>
-        <div class="flow-step">
-          <div class="step-num">04</div>
-          <div class="step-name">iterate</div>
-          <div class="step-desc">your agent updates the deck.</div>
-        </div>
-        <div class="flow-step">
-          <div class="step-num">05</div>
-          <div class="step-name">share & present</div>
-          <div class="step-desc">share the link or present.</div>
+          <h3 class="feat-title">inline screenshots</h3>
+          <p class="feat-body"><code>preview_slide</code> and <code>get_slide_screenshot</code> return the rendered PNG inline plus a render report — overflows, JS errors, font loads. your agent sees what reviewers see, before committing.</p>
         </div>
       </div>
     </section>
 
     <!-- ═══ INSTALL ═══ -->
     <section id="connect">
-      <div class="section-label"><span class="num">03</span> connect</div>
+      <div class="section-label"><span class="num">02</span> connect</div>
       <h2 class="section-title"><span class="hl">connect deckpipe to your agent.</span></h2>
       <p class="section-lede">
         supports local and remote mcp.
@@ -1120,6 +1084,47 @@
       </div>
     </section>
 
+    <!-- ═══ SKILL (Claude Code) ═══ -->
+    <section id="skill">
+      <div class="section-label"><span class="num">03</span> skill <span style="color: var(--fg-faint); margin-left: 8px; letter-spacing: 0.12em;">/ claude code</span></div>
+      <h2 class="section-title"><span class="hl">a design skill for your agent.</span></h2>
+      <p class="section-lede">
+        a markdown file your Claude Code agent loads automatically. covers the brief-clarification questions, density rules, reference-style cheatsheet, layout-safety pattern, and the post-create overflow sweep — the design judgment we'd otherwise teach your agent through trial and error.
+      </p>
+
+      <div class="install-steps">
+        <div class="install-card">
+          <div class="install-head">
+            <div class="title"><span class="dim">read it //</span>SKILL.md</div>
+            <a href="/skill.md" target="_blank" rel="noopener" class="badge">open →</a>
+          </div>
+          <div class="install-body">
+            <pre><code><span class="prompt-sym">&gt; </span>https://deckpipe.dev/skill.md</code></pre>
+            <button class="copy-btn" onclick="copyCode(this, 'https://deckpipe.dev/skill.md')" title="Copy">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="install-card">
+          <div class="install-head">
+            <div class="title"><span class="dim">install //</span>drop into your project</div>
+          </div>
+          <div class="install-body">
+            <pre><code><span class="prompt-sym">$ </span>mkdir -p .claude/skills/deckpipe-design
+<span class="prompt-sym">$ </span>curl -o .claude/skills/deckpipe-design/SKILL.md https://deckpipe.dev/skill.md</code></pre>
+            <button class="copy-btn" onclick="copyCode(this, 'mkdir -p .claude/skills/deckpipe-design &amp;&amp; curl -o .claude/skills/deckpipe-design/SKILL.md https://deckpipe.dev/skill.md')" title="Copy">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p class="see-all" style="margin-top: 32px;">
+        Cursor, Windsurf, or other MCP clients? you can paste the skill content into a system prompt or rules file directly — it's just markdown.
+      </p>
+    </section>
+
     <!-- ═══ TOOLS ═══ -->
     <section id="tools">
       <div class="section-label"><span class="num">04</span> mcp tools</div>
@@ -1132,6 +1137,8 @@
         <div class="pill">get_deck</div>
         <div class="pill">update_deck</div>
         <div class="pill">delete_deck</div>
+        <div class="pill">preview_slide</div>
+        <div class="pill">get_slide_screenshot</div>
         <div class="pill">upload_image</div>
         <div class="pill">search_images</div>
         <div class="pill">list_layouts</div>
@@ -1141,12 +1148,12 @@
       </div>
     </section>
 
-    <!-- ═══ CANVAS ═══ -->
+    <!-- ═══ CANVAS + DESIGN SYSTEM ═══ -->
     <section id="canvas">
       <div class="section-label"><span class="num">05</span> canvas</div>
       <h2 class="section-title"><span class="hl">the slide is code.</span></h2>
       <p class="section-lede">
-        every slide is <code class="ic">{ html, css?, js? }</code>. mounted in a shadow root, themed by the deck, addressable by comments.
+        every slide is <code class="ic">{ html, css?, js? }</code>, mounted in a sandboxed shadow root. design tokens — <code class="ic">stylesheet</code> and <code class="ic">head</code> — live on the deck and flow into every slide. change one field, the deck re-renders.
       </p>
       <div class="pill-group">
         <div class="pill with-desc">
@@ -1162,43 +1169,16 @@
           <span class="desc">runs on slide enter with (root, slide); returns a cleanup function</span>
         </div>
         <div class="pill with-desc">
+          <span class="name">static_render_only</span>
+          <span class="desc">skip JS in print, PDF export, and screenshots</span>
+        </div>
+        <div class="pill with-desc">
           <span class="name">stylesheet <em style="font-style: normal; color: var(--fg-mute); font-weight: 400;">(deck)</em></span>
-          <span class="desc">global CSS adopted by every canvas slide</span>
+          <span class="desc">global CSS adopted by every slide — your design system</span>
         </div>
         <div class="pill with-desc">
           <span class="name">head <em style="font-style: normal; color: var(--fg-mute); font-weight: 400;">(deck)</em></span>
-          <span class="desc">&lt;script&gt; / &lt;link&gt; entries injected on the page</span>
-        </div>
-        <div class="pill with-desc">
-          <span class="name">static_render_only</span>
-          <span class="desc">skip JS in print / PDF export</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ CUSTOMIZATION ═══ -->
-    <section id="customization">
-      <div class="section-label"><span class="num">06</span> design system</div>
-      <h2 class="section-title"><span class="hl">design system.</span></h2>
-      <p class="section-lede">
-        theming lives on the deck. tokens forward into every slide via CSS custom properties. change one field, the deck re-renders.
-      </p>
-      <div class="pill-group">
-        <div class="pill with-desc">
-          <span class="name">heading_font</span>
-          <span class="desc">any google font for headings</span>
-        </div>
-        <div class="pill with-desc">
-          <span class="name">body_font</span>
-          <span class="desc">any google font for body text</span>
-        </div>
-        <div class="pill with-desc">
-          <span class="name">stylesheet</span>
-          <span class="desc">deck-level CSS adopted by every slide</span>
-        </div>
-        <div class="pill with-desc">
-          <span class="name">head</span>
-          <span class="desc">inject CDN scripts and stylesheets</span>
+          <span class="desc">Google Fonts &lt;link&gt;s, CDN scripts, icon-font stylesheets</span>
         </div>
       </div>
       <p class="see-all" style="margin-top: 36px;">

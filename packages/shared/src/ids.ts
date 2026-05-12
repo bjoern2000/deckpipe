@@ -30,6 +30,15 @@ export function generateEditKey(): string {
 
 export function slugify(text: string): string {
   return text
+    // German conventions first — umlauts and eszett expand to digraphs,
+    // not just stripped (so "Südtirol" becomes "suedtirol", not "sdtirol").
+    .replace(/ä/g, 'ae').replace(/Ä/g, 'Ae')
+    .replace(/ö/g, 'oe').replace(/Ö/g, 'Oe')
+    .replace(/ü/g, 'ue').replace(/Ü/g, 'Ue')
+    .replace(/ß/g, 'ss')
+    // Decompose remaining accented Latin chars (é→e, ñ→n, ô→o, etc.) by
+    // splitting them into base char + combining mark, then dropping the marks.
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')

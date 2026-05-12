@@ -13,3 +13,6 @@ data/images/*
 
 # Local API working dir (uploaded images, screenshot cache)
 packages/api/data/
+
+# Build-time copy of the canonical .claude/skills/deckpipe-design/SKILL.md
+packages/viewer/public/skill.md

@@ -10,6 +10,7 @@
   "scripts": {
     "build": "npm run build -w packages/shared && npm run build -w packages/mcp-core && npm run build -w packages/api && npm run build -w packages/viewer && npm run build -w packages/mcp",
     "build:shared": "npm run build -w packages/shared && npm run build -w packages/mcp-core",
+    "start": "node packages/api/dist/index.js",
     "dev:api": "npm run dev -w packages/api",
     "dev:viewer": "npm run dev -w packages/viewer",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:viewer\"",

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/deckpipe_icon@2x.png" alt="Deckpipe" width="140" />
+</p>
+
 # Deckpipe
 
 **Agent-first slide deck rendering engine.** Agents author each slide as HTML/CSS/JS; Deckpipe renders it inside a sandboxed 1920×1080 shadow root, themes it via deck-level CSS variables, gives every deck a shareable viewer URL, and supports threaded commenting from collaborators.

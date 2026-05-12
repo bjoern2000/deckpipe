@@ -1,9 +1,6 @@
 # MCP Agent Instructions
 
-All agent-facing text for Deckpipe MCP tools. This is a review document — the source of truth lives in two places that must be kept in sync:
-
-- **Remote MCP**: `packages/api/src/routes/mcp.ts`
-- **Standalone MCP**: `deckpipe-mcp` repo — `src/index.ts`
+All agent-facing text for Deckpipe MCP tools. This is a review document — the source of truth lives at `packages/mcp-core/src/index.ts`, imported by both the remote MCP transport (`packages/api/src/routes/mcp.ts`) and the standalone npm package (`packages/mcp`, published as `deckpipe-mcp`).
 
 ---
 

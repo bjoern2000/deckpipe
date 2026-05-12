@@ -48,7 +48,7 @@ INLINE EDITS
 - Your "js" should be resilient to text changes — don't rely on exact text strings.
 
 IMAGES
-- Use search_images to find stock photos (Unsplash). In canvas slides, place the returned url directly in <img src>. Include a credit caption near the image.
+- Use search_images to find stock photos (Unsplash). Each result includes a full-resolution `url`, optional `url_full` (2400px) for hero shots, photographer info with UTM-tagged profile link, and a pre-built `attribution_html` snippet. Drop the url into <img src> and drop `attribution_html` into a small caption near the image. Deckpipe fires the required Unsplash download ping server-side on create_deck/update_deck — no manual tracking call needed.
 - Use upload_image to host your own images (PNG/JPG/WebP, base64-encoded).
 
 CONTENT STYLE
@@ -188,14 +188,18 @@ Upload a base64-encoded image (PNG/JPG/WebP, max 10MB) to get a hosted URL for u
 
 ### Description
 
-Search Unsplash for stock photos. Returns URLs, photographer info, and attribution data.
+Search Unsplash for stock photos. Each result returns everything you need to embed an image with proper attribution — no round-trip required.
 
-When using an image from results, you MUST set both image_url and image_attribution:
-1. image_url → use the urls.regular value
-2. image_attribution → { name: "<photographer>", url: "<profile_url>?utm_source=deckpipe&utm_medium=referral", source: "Unsplash", source_url: "https://unsplash.com/?utm_source=deckpipe&utm_medium=referral", download_location: "<download_location from result>" }
-3. For image_gallery: put attribution inside each image_details[] entry as an "attribution" object (same shape)
+Each result includes:
+- `url` — 1920px wide URL, ready for `<img src="">` on a canvas slide
+- `url_full` — 2400px wide URL, for full-bleed hero images
+- `url_thumb` — 400px wide URL, for thumbnails
+- `alt` — alt text from Unsplash
+- `photographer` — `{ name, profile_url }` (UTM params already attached)
+- `attribution_html` — pre-built credit snippet (e.g. `Photo: <a href="...">Jane Doe</a> / <a href="...">Unsplash</a>`)
+- `download_location` — the Unsplash tracking endpoint. You don't need to call it. Deckpipe fires the download ping server-side when it sees the URL in your slide HTML on create_deck/update_deck.
 
-The download_location triggers required Unsplash download tracking automatically when the deck is saved.
+Attribution is required by Unsplash terms. Drop `attribution_html` into a small caption near every image you use (a footer line, a corner overlay, etc.). Do not strip the UTM params from `photographer.profile_url`.
 
 ### Parameters
 

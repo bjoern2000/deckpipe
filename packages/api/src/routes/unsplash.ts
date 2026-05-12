@@ -23,8 +23,30 @@ interface UnsplashSearchResponse {
 
 interface StoredResult {
   id: string;
-  thumb: string;
+  url: string;
+  url_full: string;
+  url_thumb: string;
   alt: string | null;
+  photographer: {
+    name: string;
+    profile_url: string;
+  };
+  attribution_html: string;
+  download_location: string;
+}
+
+// Unsplash terms require attribution + UTM params on photographer + Unsplash links.
+const UTM = 'utm_source=deckpipe&utm_medium=referral';
+
+function withUtm(url: string): string {
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}${UTM}`;
+}
+
+// urls.regular from Unsplash is w=1080. For HD-canvas slides agents typically
+// want bigger — swap the w= query param. Unsplash CDN respects this.
+function resizeUnsplashUrl(url: string, width: number): string {
+  return url.replace(/([?&])w=\d+/, `$1w=${width}`);
 }
 
 async function searchAndStore(
@@ -63,7 +85,23 @@ async function searchAndStore(
       [id, photo.id, photo.urls.regular, photo.urls.small, photo.urls.thumb, photo.alt_description, photo.user.name, photo.user.links.html, photo.links.download_location],
     );
 
-    results.push({ id, thumb: photo.urls.thumb, alt: photo.alt_description });
+    const profileUrl = withUtm(photo.user.links.html);
+    const unsplashUrl = withUtm('https://unsplash.com/');
+    const attributionHtml = `Photo: <a href="${profileUrl}" target="_blank" rel="noopener">${photo.user.name}</a> / <a href="${unsplashUrl}" target="_blank" rel="noopener">Unsplash</a>`;
+
+    results.push({
+      id,
+      url: resizeUnsplashUrl(photo.urls.regular, 1920),
+      url_full: resizeUnsplashUrl(photo.urls.regular, 2400),
+      url_thumb: photo.urls.thumb,
+      alt: photo.alt_description,
+      photographer: {
+        name: photo.user.name,
+        profile_url: profileUrl,
+      },
+      attribution_html: attributionHtml,
+      download_location: photo.links.download_location,
+    });
   }
 
   return results;

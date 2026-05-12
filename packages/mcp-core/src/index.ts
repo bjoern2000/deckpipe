@@ -74,7 +74,7 @@ INLINE EDITS
 - Your "js" should be resilient to text changes — find elements with selectors or data attributes, never with exact strings.
 
 IMAGES
-- search_images returns Unsplash IDs and thumbnails. In canvas slides, put the returned url directly in <img src>; include a credit caption near the image.
+- search_images returns full-resolution URLs (url, url_full), photographer info, and a pre-built attribution_html snippet. Drop the url into <img src> on a canvas slide and the attribution_html into a small caption near the image. Download tracking fires server-side automatically.
 - upload_image hosts your own PNG/JPG/WebP and returns a URL for <img src>.
 
 CONTENT STYLE
@@ -265,11 +265,20 @@ Editing existing decks that use the deprecated templated layouts is supported (t
 
   server.tool(
     'search_images',
-    `Search Unsplash for stock photos. Returns image IDs and thumbnails. Use the returned id as image_ref in your slides — attribution, URLs, and download tracking are handled automatically.
+    `Search Unsplash for stock photos. Each result includes everything you need to embed the image with proper attribution — no round-trip required.
 
-Use the "queries" parameter to search for multiple terms in one call (e.g. one per slide) instead of making separate calls. Results are grouped by query.
+Returned per result:
+- url           — 1920px wide, ready for <img src=""> on a canvas slide
+- url_full      — 2400px wide, for full-bleed hero images
+- url_thumb     — 400px wide, for thumbnails or low-priority spots
+- alt           — Unsplash's alt text, drop into <img alt="">
+- photographer  — { name, profile_url } (UTM params already attached)
+- attribution_html — pre-built credit snippet ("Photo: <a>Name</a> / <a>Unsplash</a>") — drop near the image
+- download_location — Unsplash tracking URL. You don't need to call it. Deckpipe fires the download ping server-side when it sees the URL in your slide HTML on create_deck/update_deck.
 
-For image_gallery: pass an array of IDs as image_refs instead of images.`,
+Use the "queries" parameter to search for multiple terms in one call (e.g. one per slide) instead of making separate calls — results are grouped by query.
+
+Attribution is required by Unsplash terms. Drop attribution_html into a small caption near every image you use (a footer line, a corner overlay, etc.). Do not strip the UTM params from photographer.profile_url.`,
     {
       query: z.string().optional().describe('Single search query (e.g. "modern office workspace"). Use this OR queries, not both.'),
       queries: z.array(z.string()).max(5).optional().describe('Multiple search queries in one call (max 5). Results grouped by query. More efficient than separate calls.'),
@@ -324,7 +333,7 @@ For image_gallery: pass an array of IDs as image_refs instead of images.`,
           'Verify before committing: use preview_slide to render an HTML/CSS/JS draft and get a screenshot + render report (JS errors, overflows). Cheap, doesn\'t persist anything.',
           'Do NOT load arbitrary user-controlled scripts; the canvas runs in the parent JS context, not an iframe.',
         ],
-        images: 'Use search_images for Unsplash photos or upload_image for your own; in canvas slides, place the returned URL directly in <img src>. Include a credit caption near the image.',
+        images: 'Use search_images for Unsplash photos (returns full-res URLs + a pre-built attribution_html snippet — drop both into the slide; download tracking happens server-side) or upload_image for your own files.',
       };
       const deprecated_layouts = {
         note: 'These 25 templated layouts existed in deckpipe 0.2 and earlier. They are deprecated for new content and intentionally hidden from this listing. Existing decks using them still render unchanged, and the REST API still accepts them. To re-enable them in the MCP surface, see CLAUDE.md → "Resurrecting deprecated layouts".',

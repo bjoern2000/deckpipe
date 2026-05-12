@@ -50,6 +50,39 @@ function processUnsplashDownloads(slides: any[]) {
   }
 }
 
+/**
+ * Canvas slides embed Unsplash URLs directly in HTML — there's no image_ref
+ * intermediary that would normally fire download tracking. Scan the slide
+ * HTML/CSS, extract any Unsplash CDN photo IDs, and trigger one download
+ * ping per unique photo so we stay compliant with Unsplash's API terms.
+ */
+async function trackCanvasUnsplashUsage(slides: any[]) {
+  const seenPhotoIds = new Set<string>();
+  const photoIdRe = /images\.unsplash\.com\/(photo-[a-z0-9-]+)/gi;
+
+  for (const slide of slides) {
+    const c = slide?.content;
+    if (!c) continue;
+    const text = `${c.html || ''}\n${c.css || ''}`;
+    let m;
+    while ((m = photoIdRe.exec(text)) !== null) {
+      seenPhotoIds.add(m[1]);
+    }
+  }
+
+  if (seenPhotoIds.size === 0) return;
+
+  for (const photoId of seenPhotoIds) {
+    const result = await query(
+      `SELECT download_location FROM unsplash_images WHERE url_regular LIKE '%' || $1 || '%' LIMIT 1`,
+      [photoId],
+    );
+    if (result.rows.length > 0) {
+      triggerUnsplashDownload(result.rows[0].download_location);
+    }
+  }
+}
+
 function buildAttribution(img: { photographer_name: string; photographer_url: string }) {
   return {
     name: img.photographer_name,
@@ -188,6 +221,8 @@ decksRouter.post('/', createDeckLimiter, resolveRefsMiddleware, saveRawBody, val
 
     // Trigger Unsplash download tracking and strip download_location before storage
     processUnsplashDownloads(slides);
+    // Same for canvas slides that embed Unsplash URLs directly in HTML/CSS
+    await trackCanvasUnsplashUsage(slides);
 
     await query(
       'INSERT INTO decks (deck_id, title, heading_font, body_font, agent_name, stylesheet, head, slides, edit_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
@@ -379,6 +414,8 @@ decksRouter.patch('/:id', updateDeckLimiter, resolveRefsMiddleware, validate(Upd
 
     // Trigger Unsplash download tracking and strip download_location before storage
     processUnsplashDownloads(newSlides);
+    // Same for canvas slides that embed Unsplash URLs directly in HTML/CSS
+    await trackCanvasUnsplashUsage(newSlides);
 
     await query(
       'UPDATE decks SET title = $1, heading_font = $2, body_font = $3, stylesheet = $4, head = $5, slides = $6, updated_at = NOW() WHERE deck_id = $7',

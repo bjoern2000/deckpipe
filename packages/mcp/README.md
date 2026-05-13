@@ -146,6 +146,6 @@ deckpipe 0.2 had 25 templated layouts (`title`, `title_and_bullets`, `stats`, `s
 
 ## License
 
-[FSL-1.1-Apache-2.0](https://github.com/bjoern2000/deckpipe/blob/master/LICENSE) — Functional Source License, Version 1.1, Apache 2.0 Future License. Auto-converts to Apache 2.0 on 2030-05-11.
+[MIT](https://github.com/bjoern2000/deckpipe/blob/master/LICENSE) — use, modify, fork, host, and ship commercially.
 
 Copyright © 2026 Björn Schefzyk.

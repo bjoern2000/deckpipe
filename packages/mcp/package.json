@@ -21,7 +21,7 @@
     "agent",
     "canvas"
   ],
-  "license": "FSL-1.1-Apache-2.0",
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",
     "zod": "^3.24.3"

@@ -107,7 +107,7 @@ To smoke-test the published artifact without actually publishing: `npm pack /pat
 
 ## Licensing
 
-Code is licensed under **FSL-1.1-Apache-2.0** (Functional Source License, Apache 2.0 Future License): free for self-hosting, internal use, education, research; commercial use to offer deckpipe as a competing hosted service is prohibited until the change date (2030-05-11), after which the entire repo auto-converts to Apache 2.0. Full text in `LICENSE` at the repo root.
+Code is licensed under the **MIT License**. Use, modify, fork, host, and ship commercially — just keep the copyright notice. Full text in `LICENSE` at the repo root.
 
 The "deckpipe" name is trademark-reserved separately — forks must rename.
 

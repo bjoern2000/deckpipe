@@ -140,13 +140,9 @@ A note on layouts: deckpipe 0.2 had 25 templated layouts (`title_and_bullets`, `
 
 Issues and pull requests welcome. Before sending substantial changes, please open an issue to discuss the approach.
 
-This project will eventually require a Contributor License Agreement (CLA) so contributions can be relicensed alongside the auto-conversion to Apache 2.0 in 2030. For now, every PR is reviewed by hand and small contributions are accepted under the file's existing license.
-
 ## License
 
-[FSL-1.1-Apache-2.0](./LICENSE) — Functional Source License, Version 1.1, Apache 2.0 Future License.
-
-Free for: self-hosting, internal use, education, research, and any non-competing use. Prohibited until 2030-05-11: offering deckpipe (or a substantially-similar service) as a commercial hosted product to third parties. After the change date the entire repository auto-converts to Apache 2.0.
+[MIT](./LICENSE) — use, modify, fork, host, and ship commercially.
 
 "deckpipe" is a trademark held separately. Forks must rename.
 

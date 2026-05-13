@@ -225,6 +225,7 @@ export class ViewerApp extends LitElement {
     }
 
     .mobile-layout .mobile-slide {
+      position: relative;
       overflow: hidden;
       border-radius: 8px;
       box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
@@ -233,6 +234,9 @@ export class ViewerApp extends LitElement {
     .mobile-layout .mobile-slide .slide-container {
       width: 1920px;
       height: 1080px;
+      transform-origin: top left;
+      box-shadow: none;
+      border-radius: 0;
     }
 
     /* Presenter mode */
@@ -312,6 +316,7 @@ export class ViewerApp extends LitElement {
     }
     this.mobileQuery.addEventListener('change', this.onMobileChange);
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
+    window.addEventListener('resize', this.onWindowResize);
     this.loadDeck();
     if (!this.printMode && !this.screenshotMode && !this.isMobile) {
       window.addEventListener('keydown', this.onKeyDown);
@@ -360,7 +365,12 @@ export class ViewerApp extends LitElement {
     this.resizeObserver?.disconnect();
     this.mobileQuery?.removeEventListener('change', this.onMobileChange);
     document.removeEventListener('fullscreenchange', this.onFullscreenChange);
+    window.removeEventListener('resize', this.onWindowResize);
   }
+
+  private onWindowResize = () => {
+    if (this.isMobile) this.requestUpdate();
+  };
 
   private onMobileChange = (e: MediaQueryListEvent) => {
     this.isMobile = e.matches;
@@ -1007,11 +1017,14 @@ export class ViewerApp extends LitElement {
   private renderMobileMode() {
     if (!this.deck) return html``;
     const customVars = this.getCustomCssVars();
+    const w = window.innerWidth * 0.95;
+    const scale = w / SLIDE_WIDTH;
+    const h = SLIDE_HEIGHT * scale;
     return html`
       <div class="mobile-layout">
         ${this.deck.slides.map(slide => html`
-          <div class="mobile-slide">
-            <div class="slide-container" style="zoom:${(window.innerWidth * 0.95) / SLIDE_WIDTH};${customVars}">
+          <div class="mobile-slide" style="width:${w}px;height:${h}px">
+            <div class="slide-container" style="transform:scale(${scale});${customVars}">
               <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deck?.stylesheet ?? ''}></slide-renderer>
             </div>
           </div>

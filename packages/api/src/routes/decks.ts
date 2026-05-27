@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { CreateDeckSchema, UpdateDeckSchema, generateDeckId, generateSlideId, generateEditKey, slugify, ApiError, type SlideOperation } from '@deckpipe/shared';
+import { CreateDeckSchema, UpdateDeckSchema, CloneDeckSchema, generateDeckId, generateSlideId, generateEditKey, slugify, ApiError, type SlideOperation } from '@deckpipe/shared';
 import { validate } from '../middleware/validate.js';
 import { createDeckLimiter, getDeckLimiter, updateDeckLimiter, exportPdfLimiter } from '../middleware/rate-limiter.js';
 import { query } from '../db/client.js';
@@ -239,6 +239,51 @@ decksRouter.post('/', createDeckLimiter, resolveRefsMiddleware, saveRawBody, val
       created_at: result.rows[0].created_at,
       slide_count: slides.length,
       ...(warnings.length > 0 && { warnings }),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /v1/decks/:id/clone — Duplicate an existing deck into a brand-new one
+decksRouter.post('/:id/clone', createDeckLimiter, validate(CloneDeckSchema), async (req, res, next) => {
+  try {
+    const source = await query('SELECT * FROM decks WHERE deck_id = $1', [req.params.id]);
+    if (source.rows.length === 0) {
+      throw new ApiError('not_found', `Deck '${req.params.id}' not found`);
+    }
+    const src = source.rows[0];
+    const { title, agent_name } = req.body;
+
+    const deckId = generateDeckId();
+    const editKey = generateEditKey();
+    const newTitle = title ?? `Copy of ${src.title}`;
+    const newAgentName = agent_name ?? src.agent_name ?? null;
+    // Fresh slide_ids so the clone's slides are independent of the source.
+    const slides = (src.slides as any[]).map((s) => ({ ...s, slide_id: generateSlideId() }));
+    const slug = slugify(newTitle);
+
+    // The clone is a new use of any embedded Unsplash photos — fire tracking
+    // for parity with create. download_location was already stripped at the
+    // source deck's creation, so processUnsplashDownloads is a no-op here.
+    processUnsplashDownloads(slides);
+    await trackCanvasUnsplashUsage(slides);
+
+    await query(
+      'INSERT INTO decks (deck_id, title, heading_font, body_font, agent_name, stylesheet, head, slides, edit_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+      [deckId, newTitle, src.heading_font ?? null, src.body_font ?? null, newAgentName, src.stylesheet ?? null, src.head ? JSON.stringify(src.head) : null, JSON.stringify(slides), editKey]
+    );
+
+    const result = await query('SELECT created_at FROM decks WHERE deck_id = $1', [deckId]);
+    const shareUrl = `${config.viewerUrl}/d/${deckId}/${slug}`;
+
+    res.status(201).json({
+      deck_id: deckId,
+      viewer_url: `${shareUrl}?key=${editKey}`,
+      share_url: shareUrl,
+      created_at: result.rows[0].created_at,
+      slide_count: slides.length,
+      cloned_from: src.deck_id,
     });
   } catch (err) {
     next(err);

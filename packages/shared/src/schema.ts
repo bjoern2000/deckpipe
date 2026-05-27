@@ -417,6 +417,15 @@ export const CreateDeckSchema = z.object({
 });
 export type CreateDeckInput = z.infer<typeof CreateDeckSchema>;
 
+// --- Deck clone ---
+// Body is optional — clone with no overrides duplicates the source verbatim
+// (title becomes "Copy of <source title>").
+export const CloneDeckSchema = z.object({
+  title: z.string().min(1).max(300).optional(),
+  agent_name: z.string().min(1).max(100).optional(),
+});
+export type CloneDeckInput = z.infer<typeof CloneDeckSchema>;
+
 // --- Deck update ---
 const SlideUpdateSchema = z.object({
   index: z.number().int().min(0),

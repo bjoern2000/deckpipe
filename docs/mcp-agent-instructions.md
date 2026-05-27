@@ -10,6 +10,7 @@ deckpipe is a slide deck rendering engine. You author each slide as HTML/CSS/JS 
 
 WORKFLOW
 - Use create_deck for NEW decks. Use update_deck to modify EXISTING decks.
+- START FROM A TEMPLATE: to base a new deck on an existing one, use clone_deck (any deck ID works as a template) to get a fresh deck with its own URL + edit key and no inherited comments, then shape it with update_deck. Don't hand-copy slides through create_deck, and never edit the template itself when you mean to make a copy.
 - NEVER recreate a deck to make changes. Recreating loses the URL, edit key, and comment history. Always update in place.
 - CALIBRATE DENSITY FIRST: before authoring a whole deck, build ONE representative content-heavy slide via preview_slide and look at the actual screenshot. The cover/title is the wrong slide to calibrate on — pick one that carries real text. If the user hasn't specified slide count or a reference style (Apple keynote / Pentagram case study / NYT Magazine / investor pitch / status update), ASK before committing — those signals are what tell you how much whitespace to use.
 - ITERATE BEFORE COMMITTING: use preview_slide to render an HTML/CSS/JS draft and get a screenshot + render report. Both preview_slide and get_slide_screenshot return the actual rendered PNG inline — read it. The image is ground truth.
@@ -49,7 +50,7 @@ INLINE EDITS
 
 IMAGES
 - Use search_images to find stock photos (Unsplash). Each result includes a full-resolution `url`, optional `url_full` (2400px) for hero shots, photographer info with UTM-tagged profile link, and a pre-built `attribution_html` snippet. Drop the url into <img src> and drop `attribution_html` into a small caption near the image. Deckpipe fires the required Unsplash download ping server-side on create_deck/update_deck — no manual tracking call needed.
-- Use upload_image to host your own images (PNG/JPG/WebP, base64-encoded).
+- Use upload_image to host your own images (PNG/JPG/WebP/GIF/SVG, max 10MB). Provide it the simplest available way: a local file `path` (only when the MCP server runs on your machine), a remote `url` the server fetches and re-hosts, or base64 `image_data` + filename + content_type. Pass exactly one.
 
 CONTENT STYLE
 - Keep text short, crisp, and scannable. Stats: abbreviate ("2.4M" not "2,400,000"). Quotes: under 30 words. Headlines: ≤ 8 words.
@@ -109,6 +110,24 @@ Each slide includes a comments[] array with open comments. Each comment has: id,
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `deck_id` | string | yes | The deck ID (e.g. "dk_a1b2c3d4") |
+
+---
+
+## clone_deck
+
+### Description
+
+Duplicate an existing deck into a BRAND-NEW deck — the way to start from a template. The source can be any deck you have the ID of; there's no separate "template" type. The clone gets its own deck_id, viewer_url, and edit key, copies the source's slides / stylesheet / head / fonts verbatim (with fresh slide IDs), and does NOT inherit the source's comments. The source deck is left untouched.
+
+Typical flow: clone_deck (from your template) → update_deck (replace placeholder content). Returns the same shape as create_deck plus `cloned_from`.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `source_deck_id` | string | yes | ID of the deck to clone from (your template) |
+| `title` | string | no | Title for the new deck. Defaults to "Copy of <source title>". |
+| `agent_name` | string | no | Author name for comments on the clone. Defaults to the source's agent_name. |
 
 ---
 
@@ -172,15 +191,21 @@ Delete a deck permanently.
 
 ### Description
 
-Upload a base64-encoded image (PNG/JPG/WebP, max 10MB) to get a hosted URL for use in slide image_url fields.
+Host an image (PNG/JPG/WebP/GIF/SVG, max 10MB) and get back a URL for use in `<img src>` on a canvas slide. Provide the image one of three ways — use the simplest available — and pass exactly one:
+
+- `path` — absolute path to a local image file. Only offered when the MCP server runs on your machine (stdio); it reads the file directly, no encoding needed.
+- `url` — a remote image URL the server fetches and re-hosts. Best when you found an image online or already have a hosted URL.
+- `image_data` — base64-encoded bytes (with `filename` + `content_type`). Fallback for raw bytes.
 
 ### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `image_data` | string | yes | Base64-encoded image data |
-| `filename` | string | yes | Filename with extension (e.g. "photo.jpg") |
-| `content_type` | enum | yes | "image/png", "image/jpeg", or "image/webp" |
+| `path` | string | no | Absolute path to a local image file. Only available on local (stdio) servers. |
+| `url` | string | no | Remote image URL (http/https) to fetch and re-host. |
+| `image_data` | string | no | Base64-encoded image data. Requires filename + content_type. |
+| `filename` | string | no | Filename with extension (e.g. "photo.jpg"). Required with image_data. |
+| `content_type` | enum | no | "image/png", "image/jpeg", "image/webp", "image/gif", or "image/svg+xml". Required with image_data. |
 
 ---
 

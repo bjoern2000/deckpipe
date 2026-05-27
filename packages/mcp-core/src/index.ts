@@ -12,6 +12,8 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export const DEPRECATED_LAYOUTS = [
   'title', 'title_and_body', 'title_and_bullets', 'title_and_table',
@@ -25,6 +27,7 @@ export const INSTRUCTIONS = `deckpipe is a slide deck rendering engine. You auth
 
 WORKFLOW
 - Use create_deck for NEW decks. Use update_deck to modify EXISTING decks.
+- START FROM A TEMPLATE: to base a new deck on an existing one, use clone_deck (any deck ID works as a template) to get a fresh deck with its own URL + edit key and no inherited comments, then shape it with update_deck. Don't hand-copy slides through create_deck, and never edit the template itself when you mean to make a copy.
 - NEVER recreate a deck to make changes. Recreating loses the URL, edit key, and comment history. Always update in place.
 - CALIBRATE DENSITY FIRST: before authoring a whole deck, build ONE representative content-heavy slide via preview_slide and look at the actual screenshot. The cover/title is the wrong slide to calibrate on — pick one that carries real text. If the user hasn't specified slide count or a reference style (Apple keynote / Pentagram case study / NYT Magazine / investor pitch / status update), ASK before committing — those signals are what tell you how much whitespace to use.
 - ITERATE BEFORE COMMITTING: use preview_slide to render an HTML/CSS/JS draft and get a screenshot + render report. Both preview_slide and get_slide_screenshot return the actual rendered PNG inline — read it. The image is ground truth.
@@ -75,7 +78,7 @@ INLINE EDITS
 
 IMAGES
 - search_images returns full-resolution URLs (url, url_full), photographer info, and a pre-built attribution_html snippet. Drop the url into <img src> on a canvas slide and the attribution_html into a small caption near the image. Download tracking fires server-side automatically.
-- upload_image hosts your own PNG/JPG/WebP and returns a URL for <img src>.
+- upload_image hosts your own image (PNG/JPG/WebP/GIF/SVG, max 10MB) and returns a URL for <img src>. Three ways to provide it, simplest first: a local file "path" (only when the server runs on your machine), a remote "url" the server fetches and re-hosts, or base64 "image_data" + filename + content_type. Pass exactly one.
 
 CONTENT STYLE
 - Short, crisp, scannable. Headlines ≤ 8 words. Stats abbreviated ("2.4M" not "2,400,000"). Quotes under 30 words.
@@ -86,10 +89,26 @@ LEGACY LAYOUTS
 export interface RegisterToolsOptions {
   /** Base URL of the deckpipe REST API (no trailing slash). */
   apiUrl: string;
+  /**
+   * When true, `upload_image` accepts a local file `path` and reads it off disk.
+   * ONLY safe when the server runs on the same machine as the agent (stdio
+   * transport). MUST stay false for remote/HTTP transports, where a path would
+   * read the SERVER's filesystem. Defaults to false.
+   */
+  allowLocalFiles?: boolean;
 }
 
+const UPLOAD_EXT_MIME: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+};
+
 export function registerTools(server: McpServer, opts: RegisterToolsOptions): void {
-  const { apiUrl } = opts;
+  const { apiUrl, allowLocalFiles = false } = opts;
 
   server.tool(
     'create_deck',
@@ -144,6 +163,35 @@ IMPORTANT:
         if (!res.ok) {
           return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
         }
+        return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+      } catch (err) {
+        return { content: [{ type: 'text' as const, text: `Error: ${err}` }] };
+      }
+    }
+  );
+
+  server.tool(
+    'clone_deck',
+    `Duplicate an existing deck into a BRAND-NEW deck — the way to start from a template.
+
+The source can be ANY deck you have the ID of; there's no separate "template" type. The clone gets its own deck_id, viewer_url, and edit key. It copies the source's slides, stylesheet, head, and fonts verbatim, with fresh slide IDs. It does NOT inherit the source's comments — the clone starts with a clean review history, and the source deck is left untouched.
+
+Typical flow: clone_deck (from your template) → update_deck (replace the placeholder content with the real thing). NEVER edit the source template in place when you mean to make a copy.`,
+    {
+      source_deck_id: z.string().describe('ID of the deck to clone from (your template). E.g. "dk_a1b2c3d4".'),
+      title: z.string().optional().describe('Title for the new deck. Defaults to "Copy of <source title>".'),
+      agent_name: z.string().optional().describe('Author name for comments you post on the clone. Defaults to the source deck\'s agent_name.'),
+    },
+    { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    async ({ source_deck_id, ...body }) => {
+      try {
+        const res = await fetch(`${apiUrl}/v1/decks/${source_deck_id}/clone`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
         return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
       } catch (err) {
         return { content: [{ type: 'text' as const, text: `Error: ${err}` }] };
@@ -244,22 +292,81 @@ Editing existing decks that use the deprecated templated layouts is supported (t
 
   server.tool(
     'upload_image',
-    `Upload a base64-encoded image (PNG/JPG/WebP, max 10MB) to get a hosted URL for use in slide image_url fields.`,
+    `Host an image (PNG/JPG/WebP/GIF/SVG, max 10MB) and get back a URL for use in <img src> on a canvas slide.
+
+Provide the image ONE of three ways — use the simplest one available:
+${allowLocalFiles ? '- path: an absolute path to a local image file. This server runs locally, so it reads the file directly — no encoding needed. Easiest when the image is already on disk.\n' : ''}- url: a remote image URL. The server fetches and re-hosts it. Best when you found an image online or already have a hosted URL.
+- image_data: base64-encoded bytes (with filename + content_type). The fallback when you only have raw bytes in hand.
+
+Pass exactly one of ${allowLocalFiles ? 'path / ' : ''}url / image_data.`,
     {
-      image_data: z.string().describe('Base64-encoded image data'),
-      filename: z.string().describe('Filename with extension (e.g. "photo.jpg")'),
-      content_type: z.enum(['image/png', 'image/jpeg', 'image/webp']).describe('MIME type'),
+      ...(allowLocalFiles ? { path: z.string().optional().describe('Absolute path to a local image file to upload. Only available when the MCP server runs on your machine.') } : {}),
+      url: z.string().optional().describe('Remote image URL to fetch and re-host (http/https). Preferred over base64 when you have a URL.'),
+      image_data: z.string().optional().describe('Base64-encoded image data. Requires filename + content_type. Use only when you have raw bytes and no path/url.'),
+      filename: z.string().optional().describe('Filename with extension (e.g. "photo.jpg"). Required with image_data.'),
+      content_type: z.enum(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml']).optional().describe('MIME type. Required with image_data.'),
     },
     { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-    async ({ image_data, filename, content_type }) => {
-      const buffer = Buffer.from(image_data, 'base64');
-      const blob = new Blob([buffer], { type: content_type });
-      const form = new FormData();
-      form.append('file', blob, filename);
-      const res = await fetch(`${apiUrl}/v1/images`, { method: 'POST', body: form });
-      const data = await res.json();
-      if (!res.ok) return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
-      return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+    async (args) => {
+      try {
+        const localPath = allowLocalFiles ? (args as { path?: string }).path : undefined;
+        const { url, image_data, filename, content_type } = args as {
+          url?: string; image_data?: string; filename?: string; content_type?: string;
+        };
+        const provided = [localPath, url, image_data].filter((v) => v != null).length;
+        if (provided !== 1) {
+          const opts = allowLocalFiles ? 'path, url, or image_data' : 'url or image_data';
+          return { content: [{ type: 'text' as const, text: `Error: provide exactly one of ${opts}.` }] };
+        }
+
+        // URL → server fetches and re-hosts.
+        if (url != null) {
+          const res = await fetch(`${apiUrl}/v1/images/from-url`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+          });
+          const data = await res.json();
+          if (!res.ok) return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
+          return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+        }
+
+        // Local path (stdio only) or base64 → multipart upload.
+        let buffer: Buffer;
+        let name: string;
+        let mime: string;
+        if (localPath != null) {
+          const ext = path.extname(localPath).toLowerCase();
+          const detected = UPLOAD_EXT_MIME[ext];
+          if (!detected) {
+            return { content: [{ type: 'text' as const, text: `Error: unsupported file type '${ext}'. Must be PNG, JPG, WebP, GIF, or SVG.` }] };
+          }
+          try {
+            buffer = fs.readFileSync(localPath);
+          } catch (e) {
+            return { content: [{ type: 'text' as const, text: `Error: could not read file '${localPath}': ${e}` }] };
+          }
+          name = path.basename(localPath);
+          mime = detected;
+        } else {
+          if (!filename || !content_type) {
+            return { content: [{ type: 'text' as const, text: 'Error: image_data requires filename and content_type.' }] };
+          }
+          buffer = Buffer.from(image_data!, 'base64');
+          name = filename;
+          mime = content_type;
+        }
+
+        const blob = new Blob([new Uint8Array(buffer)], { type: mime });
+        const form = new FormData();
+        form.append('file', blob, name);
+        const res = await fetch(`${apiUrl}/v1/images`, { method: 'POST', body: form });
+        const data = await res.json();
+        if (!res.ok) return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
+        return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+      } catch (err) {
+        return { content: [{ type: 'text' as const, text: `Error: ${err}` }] };
+      }
     }
   );
 

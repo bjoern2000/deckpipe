@@ -17,7 +17,7 @@ import { INSTRUCTIONS, registerTools } from '@deckpipe/mcp-core';
 import { config } from './config.js';
 
 const NAME = 'deckpipe';
-const VERSION = '0.3.7';
+const VERSION = '0.3.8';
 
 async function main() {
   const port = process.env.PORT ? parseInt(process.env.PORT, 10) : null;
@@ -73,7 +73,8 @@ async function main() {
       };
 
       const mcpServer = new McpServer({ name: NAME, version: VERSION }, { instructions: INSTRUCTIONS });
-      registerTools(mcpServer, { apiUrl: config.apiUrl });
+      // HTTP mode is remote — never read the server's local filesystem.
+      registerTools(mcpServer, { apiUrl: config.apiUrl, allowLocalFiles: false });
       await mcpServer.connect(transport);
 
       if (transport.sessionId) {
@@ -87,9 +88,10 @@ async function main() {
       console.error(`deckpipe MCP server running on http://0.0.0.0:${port}/mcp`);
     });
   } else {
-    // Stdio mode — for CLI (npx deckpipe-mcp).
+    // Stdio mode — for CLI (npx deckpipe-mcp). Runs on the user's machine, so
+    // local-file image uploads are safe here.
     const server = new McpServer({ name: NAME, version: VERSION }, { instructions: INSTRUCTIONS });
-    registerTools(server, { apiUrl: config.apiUrl });
+    registerTools(server, { apiUrl: config.apiUrl, allowLocalFiles: true });
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error('deckpipe MCP server running on stdio');

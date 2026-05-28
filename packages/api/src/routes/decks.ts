@@ -5,6 +5,7 @@ import { createDeckLimiter, getDeckLimiter, updateDeckLimiter, exportPdfLimiter 
 import { query } from '../db/client.js';
 import { config } from '../config.js';
 import { detectUnknownFields, extractImageUrls, validateImageUrls } from '../utils/slide-warnings.js';
+import { mergeTokens } from '../utils/tokens.js';
 import { triggerUnsplashDownload, lookupUnsplashImage } from './unsplash.js';
 export const decksRouter = Router();
 
@@ -197,8 +198,9 @@ function ensureSlideIds(slides: any[]): any[] {
 // POST /v1/decks — Create a new deck
 decksRouter.post('/', createDeckLimiter, resolveRefsMiddleware, saveRawBody, validate(CreateDeckSchema), async (req, res, next) => {
   try {
-    const { title, heading_font, body_font, agent_name, stylesheet, head, slides: rawSlides } = req.body;
+    const { title, heading_font, body_font, agent_name, stylesheet, tokens, head, slides: rawSlides } = req.body;
     const slides = ensureSlideIds(convertPlaceholderUrls(rawSlides));
+    const normalizedTokens = mergeTokens(null, tokens);
     const deckId = generateDeckId();
     const editKey = generateEditKey();
     const slug = slugify(title);
@@ -225,8 +227,8 @@ decksRouter.post('/', createDeckLimiter, resolveRefsMiddleware, saveRawBody, val
     await trackCanvasUnsplashUsage(slides);
 
     await query(
-      'INSERT INTO decks (deck_id, title, heading_font, body_font, agent_name, stylesheet, head, slides, edit_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-      [deckId, title, heading_font ?? null, body_font ?? null, agent_name ?? null, stylesheet ?? null, head ? JSON.stringify(head) : null, JSON.stringify(slides), editKey]
+      'INSERT INTO decks (deck_id, title, heading_font, body_font, agent_name, stylesheet, tokens, head, slides, edit_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+      [deckId, title, heading_font ?? null, body_font ?? null, agent_name ?? null, stylesheet ?? null, normalizedTokens ? JSON.stringify(normalizedTokens) : null, head ? JSON.stringify(head) : null, JSON.stringify(slides), editKey]
     );
 
     const result = await query('SELECT created_at FROM decks WHERE deck_id = $1', [deckId]);
@@ -270,8 +272,8 @@ decksRouter.post('/:id/clone', createDeckLimiter, validate(CloneDeckSchema), asy
     await trackCanvasUnsplashUsage(slides);
 
     await query(
-      'INSERT INTO decks (deck_id, title, heading_font, body_font, agent_name, stylesheet, head, slides, edit_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-      [deckId, newTitle, src.heading_font ?? null, src.body_font ?? null, newAgentName, src.stylesheet ?? null, src.head ? JSON.stringify(src.head) : null, JSON.stringify(slides), editKey]
+      'INSERT INTO decks (deck_id, title, heading_font, body_font, agent_name, stylesheet, tokens, head, slides, edit_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+      [deckId, newTitle, src.heading_font ?? null, src.body_font ?? null, newAgentName, src.stylesheet ?? null, src.tokens ? JSON.stringify(src.tokens) : null, src.head ? JSON.stringify(src.head) : null, JSON.stringify(slides), editKey]
     );
 
     const result = await query('SELECT created_at FROM decks WHERE deck_id = $1', [deckId]);
@@ -330,6 +332,7 @@ decksRouter.get('/:id', getDeckLimiter, async (req, res, next) => {
       body_font: deck.body_font ?? null,
       agent_name: deck.agent_name ?? null,
       stylesheet: deck.stylesheet ?? null,
+      tokens: deck.tokens ?? null,
       head: deck.head ?? null,
       slides,
       edit_key: deck.edit_key,
@@ -388,7 +391,8 @@ decksRouter.patch('/:id', updateDeckLimiter, resolveRefsMiddleware, validate(Upd
     }
 
     const deck = existing.rows[0];
-    const { title, heading_font, body_font, stylesheet, head, slides, slide_operations } = req.body;
+    const { title, heading_font, body_font, stylesheet, tokens, head, slides, slide_operations } = req.body;
+    const returnMode: 'full' | 'summary' = req.body.return === 'summary' ? 'summary' : 'full';
 
     const warnings: string[] = [];
 
@@ -397,6 +401,8 @@ decksRouter.patch('/:id', updateDeckLimiter, resolveRefsMiddleware, validate(Upd
     const newHeadingFont = heading_font !== undefined ? heading_font : deck.heading_font;
     const newBodyFont = body_font !== undefined ? body_font : deck.body_font;
     const newStylesheet = stylesheet !== undefined ? stylesheet : deck.stylesheet;
+    // tokens is a PARTIAL patch (string sets, null deletes, top-level null clears).
+    const newTokens = mergeTokens(deck.tokens ?? null, tokens);
     const newHead = head !== undefined ? head : deck.head;
     let newSlides = ensureSlideIds(deck.slides);
 
@@ -405,10 +411,21 @@ decksRouter.patch('/:id', updateDeckLimiter, resolveRefsMiddleware, validate(Upd
       newSlides = applySlideOperations(newSlides, slide_operations);
     }
 
-    // Step 2: Apply content edits (indices reference post-operations state)
+    // Step 2: Apply content edits. Each targets a slide by stable slide_id
+    // (preferred — no off-by-one when ops reordered things) or by post-operations index.
+    const editedIndices: number[] = [];
     if (slides) {
       for (const update of slides) {
-        const { index, content } = update;
+        const { content } = update;
+        let index: number;
+        if (update.slide_id !== undefined) {
+          index = newSlides.findIndex((s: any) => s.slide_id === update.slide_id);
+          if (index === -1) {
+            throw new ApiError('validation_error', `No slide with slide_id '${update.slide_id}'`, 'slides');
+          }
+        } else {
+          index = update.index as number;
+        }
         if (index < 0 || index >= newSlides.length) {
           throw new ApiError('validation_error', `Slide index ${index} out of range (0-${newSlides.length - 1})`, `slides[${index}].index`);
         }
@@ -421,6 +438,7 @@ decksRouter.patch('/:id', updateDeckLimiter, resolveRefsMiddleware, validate(Upd
           ...newSlides[index],
           content: { ...newSlides[index].content, ...content },
         };
+        editedIndices.push(index);
       }
     }
 
@@ -443,7 +461,7 @@ decksRouter.patch('/:id', updateDeckLimiter, resolveRefsMiddleware, validate(Upd
         for (let i = 0; i < newSlides.length; i++) indicesToCheck.add(i);
       }
       if (slides) {
-        for (const u of slides) indicesToCheck.add(u.index);
+        for (const i of editedIndices) indicesToCheck.add(i);
       }
       const slidesWithIndex = [...indicesToCheck].map(i => ({
         ...newSlides[i],
@@ -463,12 +481,24 @@ decksRouter.patch('/:id', updateDeckLimiter, resolveRefsMiddleware, validate(Upd
     await trackCanvasUnsplashUsage(newSlides);
 
     await query(
-      'UPDATE decks SET title = $1, heading_font = $2, body_font = $3, stylesheet = $4, head = $5, slides = $6, updated_at = NOW() WHERE deck_id = $7',
-      [newTitle, newHeadingFont ?? null, newBodyFont ?? null, newStylesheet ?? null, newHead ? JSON.stringify(newHead) : null, JSON.stringify(newSlides), req.params.id]
+      'UPDATE decks SET title = $1, heading_font = $2, body_font = $3, stylesheet = $4, tokens = $5, head = $6, slides = $7, updated_at = NOW() WHERE deck_id = $8',
+      [newTitle, newHeadingFont ?? null, newBodyFont ?? null, newStylesheet ?? null, newTokens ? JSON.stringify(newTokens) : null, newHead ? JSON.stringify(newHead) : null, JSON.stringify(newSlides), req.params.id]
     );
 
     const result = await query('SELECT * FROM decks WHERE deck_id = $1', [req.params.id]);
     const updated = result.rows[0];
+
+    // return:"summary" — a compact ack instead of echoing the whole deck back.
+    // Cheap for context-limited agents flipping one token or editing one slide.
+    if (returnMode === 'summary') {
+      res.json({
+        deck_id: updated.deck_id,
+        slide_count: updated.slides.length,
+        updated_indices: [...new Set(editedIndices)].sort((a, b) => a - b),
+        ...(warnings.length > 0 && { warnings }),
+      });
+      return;
+    }
 
     res.json({
       deck_id: updated.deck_id,
@@ -477,6 +507,7 @@ decksRouter.patch('/:id', updateDeckLimiter, resolveRefsMiddleware, validate(Upd
       body_font: updated.body_font ?? null,
       agent_name: updated.agent_name ?? null,
       stylesheet: updated.stylesheet ?? null,
+      tokens: updated.tokens ?? null,
       head: updated.head ?? null,
       slides: updated.slides,
       created_at: updated.created_at,

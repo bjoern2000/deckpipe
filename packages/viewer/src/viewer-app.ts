@@ -24,6 +24,7 @@ interface Deck {
   body_font?: string | null;
   agent_name?: string | null;
   stylesheet?: string | null;
+  tokens?: Record<string, string> | null;
   head?: HeadEntry[] | null;
   slides: Array<{ layout: string; slide_id?: string; content: Record<string, unknown> }>;
   edit_key?: string;
@@ -564,9 +565,45 @@ export class ViewerApp extends LitElement {
           });
           return acc;
         };
+        // A freshly-injected <link rel=stylesheet> (Google Fonts, icon fonts)
+        // hasn't parsed its @font-face rules yet, so document.fonts.ready can
+        // resolve before those faces even exist — and the screenshot captures
+        // a fallback font. Wait for every stylesheet link to settle first.
+        const waitForStylesheetLinks = async () => {
+          const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+          await Promise.all(links.map((link) => new Promise<void>((r) => {
+            try { if ((link as HTMLLinkElement).sheet) { r(); return; } } catch { /* cross-origin: fall through to events */ }
+            link.addEventListener('load', () => r(), { once: true });
+            link.addEventListener('error', () => r(), { once: true });
+            setTimeout(() => r(), 5000); // never block readiness on a hung link
+          })));
+        };
+
+        // Fonts referenced only inside a shadow root via adoptedStyleSheets are
+        // loaded lazily, and document.fonts.ready doesn't always wait for them.
+        // Walk every element (descending shadow roots), read its computed font,
+        // and explicitly kick off the load so the face is painted before capture.
+        const forceLoadUsedFonts = async () => {
+          const fontStrings = new Set<string>();
+          const visit = (root: ParentNode) => {
+            root.querySelectorAll('*').forEach((el) => {
+              const cs = getComputedStyle(el as Element);
+              if (cs.fontFamily) fontStrings.add(`${cs.fontStyle} ${cs.fontWeight} 1em ${cs.fontFamily}`);
+              const sr = (el as Element & { shadowRoot?: ShadowRoot | null }).shadowRoot;
+              if (sr) visit(sr);
+            });
+          };
+          visit(document);
+          const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+          if (!fonts) return;
+          await Promise.all([...fontStrings].map((f) => fonts.load(f).catch(() => {})));
+        };
+
         const signal = async () => {
           // Two rAFs first so Lit has mounted the slide-canvas shadow root.
           await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+          await waitForStylesheetLinks();
+          await forceLoadUsedFonts();
           try { await (document as Document & { fonts?: FontFaceSet }).fonts?.ready; } catch { /* ignore */ }
           const imgs = collectImages(document);
           await Promise.all(imgs.map((img) =>
@@ -875,6 +912,7 @@ export class ViewerApp extends LitElement {
             .headingFont=${this.deck.heading_font ?? ''}
             .bodyFont=${this.deck.body_font ?? ''}
             .deckStylesheet=${this.deck.stylesheet ?? ''}
+            .tokens=${this.deck.tokens ?? null}
             @thumbnail-click=${this.onThumbnailClick}
           ></thumbnail-strip>
         </div>
@@ -905,6 +943,7 @@ export class ViewerApp extends LitElement {
                 .slide=${slide}
                 .editable=${this.editMode}
                 .deckStylesheet=${this.deck.stylesheet ?? ''}
+                .tokens=${this.deck.tokens ?? null}
                 @slide-content-changed=${this.onSlideContentChanged}
                 @show-tooltip=${this.onShowTooltip}
                 @hide-tooltip=${this.onHideTooltip}
@@ -987,6 +1026,7 @@ export class ViewerApp extends LitElement {
               .editable=${false}
               .staticPreview=${true}
               .deckStylesheet=${this.deck?.stylesheet ?? ''}
+              .tokens=${this.deck?.tokens ?? null}
             ></slide-renderer>
           </div>
         </div>
@@ -1004,7 +1044,7 @@ export class ViewerApp extends LitElement {
       <div class="presenter-layout">
         <div class="slide-wrapper" style="width:${this.slideWidth}px;height:${this.slideHeight}px">
           <div class="slide-container" style="transform:scale(${scaleFactor});${customVars}">
-            <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deck?.stylesheet ?? ''}></slide-renderer>
+            <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deck?.stylesheet ?? ''} .tokens=${this.deck?.tokens ?? null}></slide-renderer>
           </div>
         </div>
         <div class="presenter-counter">
@@ -1025,7 +1065,7 @@ export class ViewerApp extends LitElement {
         ${this.deck.slides.map(slide => html`
           <div class="mobile-slide" style="width:${w}px;height:${h}px">
             <div class="slide-container" style="transform:scale(${scale});${customVars}">
-              <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deck?.stylesheet ?? ''}></slide-renderer>
+              <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deck?.stylesheet ?? ''} .tokens=${this.deck?.tokens ?? null}></slide-renderer>
             </div>
           </div>
         `)}
@@ -1041,7 +1081,7 @@ export class ViewerApp extends LitElement {
         ${this.deck.slides.map(slide => html`
           <div class="slide-wrapper print-mode">
             <div class="slide-container" style="${customVars}">
-              <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deck?.stylesheet ?? ''}></slide-renderer>
+              <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deck?.stylesheet ?? ''} .tokens=${this.deck?.tokens ?? null}></slide-renderer>
             </div>
           </div>
         `)}

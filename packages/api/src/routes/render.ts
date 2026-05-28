@@ -113,6 +113,7 @@ interface PreviewPayload {
   static_render_only?: boolean;
   // optional deck-level context so the slide can use design-system tokens
   stylesheet?: string;
+  tokens?: Record<string, string>;
   head?: unknown[];
   heading_font?: string;
   body_font?: string;
@@ -140,6 +141,7 @@ const PreviewSchema = z.object({
   js: z.string().max(100_000).optional(),
   static_render_only: z.boolean().optional(),
   stylesheet: z.string().max(100_000).optional(),
+  tokens: z.record(z.string().max(2_000)).optional(),
   head: z.array(HeadEntrySchema).optional(),
   heading_font: z.string().max(80).optional(),
   body_font: z.string().max(80).optional(),
@@ -195,6 +197,7 @@ renderRouter.get('/preview/:previewId', (req, res) => {
     body_font: p.body_font ?? null,
     agent_name: null,
     stylesheet: p.stylesheet ?? null,
+    tokens: p.tokens ?? null,
     head: p.head ?? null,
     slides: [{
       slide_id: 'sl_preview',

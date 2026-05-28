@@ -55,6 +55,7 @@ export class ThumbnailStrip extends LitElement {
   @property() headingFont = '';
   @property() bodyFont = '';
   @property() deckStylesheet = '';
+  @property({ type: Object }) tokens: Record<string, string> | null = null;
 
   private getScale(el: HTMLElement): number {
     // Scale the 1920px inner to fit the thumbnail's actual width
@@ -98,7 +99,7 @@ export class ThumbnailStrip extends LitElement {
         >
           <span class="thumb-number">${i + 1}</span>
           <div class="thumbnail-inner">
-            <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deckStylesheet} .staticPreview=${true}></slide-renderer>
+            <slide-renderer .slide=${slide} .editable=${false} .deckStylesheet=${this.deckStylesheet} .tokens=${this.tokens} .staticPreview=${true}></slide-renderer>
           </div>
         </div>
       `)}

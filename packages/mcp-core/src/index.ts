@@ -65,6 +65,7 @@ DECK-LEVEL THEMING (define once, reference everywhere)
     .row        { display: flex; gap: 48px; align-items: stretch; }
 
   Notice the scale: padding in 100s of px, body in 24–32px, h1 in 100+px. Designs sized for a 16px-base browser look tiny at 1920×1080.
+- tokens: a flat { "--name": "value" } map injected into every slide as :host { … }. Put your palette / spacing / radius here, reference with var(--name) in stylesheet and slide css. Unlike stylesheet, tokens are PATCHABLE one at a time via update_deck — flip --accent without re-sending the whole stylesheet.
 - head: array of { tag, attrs?, body? } entries injected into the page head. Load Google Fonts here as <link> entries, then set font-family in deck.stylesheet on .h1/.h2/.body classes (or whatever your design system calls them).
 
 COMMENTING
@@ -82,6 +83,14 @@ IMAGES
 
 CONTENT STYLE
 - Short, crisp, scannable. Headlines ≤ 8 words. Stats abbreviated ("2.4M" not "2,400,000"). Quotes under 30 words.
+
+AUTHORING GOTCHAS (the things you'd otherwise learn by trial and error)
+- CSS lives in a SHADOW ROOT. deck.stylesheet and per-slide css are adopted into each slide's shadow tree, so selectors only match inside the slide (no leakage, no prefixes needed). Declare deck-wide custom properties on :host — a bare ":root { … }" is auto-rewritten to ":host" for you, so either works. Once a token is defined there (or in the tokens map), var() resolves EVERYWHERE, including background:, background-image:, and gradients.
+- Change one value cheaply. To tweak a single design value, PATCH the tokens map (update_deck { tokens: { "--accent": "#e11" } }) instead of re-sending the whole stylesheet. And pass return:"summary" so update_deck returns a small ack instead of echoing every slide's html/css/js back at you.
+- Fonts DO load from head <link>s. Add a Google Fonts <link> in head (or an @font-face in stylesheet), then set font-family in stylesheet/tokens. Screenshots explicitly wait for head <link>s and force the used faces to load before capturing, so the font shows up in the render. The report's fonts_loaded/fonts_missing now lists only the faces your slide actually paints with — not every weight permutation.
+- Uploading images: pass a local "path" (stdio/local server) or a remote "url" — the server reads/fetches and re-hosts it, and only the short string crosses the wire. Reserve base64 "image_data" for tiny images; a multi-hundred-KB base64 blob will bloat (and may be truncated in) your context.
+- Inspect without re-authoring. preview_slide AND get_slide_screenshot both return the rendered PNG inline — read the image, it's ground truth. get_slide_screenshot renders a slide of an EXISTING deck, so you can see a live slide without re-sending its html.
+- Address slides by slide_id. In update_deck.slides, prefer { slide_id, content } over { index, content } — slide_id won't drift if the same call also inserts/moves slides via slide_operations.
 
 LEGACY LAYOUTS
 - 25 templated layouts (title, title_and_bullets, stats, chart, swot, …) are deprecated and not advertised. Existing decks using them still render. New slides should always use the "canvas" layout.`;
@@ -135,12 +144,13 @@ IMPORTANT:
     {
       title: z.string().describe('Deck title'),
       agent_name: z.string().optional().describe('Your agent name (e.g. "Acme Strategy Agent"). Shown as author on comments you post. Set this once at deck creation.'),
-      stylesheet: z.string().optional().describe('Global CSS adopted by every canvas slide via shadow-root adoptedStyleSheets. Define your design system once (typography, components, color tokens) and reference classes from each slide.'),
+      stylesheet: z.string().optional().describe('Global CSS adopted by every canvas slide via shadow-root adoptedStyleSheets. Define your design system once (typography, components, color tokens) and reference classes from each slide. NOTE: it is adopted into a shadow root, so write `:host { … }` for deck-wide custom properties — a bare `:root { … }` is auto-rewritten to `:host`, so either works.'),
+      tokens: z.record(z.string()).optional().describe('Deck-level design tokens: a flat { "--name": "value" } map injected into every canvas slide as `:host { … }`. Define your palette/spacing/radius once here and reference them via var(--name) in stylesheet or per-slide css. Unlike stylesheet, individual tokens are patchable later via update_deck — flip one color without re-sending the whole stylesheet.'),
       head: z.array(z.object({
         tag: z.enum(['link', 'script', 'style']),
         attrs: z.record(z.string()).optional(),
         body: z.string().optional(),
-      })).optional().describe('Array of <link>/<script>/<style> entries injected into the page head. Use for Google Fonts links, icon-font stylesheets, or trusted CDN scripts your js depends on.'),
+      })).optional().describe('Array of <link>/<script>/<style> entries injected into the page head. Use for Google Fonts links, icon-font stylesheets, or trusted CDN scripts your js depends on. Font <link>s here DO load (screenshots wait for them) — set font-family in stylesheet/tokens to use them.'),
       slides: z.array(z.object({
         layout: z.literal('canvas').describe('Always "canvas". (25 legacy templated layouts exist but are deprecated for new content — see CLAUDE.md to re-enable.)'),
         content: z.object({
@@ -230,20 +240,26 @@ slide_operations examples:
 - Replace: { "op": "replace", "index": 4, "slide": { "layout": "canvas", "content": { "html": "..." } } }
 
 slides (content edit) examples:
-- Replace the html of slide 0: { "index": 0, "content": { "html": "<div class=\\"slide\\">new markup</div>" } }
-- Tweak the css of slide 2: { "index": 2, "content": { "css": ".card { border-radius: 24px; }" } }
+- Replace the html of a slide by id: { "slide_id": "sld_a1b2c3d4", "content": { "html": "<div class=\\"slide\\">new markup</div>" } }
+- Tweak the css of slide 2 by index: { "index": 2, "content": { "css": ".card { border-radius: 24px; }" } }
+- Address by slide_id (preferred) or index. slide_id can't go stale when slide_operations reorder things in the same call.
 - Both are PARTIAL merges into the existing content object — other fields (js, static_render_only, etc.) are preserved.
+
+CHEAP EDITS (save context):
+- To change one design value, PATCH "tokens" instead of re-sending "stylesheet": { "tokens": { "--accent": "#e11d48" } }. null deletes a token; tokens:null clears all.
+- Pass "return": "summary" to get back just { deck_id, slide_count, updated_indices, warnings } instead of the entire deck echoed.
 
 Editing existing decks that use the deprecated templated layouts is supported (the REST API still accepts them); just patch their content fields directly. New slides should be canvas.`,
     {
       deck_id: z.string().describe('Deck ID to update'),
       title: z.string().optional().describe('New deck title'),
-      stylesheet: z.string().nullable().optional().describe('Replace the deck-level global CSS string used by canvas slides. Pass null to clear.'),
+      stylesheet: z.string().nullable().optional().describe('Replace the deck-level global CSS string used by canvas slides (wholesale — pass the whole thing). Pass null to clear. To change just one value, prefer the patchable "tokens" map instead of re-sending this.'),
+      tokens: z.record(z.string().nullable()).nullable().optional().describe('PATCH deck design tokens (the { "--name": "value" } map). A string value sets/overwrites that one token, null deletes that one token, and passing tokens:null clears them all. This is the cheap way to flip a single design value — e.g. tokens: { "--accent": "#e11d48" } — without re-transmitting the stylesheet.'),
       head: z.array(z.object({
         tag: z.enum(['link', 'script', 'style']),
         attrs: z.record(z.string()).optional(),
         body: z.string().optional(),
-      })).nullable().optional().describe('Replace the deck-level head entries. Pass null to clear.'),
+      })).nullable().optional().describe('Replace the deck-level head entries (wholesale). Pass null to clear.'),
       slide_operations: z.array(z.object({
         op: z.enum(['delete', 'insert', 'move', 'replace']).describe('Operation type: "insert" adds a new slide, "delete" removes one, "move" reorders, "replace" swaps layout+content'),
         index: z.number().optional().describe('Target slide index. Required for insert (position to insert at), delete, and replace.'),
@@ -260,9 +276,11 @@ Editing existing decks that use the deprecated templated layouts is supported (t
         }).optional().describe('The new slide to add. Required for insert and replace.'),
       })).optional().describe('Structural changes: add, remove, reorder, or replace slides. Use this to INSERT NEW SLIDES — do not recreate the deck.'),
       slides: z.array(z.object({
-        index: z.number().describe('Zero-based slide index (post-operations)'),
+        slide_id: z.string().optional().describe('Stable slide id (e.g. "sld_a1b2c3d4", from get_deck/create_deck). PREFERRED over index — it can\'t go stale when slide_operations insert/reorder slides in the same call.'),
+        index: z.number().optional().describe('Zero-based slide index (post-operations). Use this OR slide_id.'),
         content: z.record(z.unknown()).describe('Partial content to merge'),
-      })).optional().describe('Content edits by index (applied after slide_operations)'),
+      })).optional().describe('Content edits to existing slides, addressed by slide_id (preferred) or index. Applied after slide_operations.'),
+      return: z.enum(['full', 'summary']).optional().describe('Response shape. "full" (default) echoes the entire updated deck (every slide\'s html/css/js + stylesheet) — can be tens of KB. "summary" returns only { deck_id, slide_count, updated_indices, warnings }. Use "summary" unless you actually need the deck echoed back; it saves a lot of context.'),
     },
     { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     async ({ deck_id, ...body }) => {
@@ -424,8 +442,9 @@ Attribution is required by Unsplash terms. Drop attribution_html into a small ca
         },
       ];
       const customization = {
-        stylesheet: 'Deck-level global CSS adopted by every canvas slide via shadow-root adoptedStyleSheets. Define your design system once and reference it from each slide. Up to 100KB.',
-        head: 'Array of <link>/<script>/<style> entries injected into the page head. Load Google Fonts (or icon-font stylesheets, or trusted CDN scripts) here. Then set font-family in deck.stylesheet on your typography classes.',
+        stylesheet: 'Deck-level global CSS adopted by every canvas slide via shadow-root adoptedStyleSheets. Define your design system once and reference it from each slide. Up to 100KB. Adopted into a shadow root, so use :host for deck-wide custom properties (a bare :root is auto-rewritten to :host).',
+        tokens: 'Flat { "--name": "value" } map injected into every slide as :host { … }. The patchable layer of the design system — update_deck can set/delete a single token without re-sending the stylesheet. Reference via var(--name).',
+        head: 'Array of <link>/<script>/<style> entries injected into the page head. Load Google Fonts (or icon-font stylesheets, or trusted CDN scripts) here — font <link>s are honored in screenshots. Then set font-family in deck.stylesheet/tokens on your typography classes.',
       };
       const style_guide = {
         canvas: [
@@ -534,6 +553,7 @@ The screenshot is the slide alone — no viewer chrome.`,
       js: z.string().optional().describe('Optional per-slide JS. Runs with (root, slide). Skipped if static_render_only=true (which screenshot mode forces).'),
       static_render_only: z.boolean().optional().describe('Set true to skip your "js" during the preview render. Useful to isolate CSS/HTML issues.'),
       stylesheet: z.string().optional().describe('Deck-level CSS to adopt (mirrors deck.stylesheet). Use this so the preview matches your actual design system.'),
+      tokens: z.record(z.string()).optional().describe('Deck-level design tokens (mirrors deck.tokens), injected as :host { … } so the preview resolves the same var(--name) references as the real deck.'),
       head: z.array(z.object({
         tag: z.enum(['link', 'script', 'style']),
         attrs: z.record(z.string()).optional(),

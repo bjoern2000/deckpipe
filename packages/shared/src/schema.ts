@@ -405,6 +405,23 @@ export const HeadEntrySchema = z.object({
 });
 export type HeadEntry = z.infer<typeof HeadEntrySchema>;
 
+// --- Deck design tokens ---
+// A flat custom-property map injected into every canvas slide's shadow root as
+// `:host { --name: value; … }`. Keys may omit the leading `--` (it's added).
+// Values are CSS strings. The patchable, granular layer of the design system.
+export const TokensSchema = z.record(z.string().max(2_000)).refine(
+  (obj) => Object.keys(obj).length <= 200,
+  { message: 'A deck may define at most 200 tokens' },
+);
+export type Tokens = z.infer<typeof TokensSchema>;
+
+// Update form: a partial patch — string sets/overwrites a token, null deletes it.
+export const TokensPatchSchema = z.record(z.string().max(2_000).nullable()).refine(
+  (obj) => Object.keys(obj).length <= 200,
+  { message: 'A token patch may touch at most 200 keys' },
+);
+export type TokensPatch = z.infer<typeof TokensPatchSchema>;
+
 // --- Deck creation ---
 export const CreateDeckSchema = z.object({
   title: z.string().min(1),
@@ -412,6 +429,7 @@ export const CreateDeckSchema = z.object({
   body_font: z.string().min(1).max(100).optional(),
   agent_name: z.string().min(1).max(100).optional(),
   stylesheet: z.string().max(100_000).optional(),
+  tokens: TokensSchema.optional(),
   head: z.array(HeadEntrySchema).max(20).optional(),
   slides: z.array(SlideSchema).min(1).max(50),
 });
@@ -427,10 +445,16 @@ export const CloneDeckSchema = z.object({
 export type CloneDeckInput = z.infer<typeof CloneDeckSchema>;
 
 // --- Deck update ---
+// A content edit targets a slide by stable slide_id OR by post-operations index.
+// slide_id is preferred (no off-by-one when inserting/reordering in the same call).
 const SlideUpdateSchema = z.object({
-  index: z.number().int().min(0),
+  index: z.number().int().min(0).optional(),
+  slide_id: z.string().min(1).optional(),
   content: z.record(z.unknown()),
-});
+}).refine(
+  (d) => d.index !== undefined || d.slide_id !== undefined,
+  { message: 'Each slide edit must specify either slide_id or index' },
+);
 
 const NewSlideSchema = z.object({
   layout: z.enum(LayoutNames),
@@ -450,11 +474,16 @@ export const UpdateDeckSchema = z.object({
   heading_font: z.string().min(1).max(100).optional(),
   body_font: z.string().min(1).max(100).optional(),
   stylesheet: z.string().max(100_000).nullable().optional(),
+  // Partial token patch: string sets a token, null deletes it, top-level null clears all.
+  tokens: TokensPatchSchema.nullable().optional(),
   head: z.array(HeadEntrySchema).max(20).nullable().optional(),
   slides: z.array(SlideUpdateSchema).optional(),
   slide_operations: z.array(SlideOperationSchema).max(50).optional(),
+  // Response shape: "full" (default) echoes the whole deck; "summary" returns
+  // just { deck_id, slide_count, updated_indices, warnings } to save context.
+  return: z.enum(['full', 'summary']).optional(),
 }).refine(
-  (data) => data.title !== undefined || data.heading_font !== undefined || data.body_font !== undefined || data.stylesheet !== undefined || data.head !== undefined || data.slides !== undefined || data.slide_operations !== undefined,
+  (data) => data.title !== undefined || data.heading_font !== undefined || data.body_font !== undefined || data.stylesheet !== undefined || data.tokens !== undefined || data.head !== undefined || data.slides !== undefined || data.slide_operations !== undefined,
   { message: 'At least one field must be provided for update' }
 );
 export type UpdateDeckInput = z.infer<typeof UpdateDeckSchema>;
@@ -467,6 +496,7 @@ export const DeckResponseSchema = z.object({
   body_font: z.string().nullable().optional(),
   agent_name: z.string().nullable().optional(),
   stylesheet: z.string().nullable().optional(),
+  tokens: TokensSchema.nullable().optional(),
   head: z.array(HeadEntrySchema).nullable().optional(),
   slides: z.array(SlideSchema),
   created_at: z.string(),

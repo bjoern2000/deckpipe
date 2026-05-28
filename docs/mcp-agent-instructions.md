@@ -36,8 +36,9 @@ THE CANVAS LAYOUT
 - "js" runs on slide enter with (root, slide) in scope. Return a cleanup function to run on slide exit (clear timers, detach listeners). Set static_render_only: true to skip JS in print/PDF and screenshots.
 
 DECK-LEVEL THEMING
-- stylesheet: global CSS string adopted by every canvas slide. Define your design system once (typography, color tokens, reusable card/grid classes) and reference classes from each slide's html. Up to 100KB. Pick concrete pixel values for 1920×1080: h1 ≈ 96–128px, body ≈ 24–32px, padding ≈ 96–144px.
-- head: array of { tag, attrs?, body? } entries injected into the page head. Load Google Fonts here as <link> entries, then set font-family in deck.stylesheet on your typography classes.
+- stylesheet: global CSS string adopted by every canvas slide. Define your design system once (typography, color tokens, reusable card/grid classes) and reference classes from each slide's html. Up to 100KB. Pick concrete pixel values for 1920×1080: h1 ≈ 96–128px, body ≈ 24–32px, padding ≈ 96–144px. It's adopted into a shadow root, so declare deck-wide custom properties on :host (a bare :root is auto-rewritten to :host).
+- tokens: a flat { "--name": "value" } map injected into every slide as :host { … }. Put your palette / spacing / radius here, reference with var(--name). Unlike stylesheet, tokens are PATCHABLE one at a time via update_deck — flip --accent without re-sending the whole stylesheet.
+- head: array of { tag, attrs?, body? } entries injected into the page head. Load Google Fonts here as <link> entries, then set font-family in deck.stylesheet on your typography classes. Font <link>s here are honored in screenshots (the renderer waits for them).
 
 COMMENTING
 - Reviewers can leave comments on ANY DOM element in a canvas slide — deckpipe auto-assigns a content_path to every element at render time.
@@ -54,6 +55,14 @@ IMAGES
 
 CONTENT STYLE
 - Keep text short, crisp, and scannable. Stats: abbreviate ("2.4M" not "2,400,000"). Quotes: under 30 words. Headlines: ≤ 8 words.
+
+AUTHORING GOTCHAS (the things you'd otherwise learn by trial and error)
+- CSS lives in a SHADOW ROOT. deck.stylesheet and per-slide css are adopted into each slide's shadow tree, so selectors only match inside the slide. Declare deck-wide custom properties on :host — a bare ":root { … }" is auto-rewritten to ":host" for you. Once a token is defined there (or in tokens), var() resolves EVERYWHERE, including background:, background-image:, and gradients.
+- Change one value cheaply. To tweak a single design value, PATCH the tokens map (update_deck { tokens: { "--accent": "#e11" } }) instead of re-sending the whole stylesheet. Pass return:"summary" so update_deck returns a small ack instead of echoing every slide's html/css/js.
+- Fonts DO load from head <link>s. Add a Google Fonts <link> in head (or @font-face in stylesheet), then set font-family in stylesheet/tokens. Screenshots wait for head <link>s and force the used faces to load before capture. fonts_loaded/fonts_missing now reports only the faces your slide actually paints with.
+- Uploading images: pass a local "path" (local server) or remote "url" — only the string crosses the wire. Reserve base64 "image_data" for tiny images; large blobs bloat (and may be truncated in) your context.
+- Inspect without re-authoring. preview_slide AND get_slide_screenshot both return the rendered PNG inline. get_slide_screenshot renders a slide of an EXISTING deck, so you can see a live slide without re-sending its html.
+- Address slides by slide_id. In update_deck.slides prefer { slide_id, content } over { index, content } — slide_id won't drift if the same call also reorders slides.
 
 LEGACY LAYOUTS
 - 25 templated layouts (title, title_and_bullets, stats, chart, swot, …) are deprecated and not advertised. Existing decks using them still render. New slides should always use "canvas". See CLAUDE.md → "Resurrecting deprecated layouts" if you need to re-enable them in the MCP surface.
@@ -86,8 +95,9 @@ Design checklist:
 |-----------|------|----------|-------------|
 | `title` | string | yes | Deck title |
 | `agent_name` | string | no | Your agent name (e.g. "Acme Strategy Agent"). Shown as author on comments you post. Set this once at deck creation. |
-| `stylesheet` | string | no | Global CSS adopted by every canvas slide. Define a design system once and reference it from each slide. Up to 100KB. |
-| `head` | array | no | `<link>`/`<script>`/`<style>` entries injected into the page head. Use for Google Fonts links, icon-font stylesheets, or trusted CDN scripts. |
+| `stylesheet` | string | no | Global CSS adopted by every canvas slide. Define a design system once and reference it from each slide. Up to 100KB. Adopted into a shadow root — use `:host` for deck-wide custom properties (a bare `:root` is auto-rewritten to `:host`). |
+| `tokens` | object | no | Flat `{ "--name": "value" }` design-token map injected into every slide as `:host { … }`. Reference via `var(--name)`. Patchable one-at-a-time via update_deck. |
+| `head` | array | no | `<link>`/`<script>`/`<style>` entries injected into the page head. Use for Google Fonts links, icon-font stylesheets, or trusted CDN scripts. Font `<link>`s here are honored in screenshots. |
 | `slides` | array | yes | Array of canvas slides |
 | `slides[].layout` | literal | yes | Always `"canvas"`. (Templated layouts deprecated — see CLAUDE.md to re-enable.) |
 | `slides[].content.html` | string | yes | Slide markup, designed at 1920×1080 |
@@ -149,9 +159,14 @@ slide_operations examples:
 - Replace: { "op": "replace", "index": 4, "slide": { "layout": "canvas", "content": { "html": "..." } } }
 
 slides (content edit) examples:
-- Replace the html of slide 0: { "index": 0, "content": { "html": "<div class=\"slide\">new markup</div>" } }
-- Tweak the css of slide 2: { "index": 2, "content": { "css": ".card { border-radius: 24px; }" } }
+- Replace the html of a slide by id: { "slide_id": "sld_a1b2c3d4", "content": { "html": "<div class=\"slide\">new markup</div>" } }
+- Tweak the css of slide 2 by index: { "index": 2, "content": { "css": ".card { border-radius: 24px; }" } }
+- Address by slide_id (preferred — can't go stale across slide_operations) or index.
 - Editing existing decks that use the deprecated templated layouts is supported (the REST API still accepts them); just patch their content fields directly.
+
+Cheap edits (save context):
+- Flip one design value via the patchable tokens map instead of re-sending stylesheet: { "tokens": { "--accent": "#e11d48" } }. A null value deletes that token; tokens:null clears all.
+- Pass "return": "summary" to get back { deck_id, slide_count, updated_indices, warnings } instead of the entire deck echoed.
 
 ### Parameters
 
@@ -159,17 +174,20 @@ slides (content edit) examples:
 |-----------|------|----------|-------------|
 | `deck_id` | string | yes | Deck ID to update |
 | `title` | string | no | New deck title |
-| `stylesheet` | string \| null | no | Replace deck-level global CSS for canvas slides. Pass null to clear. |
-| `head` | array \| null | no | Replace deck-level head entries. Pass null to clear. |
+| `stylesheet` | string \| null | no | Replace deck-level global CSS for canvas slides (wholesale). Pass null to clear. Prefer `tokens` for single-value changes. |
+| `tokens` | object \| null | no | PATCH the design-token map. A string value sets/overwrites a token, null deletes that one token, top-level null clears all. The cheap way to flip one value without re-sending the stylesheet. |
+| `head` | array \| null | no | Replace deck-level head entries (wholesale). Pass null to clear. |
 | `slide_operations` | array | no | Structural changes: add, remove, reorder, or replace slides. |
 | `slide_operations[].op` | enum | yes | "insert", "delete", "move", or "replace" |
 | `slide_operations[].index` | number | no | Target slide index. Required for insert, delete, replace. |
 | `slide_operations[].from` | number | no | Source index. Only for move. |
 | `slide_operations[].to` | number | no | Destination index. Only for move. |
 | `slide_operations[].slide` | object | no | The new slide (layout + content). Required for insert and replace. |
-| `slides` | array | no | Content edits by index (applied after slide_operations) |
-| `slides[].index` | number | yes | Zero-based slide index (post-operations) |
+| `slides` | array | no | Content edits to existing slides (applied after slide_operations) |
+| `slides[].slide_id` | string | no | Stable slide id to target (preferred over index). Provide this OR index. |
+| `slides[].index` | number | no | Zero-based slide index (post-operations). Provide this OR slide_id. |
 | `slides[].content` | object | yes | Partial content to merge |
+| `return` | enum | no | `"full"` (default) echoes the whole deck; `"summary"` returns just `{ deck_id, slide_count, updated_indices, warnings }`. |
 
 ---
 
@@ -255,6 +273,7 @@ Each entry in `overflows` includes a `reason` field — `"off_canvas"` (element 
 | `js` | string | no | Optional per-slide JS. Runs with `(root, slide)`. |
 | `static_render_only` | boolean | no | If true, your `js` is skipped during the preview. |
 | `stylesheet` | string | no | Deck-level CSS to adopt (mirrors `deck.stylesheet`). Use so the preview matches your design system. |
+| `tokens` | object | no | Deck-level design tokens (mirrors `deck.tokens`), injected as `:host { … }` so the preview resolves the same `var(--name)` references. |
 | `head` | array | no | Deck-level head entries (Google Fonts links etc.). Same shape as `deck.head`. |
 | `format` | enum | no | "png" (default) or "jpeg". |
 

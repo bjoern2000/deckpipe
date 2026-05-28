@@ -1,6 +1,6 @@
 {
   "name": "deckpipe-mcp",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "MCP server for deckpipe — author slides as HTML/CSS/JS from any AI agent",
   "type": "module",
   "main": "dist/index.js",

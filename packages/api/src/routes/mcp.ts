@@ -12,7 +12,7 @@ import { Router } from 'express';
 import { INSTRUCTIONS, registerTools } from '@deckpipe/mcp-core';
 import { config } from '../config.js';
 
-const MCP_VERSION = '0.3.8';
+const MCP_VERSION = '0.3.9';
 
 const transports = new Map<string, StreamableHTTPServerTransport>();
 

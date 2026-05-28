@@ -45,6 +45,7 @@ export class SlideRenderer extends LitElement {
   @property({ type: Object }) slide: SlideData = { layout: 'title', content: {} };
   @property({ type: Boolean }) editable = false;
   @property() deckStylesheet = '';
+  @property({ type: Object }) tokens: Record<string, string> | null = null;
   @property({ type: Boolean }) staticPreview = false;
 
   render() {
@@ -292,6 +293,7 @@ export class SlideRenderer extends LitElement {
           .staticPreview=${this.staticPreview}
           .editable=${this.editable}
           .deckStylesheet=${this.deckStylesheet}
+          .tokens=${this.tokens}
         ></slide-canvas>`;
 
       default:

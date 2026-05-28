@@ -1,5 +1,6 @@
 import { LitElement, html, css, type CSSResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { scopeRootToHost, tokensToCss } from '../css-scope.js';
 
 const stringSheetCache = new Map<string, CSSStyleSheet>();
 
@@ -19,7 +20,7 @@ function sheetFor(cssText: string | undefined): CSSStyleSheet | null {
   if (!sheet) {
     sheet = new CSSStyleSheet();
     try {
-      sheet.replaceSync(cssText);
+      sheet.replaceSync(scopeRootToHost(cssText));
     } catch (err) {
       console.warn('[deckpipe] canvas: failed to parse CSS', err);
       return null;
@@ -65,11 +66,14 @@ export class SlideCanvas extends LitElement {
   @property({ type: Boolean, attribute: 'static-preview' }) staticPreview = false;
   @property({ type: Boolean }) editable = false;
   @property({ attribute: 'deck-stylesheet' }) deckStylesheet = '';
+  /** Deck-level design tokens, injected as `:host { --k: v }` (lowest precedence). */
+  @property({ attribute: false }) tokens: Record<string, string> | null = null;
 
   private mountedHtml = '';
   private mountedCss = '';
   private mountedJs = '';
   private mountedDeckStylesheet = '';
+  private mountedTokensCss = '';
   private mountedEditable = false;
   private jsCleanup: (() => void) | null = null;
   private blurHandler: ((e: FocusEvent) => void) | null = null;
@@ -83,9 +87,15 @@ export class SlideCanvas extends LitElement {
     const root = this.shadowRoot;
     if (!root) return;
 
-    if (this.deckStylesheet !== this.mountedDeckStylesheet || this.css !== this.mountedCss) {
+    const tokensCss = tokensToCss(this.tokens);
+    if (
+      this.deckStylesheet !== this.mountedDeckStylesheet ||
+      this.css !== this.mountedCss ||
+      tokensCss !== this.mountedTokensCss
+    ) {
       this.mountedDeckStylesheet = this.deckStylesheet;
       this.mountedCss = this.css;
+      this.mountedTokensCss = tokensCss;
       this.applyAdoptedSheets(root);
     }
 
@@ -126,6 +136,10 @@ export class SlideCanvas extends LitElement {
       if (sheet) baseSheets.push(sheet);
     }
     const extras: CSSStyleSheet[] = [];
+    // Deck tokens first (lowest precedence) so deck.stylesheet / slide css can
+    // override a token value if they declare the same custom property.
+    const tokensSheet = sheetFor(tokensToCss(this.tokens));
+    if (tokensSheet) extras.push(tokensSheet);
     const deckSheet = sheetFor(this.deckStylesheet);
     if (deckSheet) extras.push(deckSheet);
     const slideSheet = sheetFor(this.css);

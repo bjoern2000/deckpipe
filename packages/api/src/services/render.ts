@@ -24,9 +24,14 @@ export interface RenderReport {
    * on elements with overflow: visible is NOT reported — those don't actually clip anything.
    */
   overflows: Array<{ selector: string; reason: 'off_canvas' | 'clipped'; overflow_x_px: number; overflow_y_px: number; text_preview: string }>;
-  /** Fonts the page declared and successfully loaded. */
+  /**
+   * Fonts the slide ACTUALLY paints text with and that resolved successfully,
+   * as "Family weight[ style]" labels (e.g. "Poppins 700", "Space Mono 400 italic").
+   * Only the first non-generic family of each text-bearing element is considered —
+   * unused @font-face permutations and viewer theme fonts are excluded.
+   */
   fonts_loaded: string[];
-  /** Fonts the page declared but didn't load. */
+  /** Same labels, but for faces that are referenced yet did NOT load (typo'd name, missing head <link>, 404). */
   fonts_missing: string[];
   /** Network requests that failed (image 404s, font 403s, etc.). */
   failed_requests: Array<{ url: string; reason: string }>;
@@ -141,16 +146,57 @@ export async function renderSlide(opts: RenderOptions): Promise<RenderResult> {
     // TypeScript transpiler (tsx/esbuild) doesn't inject helpers like
     // __name that don't exist in the browser context.
 
-    // Collect font load status (best-effort).
+    // Collect font load status — only for faces the slide ACTUALLY uses.
+    //
+    // The naive approach (enumerate document.fonts) reports every @font-face a
+    // Google Fonts <link> declares — dozens of weight/charset permutations the
+    // slide never references, all "unloaded" because they're never painted —
+    // plus the viewer's own theme fonts. That noise made the whole report
+    // untrustworthy. Instead: walk every text-bearing element (descending
+    // shadow roots), take the first NON-generic family it renders with, and
+    // classify it via document.fonts.check() — i.e. did the face actually load.
     const fontInfo = await page.evaluate(`(() => {
+      const GENERIC = new Set([
+        'serif','sans-serif','monospace','system-ui','ui-serif','ui-sans-serif',
+        'ui-monospace','ui-rounded','cursive','fantasy','math','emoji','fangsong','inherit','initial','unset',
+      ]);
+      const firstFamily = (list) => {
+        const first = (list || '').split(',')[0].trim().replace(/^["']|["']$/g, '');
+        return first;
+      };
+      const used = new Map(); // label -> { family, spec }
+      const visit = (root) => {
+        const all = root.querySelectorAll('*');
+        for (let i = 0; i < all.length; i++) {
+          const el = all[i];
+          if (el.shadowRoot) visit(el.shadowRoot);
+          // Only elements that directly paint non-whitespace text.
+          let hasText = false;
+          for (let n = el.firstChild; n; n = n.nextSibling) {
+            if (n.nodeType === 3 && n.textContent && n.textContent.trim()) { hasText = true; break; }
+          }
+          if (!hasText) continue;
+          if (el.getClientRects().length === 0) continue; // not rendered
+          const cs = getComputedStyle(el);
+          const family = firstFamily(cs.fontFamily);
+          if (!family || GENERIC.has(family.toLowerCase())) continue;
+          const weight = cs.fontWeight;
+          const style = cs.fontStyle && cs.fontStyle !== 'normal' ? ' ' + cs.fontStyle : '';
+          const label = family + ' ' + weight + style;
+          const spec = (cs.fontStyle && cs.fontStyle !== 'normal' ? cs.fontStyle + ' ' : '') + weight + ' 1em "' + family + '"';
+          if (!used.has(label)) used.set(label, { family: family, spec: spec });
+        }
+      };
+      visit(document);
       const loaded = [];
       const missing = [];
-      try {
-        for (const f of document.fonts) {
-          const label = (f.family + ' ' + f.weight + ' ' + f.style).trim();
-          (f.status === 'loaded' ? loaded : missing).push(label);
-        }
-      } catch (e) { /* ignore */ }
+      used.forEach((info, label) => {
+        let ok = false;
+        try { ok = document.fonts.check(info.spec); } catch (e) { ok = false; }
+        (ok ? loaded : missing).push(label);
+      });
+      loaded.sort();
+      missing.sort();
       return { loaded: loaded, missing: missing };
     })()`) as { loaded: string[]; missing: string[] };
     report.fonts_loaded = fontInfo.loaded;

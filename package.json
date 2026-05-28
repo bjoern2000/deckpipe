@@ -15,7 +15,8 @@
     "dev:viewer": "npm run dev -w packages/viewer",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:viewer\"",
     "db:migrate": "npm run migrate -w packages/api",
-    "db:reset": "docker compose down -v && docker compose up -d"
+    "db:reset": "docker compose down -v && docker compose up -d",
+    "test": "tsx --test packages/viewer/test/*.test.ts packages/api/test/*.test.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

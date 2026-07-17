@@ -5,6 +5,7 @@ import { ApiError } from '@deckpipe/shared';
 import { uploadImageLimiter } from '../middleware/rate-limiter.js';
 import { saveUploadedImage, saveImageFromUrl, ALLOWED_TYPES } from '../services/image-service.js';
 import { config } from '../config.js';
+import { track, viaOf } from '../analytics.js';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -28,6 +29,13 @@ imagesRouter.post('/', uploadImageLimiter, upload.single('file'), async (req, re
     }
 
     const result = await saveUploadedImage(req.file);
+    track('deckpipe-api', 'image_uploaded', {
+      image_id: result.image_id,
+      content_type: result.content_type,
+      size_bytes: result.size_bytes,
+      source: 'upload',
+      via: viaOf(req),
+    });
     res.status(201).json(result);
   } catch (err) {
     next(err);
@@ -42,6 +50,13 @@ imagesRouter.post('/from-url', uploadImageLimiter, async (req, res, next) => {
       throw new ApiError('validation_error', 'A "url" string is required', 'url');
     }
     const result = await saveImageFromUrl(url);
+    track('deckpipe-api', 'image_uploaded', {
+      image_id: result.image_id,
+      content_type: result.content_type,
+      size_bytes: result.size_bytes,
+      source: 'url',
+      via: viaOf(req),
+    });
     res.status(201).json(result);
   } catch (err) {
     next(err);

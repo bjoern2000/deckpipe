@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { detectUnknownFields, extractImageUrls, validateImageUrls } from '../utils/slide-warnings.js';
 import { mergeTokens } from '../utils/tokens.js';
 import { triggerUnsplashDownload, lookupUnsplashImage } from './unsplash.js';
+import { track, viaOf } from '../analytics.js';
 export const decksRouter = Router();
 
 /** Fire Unsplash download tracking for any slides with unsplash attribution, then strip download_location before storage */
@@ -234,6 +235,13 @@ decksRouter.post('/', createDeckLimiter, resolveRefsMiddleware, saveRawBody, val
     const result = await query('SELECT created_at FROM decks WHERE deck_id = $1', [deckId]);
     const shareUrl = `${config.viewerUrl}/d/${deckId}/${slug}`;
 
+    track(`deck:${deckId}`, 'deck_created', {
+      deck_id: deckId,
+      slide_count: slides.length,
+      layouts: [...new Set(slides.map((s: any) => s.layout))],
+      via: viaOf(req),
+    });
+
     res.status(201).json({
       deck_id: deckId,
       viewer_url: `${shareUrl}?key=${editKey}`,
@@ -278,6 +286,13 @@ decksRouter.post('/:id/clone', createDeckLimiter, validate(CloneDeckSchema), asy
 
     const result = await query('SELECT created_at FROM decks WHERE deck_id = $1', [deckId]);
     const shareUrl = `${config.viewerUrl}/d/${deckId}/${slug}`;
+
+    track(`deck:${deckId}`, 'deck_cloned', {
+      deck_id: deckId,
+      source_deck_id: src.deck_id,
+      slide_count: slides.length,
+      via: viaOf(req),
+    });
 
     res.status(201).json({
       deck_id: deckId,
@@ -488,6 +503,12 @@ decksRouter.patch('/:id', updateDeckLimiter, resolveRefsMiddleware, validate(Upd
     const result = await query('SELECT * FROM decks WHERE deck_id = $1', [req.params.id]);
     const updated = result.rows[0];
 
+    track(`deck:${updated.deck_id}`, 'deck_updated', {
+      deck_id: updated.deck_id,
+      slide_count: updated.slides.length,
+      via: viaOf(req),
+    });
+
     // return:"summary" — a compact ack instead of echoing the whole deck back.
     // Cheap for context-limited agents flipping one token or editing one slide.
     if (returnMode === 'summary') {
@@ -526,6 +547,7 @@ decksRouter.delete('/:id', async (req, res, next) => {
     if (result.rows.length === 0) {
       throw new ApiError('not_found', `Deck '${req.params.id}' not found`);
     }
+    track(`deck:${req.params.id}`, 'deck_deleted', { deck_id: req.params.id, via: viaOf(req) });
     res.status(204).send();
   } catch (err) {
     next(err);

@@ -107,6 +107,19 @@ export interface RegisterToolsOptions {
   allowLocalFiles?: boolean;
 }
 
+/**
+ * fetch wrapper for all REST API calls made by the MCP tools. Tags each
+ * request with `x-deckpipe-via: mcp` so the API can distinguish MCP-originated
+ * traffic (remote /mcp transport or standalone deckpipe-mcp — both funnel
+ * through here) from plain REST callers, e.g. for analytics `via` props.
+ */
+function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+  return fetch(url, {
+    ...init,
+    headers: { 'x-deckpipe-via': 'mcp', ...(init?.headers as Record<string, string> | undefined) },
+  });
+}
+
 const UPLOAD_EXT_MIME: Record<string, string> = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -164,7 +177,7 @@ IMPORTANT:
     { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     async (args) => {
       try {
-        const res = await fetch(`${apiUrl}/v1/decks`, {
+        const res = await apiFetch(`${apiUrl}/v1/decks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(args),
@@ -195,7 +208,7 @@ Typical flow: clone_deck (from your template) → update_deck (replace the place
     { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     async ({ source_deck_id, ...body }) => {
       try {
-        const res = await fetch(`${apiUrl}/v1/decks/${source_deck_id}/clone`, {
+        const res = await apiFetch(`${apiUrl}/v1/decks/${source_deck_id}/clone`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
@@ -217,7 +230,7 @@ Each slide includes a comments[] array with open comments. Each comment has: id,
     { deck_id: z.string().describe('The deck ID (e.g. "dk_a1b2c3d4")') },
     { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     async ({ deck_id }) => {
-      const res = await fetch(`${apiUrl}/v1/decks/${deck_id}`);
+      const res = await apiFetch(`${apiUrl}/v1/decks/${deck_id}`);
       const data = await res.json();
       if (!res.ok) return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
       return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
@@ -284,7 +297,7 @@ Editing existing decks that use the deprecated templated layouts is supported (t
     },
     { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     async ({ deck_id, ...body }) => {
-      const res = await fetch(`${apiUrl}/v1/decks/${deck_id}`, {
+      const res = await apiFetch(`${apiUrl}/v1/decks/${deck_id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -301,7 +314,7 @@ Editing existing decks that use the deprecated templated layouts is supported (t
     { deck_id: z.string().describe('Deck ID to delete') },
     { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
     async ({ deck_id }) => {
-      const res = await fetch(`${apiUrl}/v1/decks/${deck_id}`, { method: 'DELETE' });
+      const res = await apiFetch(`${apiUrl}/v1/decks/${deck_id}`, { method: 'DELETE' });
       if (res.status === 204) return { content: [{ type: 'text' as const, text: `Deck ${deck_id} deleted successfully.` }] };
       const data = await res.json();
       return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
@@ -339,7 +352,7 @@ Pass exactly one of ${allowLocalFiles ? 'path / ' : ''}url / image_data.`,
 
         // URL → server fetches and re-hosts.
         if (url != null) {
-          const res = await fetch(`${apiUrl}/v1/images/from-url`, {
+          const res = await apiFetch(`${apiUrl}/v1/images/from-url`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url }),
@@ -378,7 +391,7 @@ Pass exactly one of ${allowLocalFiles ? 'path / ' : ''}url / image_data.`,
         const blob = new Blob([new Uint8Array(buffer)], { type: mime });
         const form = new FormData();
         form.append('file', blob, name);
-        const res = await fetch(`${apiUrl}/v1/images`, { method: 'POST', body: form });
+        const res = await apiFetch(`${apiUrl}/v1/images`, { method: 'POST', body: form });
         const data = await res.json();
         if (!res.ok) return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
         return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
@@ -418,7 +431,7 @@ Attribution is required by Unsplash terms. Drop attribution_html into a small ca
         if (queries) params.set('queries', JSON.stringify(queries));
         if (per_page) params.set('per_page', String(per_page));
         if (orientation) params.set('orientation', orientation);
-        const res = await fetch(`${apiUrl}/v1/unsplash/search?${params}`);
+        const res = await apiFetch(`${apiUrl}/v1/unsplash/search?${params}`);
         const data = await res.json();
         if (!res.ok) return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
         return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
@@ -487,7 +500,7 @@ Use the "since" parameter with an ISO timestamp to only fetch comments added or 
       if (slide_id) qs.set('slide_id', slide_id);
       if (since) qs.set('since', since);
       const url = `${apiUrl}/v1/decks/${deck_id}/comments${qs.toString() ? '?' + qs : ''}`;
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const data = await res.json();
       if (!res.ok) return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
       return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
@@ -508,7 +521,7 @@ Use the "since" parameter with an ISO timestamp to only fetch comments added or 
       let name = author_name;
       if (!name) {
         try {
-          const deckRes = await fetch(`${apiUrl}/v1/decks/${deck_id}`);
+          const deckRes = await apiFetch(`${apiUrl}/v1/decks/${deck_id}`);
           if (deckRes.ok) {
             const deck = await deckRes.json() as Record<string, unknown>;
             name = (deck.agent_name as string) || 'Agent';
@@ -516,7 +529,7 @@ Use the "since" parameter with an ISO timestamp to only fetch comments added or 
         } catch { /* fall through */ }
         name = name || 'Agent';
       }
-      const res = await fetch(`${apiUrl}/v1/decks/${deck_id}/comments/${comment_id}/replies`, {
+      const res = await apiFetch(`${apiUrl}/v1/decks/${deck_id}/comments/${comment_id}/replies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ author_name: name, author_type: 'agent', body }),
@@ -564,7 +577,7 @@ The screenshot is the slide alone — no viewer chrome.`,
     { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     async (args) => {
       try {
-        const res = await fetch(`${apiUrl}/v1/preview`, {
+        const res = await apiFetch(`${apiUrl}/v1/preview`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(args),
@@ -609,7 +622,7 @@ The render report's overflow list is a syntactic check, not a visual one. Each o
       try {
         const fmt = format ?? 'png';
         const url = `${apiUrl}/v1/decks/${deck_id}/slides/${slide_index}/screenshot?format=${fmt}`;
-        const res = await fetch(url);
+        const res = await apiFetch(url);
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           return { content: [{ type: 'text' as const, text: `Error: ${JSON.stringify(data)}` }] };
@@ -647,7 +660,7 @@ The render report's overflow list is a syntactic check, not a visual one. Each o
     },
     { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     async ({ deck_id, comment_id }) => {
-      const res = await fetch(`${apiUrl}/v1/decks/${deck_id}/comments/${comment_id}`, {
+      const res = await apiFetch(`${apiUrl}/v1/decks/${deck_id}/comments/${comment_id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'resolved' }),

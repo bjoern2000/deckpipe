@@ -942,6 +942,26 @@
       .brand-dot, .hero h1 .caret, .video-placeholder .play::before, .video-caption .dot { animation: none; }
     }
   </style>
+
+  <!-- PostHog analytics (product: deckpipe, surface: marketing) -->
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_uUq5DaCoF5SpGeXo353jR3uMenhy75QFgv6NUpzCzTPg', {
+      api_host: 'https://eu.i.posthog.com',
+      ui_host: 'https://eu.posthog.com',
+      defaults: '2026-05-30',
+      capture_pageview: true,
+      capture_pageleave: true,
+      autocapture: true,
+      persistence: 'localStorage+cookie',
+      person_profiles: 'identified_only',
+    });
+    posthog.register({
+      product: 'deckpipe',
+      surface: 'marketing',
+      environment: (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'dev' : 'production',
+    });
+  </script>
 </head>
 <body>
   <div class="shell">
@@ -955,7 +975,7 @@
         <a href="#connect">connect</a>
         <a href="#skill" class="hide-sm">skill</a>
         <a href="#canvas" class="hide-sm">canvas</a>
-        <a href="https://github.com/bjoern2000/deckpipe" target="_blank" rel="noopener">github</a>
+        <a href="https://github.com/bjoern2000/deckpipe" target="_blank" rel="noopener" data-cta="nav_github">github</a>
       </div>
     </nav>
 
@@ -973,7 +993,7 @@
       </p>
 
       <div class="cta-row reveal reveal-4">
-        <a href="#connect" class="btn btn-primary">
+        <a href="#connect" class="btn btn-primary" data-cta="hero_connect_mcp">
           connect mcp
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </a>
@@ -989,7 +1009,7 @@
         </div>
         <div class="video-caption">
           <span>example deck</span>
-          <span>/ <a href="https://deckpipe.dev/d/dk_Z5EYzIKY/the-deep-sea-earth-s-last-frontier" target="_blank" rel="noopener">the deep sea →</a></span>
+          <span>/ <a href="https://deckpipe.dev/d/dk_Z5EYzIKY/the-deep-sea-earth-s-last-frontier" target="_blank" rel="noopener" data-cta="hero_example_deck">the deep sea →</a></span>
         </div>
       </div>
 
@@ -1052,7 +1072,7 @@
           </div>
           <div class="install-body">
             <pre><code><span class="prompt-sym">&gt; </span>https://deckpipe.dev/mcp</code></pre>
-            <button class="copy-btn" onclick="copyCode(this, 'https://deckpipe.dev/mcp')" title="Copy">
+            <button class="copy-btn" data-cta="connect_copy_remote_mcp_url" onclick="copyCode(this, 'https://deckpipe.dev/mcp')" title="Copy">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             </button>
           </div>
@@ -1064,7 +1084,7 @@
           </div>
           <div class="install-body">
             <pre><code><span class="prompt-sym">$ </span>claude mcp add deckpipe -- npx deckpipe-mcp</code></pre>
-            <button class="copy-btn" onclick="copyCode(this, 'claude mcp add deckpipe -- npx deckpipe-mcp')" title="Copy">
+            <button class="copy-btn" data-cta="connect_copy_claude_code" onclick="copyCode(this, 'claude mcp add deckpipe -- npx deckpipe-mcp')" title="Copy">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             </button>
           </div>
@@ -1083,7 +1103,7 @@
     }
   }
 }</code></pre>
-            <button class="copy-btn" onclick="copyCode(this, '{\n  &quot;mcpServers&quot;: {\n    &quot;deckpipe&quot;: {\n      &quot;command&quot;: &quot;npx&quot;,\n      &quot;args&quot;: [&quot;-y&quot;, &quot;deckpipe-mcp&quot;]\n    }\n  }\n}')" title="Copy">
+            <button class="copy-btn" data-cta="connect_copy_mcp_config" onclick="copyCode(this, '{\n  &quot;mcpServers&quot;: {\n    &quot;deckpipe&quot;: {\n      &quot;command&quot;: &quot;npx&quot;,\n      &quot;args&quot;: [&quot;-y&quot;, &quot;deckpipe-mcp&quot;]\n    }\n  }\n}')" title="Copy">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             </button>
           </div>
@@ -1111,7 +1131,7 @@
           </div>
           <div class="install-body">
             <pre><code><span class="prompt-sym">$ </span>npx skills add bjoern2000/deckpipe</code></pre>
-            <button class="copy-btn" onclick="copyCode(this, 'npx skills add bjoern2000/deckpipe')" title="Copy">
+            <button class="copy-btn" data-cta="skill_copy_npx_install" onclick="copyCode(this, 'npx skills add bjoern2000/deckpipe')" title="Copy">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             </button>
           </div>
@@ -1124,7 +1144,7 @@
           <div class="install-body">
             <pre><code><span class="prompt-sym">$ </span>mkdir -p ~/.claude/skills/deckpipe-design
 <span class="prompt-sym">$ </span>curl -o ~/.claude/skills/deckpipe-design/SKILL.md https://deckpipe.dev/skill.md</code></pre>
-            <button class="copy-btn" onclick="copyCode(this, 'mkdir -p ~/.claude/skills/deckpipe-design &amp;&amp; curl -o ~/.claude/skills/deckpipe-design/SKILL.md https://deckpipe.dev/skill.md')" title="Copy">
+            <button class="copy-btn" data-cta="skill_copy_curl_install" onclick="copyCode(this, 'mkdir -p ~/.claude/skills/deckpipe-design &amp;&amp; curl -o ~/.claude/skills/deckpipe-design/SKILL.md https://deckpipe.dev/skill.md')" title="Copy">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             </button>
           </div>
@@ -1133,11 +1153,11 @@
         <div class="install-card">
           <div class="install-head">
             <div class="title"><span class="dim">read it //</span>SKILL.md</div>
-            <a href="/skill.md" target="_blank" rel="noopener" class="badge">open →</a>
+            <a href="/skill.md" target="_blank" rel="noopener" class="badge" data-cta="skill_open">open →</a>
           </div>
           <div class="install-body">
             <pre><code><span class="prompt-sym">&gt; </span>https://deckpipe.dev/skill.md</code></pre>
-            <button class="copy-btn" onclick="copyCode(this, 'https://deckpipe.dev/skill.md')" title="Copy">
+            <button class="copy-btn" data-cta="skill_copy_url" onclick="copyCode(this, 'https://deckpipe.dev/skill.md')" title="Copy">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             </button>
           </div>
@@ -1214,7 +1234,7 @@
     <footer class="footer">
       <div>&copy; 2026 <a href="https://bjoernschefzyk.co" target="_blank" rel="noopener">björn schefzyk</a> &nbsp;·&nbsp; all rights reserved</div>
       <div>
-        <a href="https://github.com/bjoern2000/deckpipe" target="_blank" rel="noopener">github</a>
+        <a href="https://github.com/bjoern2000/deckpipe" target="_blank" rel="noopener" data-cta="footer_github">github</a>
         <span class="sep">/</span>
         <a href="/terms.html">terms</a>
         <span class="sep">/</span>
@@ -1237,6 +1257,17 @@
       navigator.clipboard.writeText(text).then(() => flashCopied(btn));
     }
 
+    // cta_clicked for every element tagged data-cta (delegated).
+    document.addEventListener('click', (e) => {
+      const el = e.target instanceof Element ? e.target.closest('[data-cta]') : null;
+      if (!el || !window.posthog) return;
+      try {
+        const props = { cta: el.getAttribute('data-cta') };
+        const href = el.getAttribute('href');
+        if (href) props.href = href;
+        posthog.capture('cta_clicked', props);
+      } catch { /* analytics must never break the page */ }
+    });
   </script>
 </body>
 </html>

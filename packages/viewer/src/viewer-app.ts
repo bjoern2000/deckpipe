@@ -10,6 +10,9 @@ import './components/comment-layer.js';
 import './components/comment-thread.js';
 import { fetchComments, createComment, addReply, updateComment, type Comment } from './utils/comment-api.js';
 import { SLIDE_WIDTH, SLIDE_HEIGHT } from './constants.js';
+import { initAnalytics, track } from './analytics.js';
+
+initAnalytics();
 
 interface HeadEntry {
   tag: 'link' | 'script' | 'style';
@@ -419,6 +422,7 @@ export class ViewerApp extends LitElement {
   };
 
   private enterPresenterMode() {
+    track('deck_presented', { deck_id: this.deck?.deck_id });
     this.presenterMode = true;
     this.editMode = false;
     this.commentMode = false;
@@ -530,6 +534,14 @@ export class ViewerApp extends LitElement {
       // Set page title
       document.title = `${this.deck.title} — deckpipe`;
 
+      if (!this.printMode && !this.screenshotMode && !this.isPreviewRoute()) {
+        track('deck_viewed', {
+          deck_id: this.deck.deck_id,
+          slide_count: this.deck.slides.length,
+          is_edit_mode: this.canEdit,
+        });
+      }
+
       // Load custom Google Fonts if specified
       const fonts = [this.deck.heading_font, this.deck.body_font].filter(Boolean) as string[];
       const uniqueFonts = [...new Set(fonts)];
@@ -625,11 +637,19 @@ export class ViewerApp extends LitElement {
     }
   }
 
+  private trackSlideNavigated() {
+    track('slide_navigated', {
+      deck_id: this.deck?.deck_id,
+      slide_index: this.currentIndex,
+    });
+  }
+
   private nextSlide() {
     if (this.deck && this.currentIndex < this.deck.slides.length - 1) {
       this.currentIndex++;
       this.closeThread();
       window.location.hash = `slide=${this.currentIndex + 1}`;
+      this.trackSlideNavigated();
     }
   }
 
@@ -638,12 +658,14 @@ export class ViewerApp extends LitElement {
       this.currentIndex--;
       this.closeThread();
       window.location.hash = `slide=${this.currentIndex + 1}`;
+      this.trackSlideNavigated();
     }
   }
 
   private onThumbnailClick(e: CustomEvent<number>) {
     this.currentIndex = e.detail;
     window.location.hash = `slide=${this.currentIndex + 1}`;
+    this.trackSlideNavigated();
   }
 
   private onToggleEdit() {
@@ -687,6 +709,10 @@ export class ViewerApp extends LitElement {
         body: e.detail.body,
       });
       this.comments = [...this.comments, comment];
+      track('comment_added', {
+        deck_id: this.deck.deck_id,
+        slide_index: this.currentIndex,
+      });
     } catch {
       console.error('[deckpipe] Failed to create comment');
     }
@@ -789,6 +815,9 @@ export class ViewerApp extends LitElement {
         status: e.detail.status,
       });
       this.comments = this.comments.map(c => c.id === updated.id ? updated : c);
+      if (e.detail.status === 'resolved') {
+        track('comment_resolved', { deck_id: this.deck.deck_id });
+      }
     } catch {
       console.error('[deckpipe] Failed to update comment');
     }

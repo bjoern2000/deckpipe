@@ -14,4 +14,7 @@ export const config = {
   adminUsername: process.env.ADMIN_USERNAME || '',
   adminPassword: process.env.ADMIN_PASSWORD || '',
   unsplashAccessKey: process.env.UNSPLASH_ACCESS_KEY || '',
+  // PostHog (EU cloud). Public project key — safe to embed as a default.
+  posthogKey: process.env.POSTHOG_KEY || 'phc_uUq5DaCoF5SpGeXo353jR3uMenhy75QFgv6NUpzCzTPg',
+  posthogHost: process.env.POSTHOG_HOST || 'https://eu.i.posthog.com',
 };

@@ -142,11 +142,18 @@
       autocapture: true,
       persistence: 'localStorage+cookie',
       person_profiles: 'identified_only',
-    });
-    posthog.register({
-      product: 'deckpipe',
-      surface: 'marketing',
-      environment: (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'dev' : 'production',
+      // Stamp product/surface/environment per-event instead of register():
+      // localStorage is shared with the viewer app on this origin, so
+      // persisted super props would otherwise cross-contaminate surfaces.
+      before_send: function (event) {
+        if (!event) return null;
+        event.properties = Object.assign({}, event.properties, {
+          product: 'deckpipe',
+          surface: 'marketing',
+          environment: (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'dev' : 'production',
+        });
+        return event;
+      },
     });
   </script>
 </head>

@@ -23,6 +23,21 @@ export function initAnalytics() {
     const key = import.meta.env.VITE_POSTHOG_KEY ?? DEFAULT_KEY;
     const host = import.meta.env.VITE_POSTHOG_HOST ?? DEFAULT_HOST;
 
+    const isDev =
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // The landing page embeds live decks in iframes; label (don't drop)
+    // embedded-viewer traffic so it's filterable from real app usage.
+    const embedded = window.self !== window.top;
+    let embedReferrerHost = '';
+    if (embedded) {
+      try {
+        embedReferrerHost = document.referrer ? new URL(document.referrer).hostname : '';
+      } catch {
+        embedReferrerHost = '';
+      }
+    }
+
     posthog.init(key, {
       api_host: host,
       ui_host: 'https://eu.posthog.com',
@@ -32,14 +47,23 @@ export function initAnalytics() {
       autocapture: true,
       persistence: 'localStorage+cookie',
       person_profiles: 'identified_only',
-    });
-
-    const isDev =
-      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    posthog.register({
-      product: 'deckpipe',
-      surface: 'app',
-      environment: isDev ? 'dev' : 'production',
+      // Stamp product/surface/environment per-event instead of register():
+      // localStorage is shared across surfaces on deckpipe.dev, so persisted
+      // super props from the marketing snippet would otherwise leak into (or
+      // be clobbered by) app events. before_send always wins over persisted
+      // state.
+      before_send: (event) => {
+        if (!event) return null;
+        event.properties = {
+          ...event.properties,
+          product: 'deckpipe',
+          surface: 'app',
+          environment: isDev ? 'dev' : 'production',
+          embedded,
+          ...(embedded ? { embed_referrer_host: embedReferrerHost } : {}),
+        };
+        return event;
+      },
     });
 
     initialized = true;

@@ -13,11 +13,12 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
-import { INSTRUCTIONS, registerTools } from '@deckpipe/mcp-core';
+import { INSTRUCTIONS, MCP_SERVER_VERSION, registerTools } from '@deckpipe/mcp-core';
 import { config } from './config.js';
 
 const NAME = 'deckpipe';
-const VERSION = '0.3.9';
+// Shared with the remote /mcp transport via mcp-core — see MCP_SERVER_VERSION.
+const VERSION = MCP_SERVER_VERSION;
 
 async function main() {
   const port = process.env.PORT ? parseInt(process.env.PORT, 10) : null;

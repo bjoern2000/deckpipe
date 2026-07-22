@@ -38,6 +38,7 @@ claude mcp add deckpipe -- npx deckpipe-mcp
 | Tool | Description |
 |------|-------------|
 | `create_deck` | Create a new deck and get a shareable viewer URL |
+| `clone_deck` | Duplicate any deck into a new one (fresh URL + edit key, no inherited comments) — start from a template |
 | `get_deck` | Retrieve a deck by ID (includes open comments) |
 | `update_deck` | Edit slide content, restructure slides, change theme |
 | `delete_deck` | Delete a deck permanently |

@@ -2,7 +2,7 @@
 
 > Agent-first slide deck rendering engine. Agents author each slide as HTML/CSS/JS on a sandboxed 1920×1080 canvas; deckpipe themes, hosts, and renders every deck at a shareable URL with built-in commenting.
 
-deckpipe is open source (FSL-1.1-Apache-2.0) and works with any MCP-aware AI agent — Claude desktop and web (as a connector), Claude Code, Cursor, Windsurf, or custom agents. The remote MCP server lives at `https://deckpipe.dev/mcp`; a local stdio package is published as `deckpipe-mcp` on npm. Every deck is authored as a sequence of `canvas` slides, each one a freeform HTML document with optional CSS and JS, rendered inside a shadow root at 1920×1080.
+deckpipe is open source (MIT) and works with any MCP-aware AI agent — Claude desktop and web (as a connector), Claude Code, Cursor, Windsurf, or custom agents. The remote MCP server lives at `https://deckpipe.dev/mcp`; a local stdio package is published as `deckpipe-mcp` on npm. Every deck is authored as a sequence of `canvas` slides, each one a freeform HTML document with optional CSS and JS, rendered inside a shadow root at 1920×1080.
 
 ## Connect
 
@@ -20,7 +20,9 @@ deckpipe is open source (FSL-1.1-Apache-2.0) and works with any MCP-aware AI age
 
 - `create_deck` — Create a new deck from an array of canvas slides. Returns a viewer URL with an edit key plus a read-only share URL.
 - `update_deck` — Modify an existing deck in place. Supports structural operations (insert / delete / move / replace) and partial content edits by slide index. Never recreate a deck to make changes — edits preserve URL and comment history.
+- `clone_deck` — Duplicate any deck into a brand-new one with its own URL and edit key, no inherited comments. The way to start from a template.
 - `get_deck` — Read deck state plus open comments.
+- `delete_deck` — Permanently delete a deck.
 - `preview_slide` — Render a single slide transiently (no persistence) and return a PNG plus a render report (JS errors, console errors, overflows, font load status). Use this to iterate on a slide before committing.
 - `get_slide_screenshot` — Render a specific slide of an existing deck. Cached on deck.updated_at.
 - `list_layouts` — List supported slide layouts. As of 0.3, only `canvas` is advertised for new content.

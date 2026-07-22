@@ -69,16 +69,10 @@ LEGACY LAYOUTS
 
 ---
 
-## create_deck
+## Design guidance
 
-### Description
+This is documentation, not tool-description text — the MCP tool descriptions stay factual (what the tool does, its inputs, its outputs). The full version, with the reference-style cheatsheet and the render-report walkthrough, lives at <https://deckpipe.dev/skill.md>.
 
-Create a new slide deck. Returns viewer_url (owner link with edit key) and share_url (read-only).
-
-Each slide is a canvas slide — you write HTML/CSS/JS directly:
-`{ layout: "canvas", content: { html (required), css?, js?, static_render_only? } }`
-
-Design checklist:
 - Design at 1920×1080. The viewer scales to fit.
 - Pick concrete pixel values: h1 ≈ 96–128px, body ≈ 24–32px, padding ≈ 96–144px. Designs sized for a 16px-base browser look tiny at HD.
 - ONE IDEA PER SLIDE. If a slide has a headline + lede + tags + callout + quote + attribution, split it into two or three. Whitespace is a design element. For editorial decks, prefer 20 sparse slides over 12 dense ones unless the user asked for dense.
@@ -88,6 +82,20 @@ Design checklist:
 - Mark commentable elements with `data-dp-anchor="<stable-id>"`.
 - Optional "js" runs `(root, slide)` on slide enter — return a cleanup function.
 - Verify before committing: call `preview_slide` and READ THE SCREENSHOT and the render report. After creation, `get_slide_screenshot` returns the image inline so you can SEE what reviewers see.
+
+---
+
+## create_deck
+
+### Description
+
+Create a new slide deck and host it at a shareable viewer URL.
+
+Takes a title, an array of canvas slides, and optional deck-level theming (stylesheet, tokens, head). Each slide is `{ layout: "canvas", content: { html (required), css?, js?, static_render_only? } }` and is rendered into a 1920×1080 shadow root.
+
+Returns: `deck_id`, the created slides with their `slide_id`s, `viewer_url` (owner link, includes the edit key), `share_url` (read-only), and a `warnings` array listing content problems worth fixing.
+
+Use `update_deck` to change a deck afterwards — creating a second deck loses the original URL, edit key, and comment history. For density and type-scale guidance, see [Design guidance](#design-guidance) above.
 
 ### Parameters
 

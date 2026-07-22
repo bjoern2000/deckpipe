@@ -15,6 +15,35 @@ import { z } from 'zod';
 import fs from 'node:fs';
 import path from 'node:path';
 
+/**
+ * Version reported by BOTH MCP servers (remote /mcp and the standalone
+ * `deckpipe-mcp` npm package). Single constant so the two transports can never
+ * advertise different versions. Keep in sync with the package.json versions —
+ * `packages/mcp-core/test/parity.test.ts` asserts it.
+ */
+export const MCP_SERVER_VERSION = '0.3.10';
+
+/**
+ * Canonical list of every tool `registerTools` exposes, in registration order.
+ * This is the list that must appear in the MCP directory submission, the README,
+ * llms.txt, and docs/mcp-agent-instructions.md — the parity test checks all of them.
+ */
+export const TOOL_NAMES = [
+  'create_deck',
+  'clone_deck',
+  'get_deck',
+  'update_deck',
+  'delete_deck',
+  'upload_image',
+  'search_images',
+  'list_layouts',
+  'list_comments',
+  'reply_to_comment',
+  'preview_slide',
+  'get_slide_screenshot',
+  'resolve_comment',
+] as const;
+
 export const DEPRECATED_LAYOUTS = [
   'title', 'title_and_body', 'title_and_bullets', 'title_and_table',
   'two_columns', 'section_break', 'image_and_text', 'image_gallery',
@@ -134,26 +163,15 @@ export function registerTools(server: McpServer, opts: RegisterToolsOptions): vo
 
   server.tool(
     'create_deck',
-    `Create a new slide deck. Returns viewer_url (owner link with edit key) and share_url (read-only).
+    `Create a new slide deck and host it at a shareable viewer URL.
 
-Each slide is a canvas slide — you write the HTML/CSS/JS directly. Slide shape:
-{ layout: "canvas", content: { html (required), css?, js?, static_render_only? } }
+Takes a title, an array of canvas slides, and optional deck-level theming (stylesheet, tokens, head). Each slide is { layout: "canvas", content: { html (required), css?, js?, static_render_only? } } and is rendered into a 1920×1080 shadow root.
 
-Design checklist:
-- Design at 1920×1080. The viewer scales to fit.
-- Pick concrete pixel values: h1 ≈ 96–128px, body ≈ 24–32px, padding ≈ 96–144px, gap ≈ 32–64px. Designs sized for a 16px browser look tiny at HD.
-- ONE IDEA PER SLIDE. If a slide has a headline + lede + tags + callout + quote + attribution, split it into two or three. Whitespace is a design element. For editorial decks, prefer 20 sparse slides over 12 dense ones unless the user asked for dense.
-- BUILD ONE REPRESENTATIVE SLIDE FIRST. Pick a content-heavy slide (not the cover), preview_slide it, look at the actual screenshot, calibrate density, THEN author the rest at that bar. Don't preview the cover and assume the body slides will be fine.
-- If the brief is vague ("hi-fi", "make it visual"), ASK for a reference (Apple keynote / Pentagram case study / NYT Magazine / investor pitch / status update) and a slide count before committing.
-- Define shared styles ONCE in deck.stylesheet (typography, color tokens, .card/.grid/.hero classes). Reference them from each slide's html.
-- Mark commentable elements with data-dp-anchor="<stable-id>" so feedback threads survive edits.
-- Optional "js" runs (root, slide) on slide enter — return a cleanup function. Set static_render_only: true to freeze animations in print/PDF and screenshots.
-- VERIFY BEFORE COMMITTING: call preview_slide with your draft html/css/js and read both the screenshot and the render report. After creation, call get_slide_screenshot on any slide you didn't preview — it returns the image inline so you can SEE what reviewers see.
+Returns: deck_id, the created slides with their slide_ids, viewer_url (owner link, includes the edit key), share_url (read-only), and a warnings array listing content problems worth fixing.
 
-IMPORTANT:
-- To modify this deck later, use update_deck. NEVER create a new deck to make changes — it loses the URL and comment history.
-- To iterate: get_deck (read state + comments) → get_slide_screenshot (see actual render) → update_deck → reply_to_comment.
-- Check the "warnings" array and fix issues with a follow-up update_deck call.`,
+Use update_deck to change a deck afterwards — creating a second deck loses the original URL, edit key, and comment history.
+
+Design and density guidance (type scale, whitespace, the preview-then-author loop) is documented at https://deckpipe.dev/skill.md.`,
     {
       title: z.string().describe('Deck title'),
       agent_name: z.string().optional().describe('Your agent name (e.g. "Acme Strategy Agent"). Shown as author on comments you post. Set this once at deck creation.'),
@@ -174,7 +192,7 @@ IMPORTANT:
         }).passthrough(),
       })).describe('Array of canvas slides. Each slide is HTML/CSS/JS the agent authors.'),
     },
-    { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    { title: 'Create Deck', readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     async (args) => {
       try {
         const res = await apiFetch(`${apiUrl}/v1/decks`, {
@@ -205,7 +223,7 @@ Typical flow: clone_deck (from your template) → update_deck (replace the place
       title: z.string().optional().describe('Title for the new deck. Defaults to "Copy of <source title>".'),
       agent_name: z.string().optional().describe('Author name for comments you post on the clone. Defaults to the source deck\'s agent_name.'),
     },
-    { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    { title: 'Clone Deck', readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     async ({ source_deck_id, ...body }) => {
       try {
         const res = await apiFetch(`${apiUrl}/v1/decks/${source_deck_id}/clone`, {
@@ -228,7 +246,7 @@ Typical flow: clone_deck (from your template) → update_deck (replace the place
 
 Each slide includes a comments[] array with open comments. Each comment has: id, content_path (e.g. "title", "bullets[2]", "slide" for general), status, messages[] thread, and created_at.`,
     { deck_id: z.string().describe('The deck ID (e.g. "dk_a1b2c3d4")') },
-    { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    { title: 'Get Deck', readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     async ({ deck_id }) => {
       const res = await apiFetch(`${apiUrl}/v1/decks/${deck_id}`);
       const data = await res.json();
@@ -295,7 +313,7 @@ Editing existing decks that use the deprecated templated layouts is supported (t
       })).optional().describe('Content edits to existing slides, addressed by slide_id (preferred) or index. Applied after slide_operations.'),
       return: z.enum(['full', 'summary']).optional().describe('Response shape. "full" (default) echoes the entire updated deck (every slide\'s html/css/js + stylesheet) — can be tens of KB. "summary" returns only { deck_id, slide_count, updated_indices, warnings }. Use "summary" unless you actually need the deck echoed back; it saves a lot of context.'),
     },
-    { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    { title: 'Update Deck', readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     async ({ deck_id, ...body }) => {
       const res = await apiFetch(`${apiUrl}/v1/decks/${deck_id}`, {
         method: 'PATCH',
@@ -312,7 +330,7 @@ Editing existing decks that use the deprecated templated layouts is supported (t
     'delete_deck',
     'Delete a deck permanently.',
     { deck_id: z.string().describe('Deck ID to delete') },
-    { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+    { title: 'Delete Deck', readOnlyHint: false, destructiveHint: true, idempotentHint: true },
     async ({ deck_id }) => {
       const res = await apiFetch(`${apiUrl}/v1/decks/${deck_id}`, { method: 'DELETE' });
       if (res.status === 204) return { content: [{ type: 'text' as const, text: `Deck ${deck_id} deleted successfully.` }] };
@@ -337,7 +355,7 @@ Pass exactly one of ${allowLocalFiles ? 'path / ' : ''}url / image_data.`,
       filename: z.string().optional().describe('Filename with extension (e.g. "photo.jpg"). Required with image_data.'),
       content_type: z.enum(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml']).optional().describe('MIME type. Required with image_data.'),
     },
-    { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    { title: 'Upload Image', readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     async (args) => {
       try {
         const localPath = allowLocalFiles ? (args as { path?: string }).path : undefined;
@@ -423,7 +441,7 @@ Attribution is required by Unsplash terms. Drop attribution_html into a small ca
       per_page: z.number().min(1).max(30).optional().describe('Results per query (default 5, max 30)'),
       orientation: z.enum(['landscape', 'portrait', 'squarish']).optional().describe('Filter by orientation. Use "landscape" for full_image/image_and_text, "portrait" for image_gallery.'),
     },
-    { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    { title: 'Search Stock Images', readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     async ({ query, queries, per_page, orientation }) => {
       try {
         const params = new URLSearchParams();
@@ -445,7 +463,7 @@ Attribution is required by Unsplash terms. Drop attribution_html into a small ca
     'list_layouts',
     'Describe the slide layouts and deck-level customization fields. New content uses a single layout — "canvas" — where you author HTML/CSS/JS directly.',
     {},
-    { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    { title: 'List Slide Layouts', readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     async () => {
       const layouts = [
         {
@@ -493,7 +511,7 @@ Use the "since" parameter with an ISO timestamp to only fetch comments added or 
       slide_id: z.string().optional().describe('Filter to a specific slide by its stable slide_id (e.g. "sld_a1b2c3d4")'),
       since: z.string().optional().describe('ISO timestamp. Only return comments created or updated since this time. Use this to poll for new feedback efficiently.'),
     },
-    { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    { title: 'List Comments', readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     async ({ deck_id, status, slide_id, since }) => {
       const qs = new URLSearchParams();
       if (status) qs.set('status', status);
@@ -516,7 +534,7 @@ Use the "since" parameter with an ISO timestamp to only fetch comments added or 
       body: z.string().describe('Your reply message'),
       author_name: z.string().optional().describe('Your agent name. Defaults to the agent_name set at deck creation, or "Agent" if none was set.'),
     },
-    { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    { title: 'Reply to Comment', readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     async ({ deck_id, comment_id, body, author_name }) => {
       let name = author_name;
       if (!name) {
@@ -574,7 +592,7 @@ The screenshot is the slide alone — no viewer chrome.`,
       })).optional().describe('Deck-level head entries (Google Fonts links, etc.). Same shape as deck.head.'),
       format: z.enum(['png', 'jpeg']).optional().describe('Image format. Defaults to png.'),
     },
-    { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    { title: 'Preview Slide', readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     async (args) => {
       try {
         const res = await apiFetch(`${apiUrl}/v1/preview`, {
@@ -617,7 +635,7 @@ The render report's overflow list is a syntactic check, not a visual one. Each o
       slide_index: z.number().int().min(0).describe('Zero-based slide index.'),
       format: z.enum(['png', 'jpeg']).optional().describe('Image format. Defaults to png.'),
     },
-    { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    { title: 'Get Slide Screenshot', readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     async ({ deck_id, slide_index, format }) => {
       try {
         const fmt = format ?? 'png';
@@ -658,7 +676,7 @@ The render report's overflow list is a syntactic check, not a visual one. Each o
       deck_id: z.string().describe('The deck ID'),
       comment_id: z.string().describe('The comment ID to resolve'),
     },
-    { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    { title: 'Resolve Comment', readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     async ({ deck_id, comment_id }) => {
       const res = await apiFetch(`${apiUrl}/v1/decks/${deck_id}/comments/${comment_id}`, {
         method: 'PATCH',

@@ -89,10 +89,19 @@ All MCP tool descriptions, parameter schemas, and the server instructions string
 
 When you update an MCP tool:
 1. Edit `packages/mcp-core/src/index.ts`.
-2. Bump the `MCP_VERSION` in `packages/api/src/routes/mcp.ts` and the `version` in `packages/mcp/src/index.ts` + `packages/mcp/package.json` + `packages/mcp-core/package.json` if the change is user-facing.
+2. If the change is user-facing, bump `MCP_SERVER_VERSION` in `packages/mcp-core/src/index.ts` and the matching `version` in `packages/mcp/package.json` + `packages/mcp-core/package.json`. Both servers import `MCP_SERVER_VERSION` — there are no per-server version literals left to forget.
 3. Mirror any agent-facing copy changes to `docs/mcp-agent-instructions.md` (review-friendly markdown copy).
 
 There is no second file to keep in sync.
+
+### Invariants the parity test enforces
+
+`packages/mcp-core/test/parity.test.ts` boots a real `McpServer` over an in-memory transport in both configurations (`allowLocalFiles: false` = remote `/mcp` + `deckpipe-mcp` in HTTP mode; `true` = stdio) and asserts the surfaces can't drift. Adding or renaming a tool means updating these in the same commit:
+
+- **`TOOL_NAMES`** in `mcp-core` is the canonical list (13 tools). The test asserts both transports expose exactly it, and that every doc that enumerates tools — `README.md`, `docs/mcp-agent-instructions.md`, `packages/mcp/README.md`, `packages/viewer/public/llms.txt`, `packages/viewer/public/landing.html` — mentions all of them. The MCP directory submission has to be updated by hand; nothing can test that for you.
+- **Every tool needs `annotations.title`** — a human-readable name ("Create Deck"), not the tool name. Required by the Anthropic MCP directory review.
+- **The two configurations must be byte-identical** in description, input schema, and annotations, with exactly one sanctioned exception: `upload_image` gains a local-file `path` param under stdio (never remote — a path there would read the *server's* filesystem).
+- **Tool descriptions stay factual** — what the tool does, its inputs, its outputs. Design/density guidance belongs in `docs/mcp-agent-instructions.md` → "Design guidance" and `packages/viewer/public/skill.md` (served at `https://deckpipe.dev/skill.md`), not in a tool description. This was an explicit directory-review finding on `create_deck`.
 
 ### Publishing `deckpipe-mcp` to npm
 

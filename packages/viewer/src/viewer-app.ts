@@ -92,8 +92,16 @@ export class ViewerApp extends LitElement {
       white-space: nowrap;
     }
 
+    /* The wrapper is sized in real display px while .slide-container is a
+       1920x1080 box scaled down inside it. Rounding + clipping here (rather than
+       on the container) keeps the corner radius visually constant at any zoom
+       level, and clips the slide's own background — which paints over a radius
+       set on the container. Same pattern as .mobile-slide below. */
     .slide-wrapper {
       position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     }
 
     .slide-container {
@@ -101,8 +109,6 @@ export class ViewerApp extends LitElement {
       height: 1080px;
       transform-origin: top left;
       background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
       font-size: 32px;
     }
 
@@ -113,6 +119,13 @@ export class ViewerApp extends LitElement {
       margin: 0;
       padding: 0;
       background: #fff;
+    }
+
+    /* Screenshots and PDF export must stay square-cornered and unclipped. */
+    .screenshot-layout .slide-wrapper {
+      border-radius: 0;
+      overflow: visible;
+      box-shadow: none;
     }
 
     .screenshot-layout .slide-container {
@@ -126,6 +139,7 @@ export class ViewerApp extends LitElement {
     .slide-wrapper.print-mode {
       box-shadow: none;
       border-radius: 0;
+      overflow: visible;
       max-width: none;
     }
 
@@ -161,6 +175,7 @@ export class ViewerApp extends LitElement {
       page-break-after: always;
       margin: 0;
       border-radius: 0;
+      overflow: visible;
       box-shadow: none;
     }
 
@@ -252,6 +267,12 @@ export class ViewerApp extends LitElement {
       align-items: center;
       justify-content: center;
       position: relative;
+    }
+
+    /* Fullscreen on black — square corners, no lift. */
+    .presenter-layout .slide-wrapper {
+      border-radius: 0;
+      box-shadow: none;
     }
 
     .presenter-counter {

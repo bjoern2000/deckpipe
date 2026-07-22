@@ -9,10 +9,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
-import { INSTRUCTIONS, registerTools } from '@deckpipe/mcp-core';
+import { INSTRUCTIONS, MCP_SERVER_VERSION, registerTools } from '@deckpipe/mcp-core';
 import { config } from '../config.js';
 
-const MCP_VERSION = '0.3.9';
+// Version comes from mcp-core so the remote transport and the standalone
+// `deckpipe-mcp` package can never advertise different versions.
+const MCP_VERSION = MCP_SERVER_VERSION;
 
 const transports = new Map<string, StreamableHTTPServerTransport>();
 

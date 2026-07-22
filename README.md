@@ -122,6 +122,7 @@ Tools (MCP):
 | Tool | Description |
 |---|---|
 | `create_deck` | Create a new deck, get a shareable viewer URL. |
+| `clone_deck` | Duplicate any deck into a new one (fresh URL + edit key, no inherited comments) — the way to start from a template. |
 | `get_deck` | Read deck state including open comments. |
 | `update_deck` | Edit slide content, restructure slides, change theme. |
 | `delete_deck` | Permanently delete a deck. |

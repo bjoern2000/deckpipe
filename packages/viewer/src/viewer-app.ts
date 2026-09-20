@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import './components/slide-renderer.js';
 import './components/thumbnail-strip.js';
 import './components/viewer-toolbar.js';
+import './components/feedback-modal.js';
 import './components/nav-arrows.js';
 import './components/slide-counter.js';
 import './components/image-drop-zone.js';
@@ -308,6 +309,7 @@ export class ViewerApp extends LitElement {
   @state() private isMobile = false;
   @state() private presenterMode = false;
   @state() private commentMode = false;
+  @state() private feedbackOpen = false;
   @state() private comments: Comment[] = [];
   @state() private threadComment: Comment | null = null;
   @state() private threadContentPath: string | null = null;
@@ -481,6 +483,7 @@ export class ViewerApp extends LitElement {
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
+    if (this.feedbackOpen) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault();
       this.nextSlide();
@@ -698,6 +701,15 @@ export class ViewerApp extends LitElement {
   private onShare() {
     const url = this.getShareUrl();
     navigator.clipboard.writeText(url);
+  }
+
+  private onOpenFeedback() {
+    this.feedbackOpen = true;
+    track('feedback_opened', { deck_id: this.deck?.deck_id });
+  }
+
+  private onFeedbackPick(e: CustomEvent<{ channel: string }>) {
+    track('feedback_channel_picked', { deck_id: this.deck?.deck_id, channel: e.detail.channel });
   }
 
   private async onToggleComments() {
@@ -985,8 +997,14 @@ export class ViewerApp extends LitElement {
               @toggle-comments=${this.onToggleComments}
               @share-deck=${this.onShare}
               @start-presentation=${() => this.enterPresenterMode()}
+              @open-feedback=${this.onOpenFeedback}
             ></viewer-toolbar>
           </div>
+          <feedback-modal
+            .open=${this.feedbackOpen}
+            @close=${() => { this.feedbackOpen = false; }}
+            @feedback-pick=${this.onFeedbackPick}
+          ></feedback-modal>
           <div class="slide-wrapper" style="width:${this.slideWidth}px;height:${this.slideHeight}px">
             <div class="slide-container" style="transform:scale(${scaleFactor});${customVars}">
               <slide-renderer

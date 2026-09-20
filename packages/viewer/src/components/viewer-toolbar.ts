@@ -130,6 +130,11 @@ export class ViewerToolbar extends LitElement {
             title="Toggle edit mode"
           >${unsafeHTML(lucideIcon('pencil'))}
           </button>
+          <button
+            @click=${() => this.dispatchEvent(new CustomEvent('open-feedback', { bubbles: true, composed: true }))}
+            title="Send feedback"
+          >${unsafeHTML(lucideIcon('message-circle-heart'))} Feedback
+          </button>
         ` : ''}
       </div>
     `;

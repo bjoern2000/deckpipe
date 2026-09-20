@@ -18,10 +18,31 @@ import { config } from '../config.js';
 import { renderSlide } from '../services/render.js';
 import { renderLimiter, previewLimiter } from '../middleware/rate-limiter.js';
 import { validate } from '../middleware/validate.js';
+import { track } from '../analytics.js';
 
 export const renderRouter = Router();
 
 // ---------- /v1/decks/:id/slides/:slideIndex/screenshot ----------
+
+/**
+ * Drop every cached render of <deckId>/<slideIndex> whose stamp isn't keepStamp.
+ * The cache key includes updated_at, so each PATCH (viewer autosave included)
+ * leaves the previous render orphaned on the volume. Called fire-and-forget
+ * after a fresh write lands; never throws.
+ */
+async function pruneStaleScreenshots(cacheDir: string, deckId: string, slideIndex: number, keepStamp: number) {
+  try {
+    // Anchor on the exact deck id + slide index so dk_x-1-* never matches dk_x-10-*.
+    const escaped = deckId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`^${escaped}-(\\d+)-(\\d+)\\.(png|jpeg)(\\.report\\.json)?$`);
+    const names = await fs.readdir(cacheDir);
+    await Promise.all(names.map(async (name) => {
+      const m = re.exec(name);
+      if (!m || Number(m[1]) !== slideIndex || Number(m[2]) === keepStamp) return;
+      await fs.unlink(path.join(cacheDir, name)).catch(() => {});
+    }));
+  } catch { /* best-effort */ }
+}
 
 renderRouter.get('/decks/:id/slides/:slideIndex/screenshot', renderLimiter, async (req, res, next) => {
   try {
@@ -77,8 +98,20 @@ renderRouter.get('/decks/:id/slides/:slideIndex/screenshot', renderLimiter, asyn
       await Promise.all([
         fs.writeFile(cacheFile, png),
         fs.writeFile(reportPath, JSON.stringify(rendered.report)),
-      ]).catch(() => { /* cache write best-effort */ });
+      ]).then(
+        () => { void pruneStaleScreenshots(cacheDir, deck.deck_id, slideIndex, stamp); },
+        () => { /* cache write best-effort */ },
+      );
     }
+
+    track(`deck:${deck.deck_id}`, 'slide_rendered', {
+      deck_id: deck.deck_id,
+      slide_index: slideIndex,
+      kind: 'screenshot',
+      format,
+      cache_hit: cached !== null,
+      duration_ms: durationMs,
+    });
 
     // Render report as JSON header — small enough for the typical report.
     res.setHeader('X-Render-Report', encodeURIComponent(JSON.stringify(report)));
@@ -164,6 +197,13 @@ renderRouter.post('/preview', previewLimiter, validate(PreviewSchema), async (re
 
     // Clean up immediately — we don't keep transient payloads after the screenshot lands.
     previewStore.delete(previewId);
+
+    track(`preview:${previewId}`, 'slide_rendered', {
+      kind: 'preview',
+      format: format ?? 'png',
+      cache_hit: false,
+      duration_ms: rendered.duration_ms,
+    });
 
     res.json({
       image: {

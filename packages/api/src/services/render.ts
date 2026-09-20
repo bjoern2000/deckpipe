@@ -7,6 +7,12 @@
  * page. The viewer URL passed in is expected to set
  * document.documentElement[data-ready=true] when the slide has settled
  * (see packages/viewer/src/viewer-app.ts).
+ *
+ * The browser is launched lazily on the first render and closed again after
+ * RENDER_BROWSER_IDLE_MS without a render — an idle Chromium holds ~1 GB RSS,
+ * which at our traffic (a few hundred renders/week) is most of the hosting
+ * bill. Concurrent renders are capped at RENDER_CONCURRENCY so a burst can't
+ * open a dozen pages against one browser.
  */
 
 import puppeteer, { type Browser, type Page } from 'puppeteer';
@@ -54,11 +60,32 @@ export interface RenderOptions {
   ready_timeout_ms?: number;
 }
 
+// Tunables. Read from process.env at call time (not module load) rather than
+// via config.ts: this module can be evaluated before config.ts has run dotenv,
+// and keeping the knobs here keeps the browser lifecycle self-contained.
+function envInt(name: string, fallback: number): number {
+  const raw = process.env[name];
+  const n = raw ? parseInt(raw, 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+/** Close Chromium after this many ms without a render. */
+const RENDER_BROWSER_IDLE_MS = () => envInt('RENDER_BROWSER_IDLE_MS', 180_000);
+/** Max renders in flight at once; excess callers queue FIFO. */
+const RENDER_CONCURRENCY = () => envInt('RENDER_CONCURRENCY', 2);
+
 let browserPromise: Promise<Browser> | null = null;
+/** Set while closeBrowser() is tearing down; getBrowser() awaits it before relaunching. */
+let closingPromise: Promise<void> | null = null;
+let idleTimer: NodeJS.Timeout | null = null;
+/** Renders currently holding a semaphore slot (past the queue, not yet in finally). */
+let inFlight = 0;
 
 async function getBrowser(): Promise<Browser> {
+  // A render arriving mid-close must not get the browser that's being torn
+  // down — wait for the close to finish, then launch a fresh one below.
+  if (closingPromise) await closingPromise;
   if (!browserPromise) {
-    browserPromise = puppeteer.launch({
+    const launching = puppeteer.launch({
       headless: true,
       args: [
         '--no-sandbox',
@@ -66,19 +93,84 @@ async function getBrowser(): Promise<Browser> {
         '--disable-dev-shm-usage',
         '--disable-gpu',
       ],
+    }).then((browser) => {
+      // Chromium can die on its own (OOM kill, crash). Forget the dead handle
+      // so the next render relaunches instead of failing forever. Guard on
+      // identity: by the time this fires a newer browser may already exist.
+      browser.once('disconnected', () => {
+        if (browserPromise === launching) browserPromise = null;
+      });
+      return browser;
     }).catch((err) => {
-      browserPromise = null;
+      if (browserPromise === launching) browserPromise = null;
       throw err;
     });
+    browserPromise = launching;
   }
   return browserPromise;
 }
 
 async function closeBrowser(): Promise<void> {
-  if (browserPromise) {
-    const browser = await browserPromise.catch(() => null);
-    browserPromise = null;
+  if (closingPromise) return closingPromise;
+  clearIdleTimer();
+  if (!browserPromise) return;
+  const pending = browserPromise;
+  browserPromise = null;
+  closingPromise = (async () => {
+    const browser = await pending.catch(() => null);
     if (browser) await browser.close().catch(() => {});
+  })().finally(() => {
+    closingPromise = null;
+  });
+  return closingPromise;
+}
+
+// ---- Idle close ------------------------------------------------------------
+
+function clearIdleTimer() {
+  if (idleTimer) {
+    clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+}
+
+/** (Re)arm the idle timer. Called after every render, success or failure. */
+function armIdleTimer() {
+  clearIdleTimer();
+  idleTimer = setTimeout(() => {
+    idleTimer = null;
+    // A render may have started (or be queued) since we were armed — leave the
+    // browser alone; that render will re-arm us when it finishes.
+    if (inFlight > 0 || waiters.length > 0) return;
+    void closeBrowser();
+  }, RENDER_BROWSER_IDLE_MS());
+  // Never keep the process alive just to close an idle browser.
+  idleTimer.unref();
+}
+
+// ---- Concurrency cap -------------------------------------------------------
+//
+// Minimal FIFO semaphore: acquire() resolves immediately while there's a free
+// slot, otherwise parks the caller in `waiters` until a release() hands the
+// slot over. The slot is passed directly to the next waiter (inFlight never
+// dips) so a queued render can't be starved by a newcomer.
+
+const waiters: Array<() => void> = [];
+
+function acquire(): Promise<void> {
+  if (inFlight < RENDER_CONCURRENCY()) {
+    inFlight++;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => waiters.push(resolve));
+}
+
+function release() {
+  const next = waiters.shift();
+  if (next) {
+    next(); // slot handed over; inFlight unchanged
+  } else {
+    inFlight--;
   }
 }
 
@@ -94,6 +186,20 @@ function registerShutdown() {
 
 export async function renderSlide(opts: RenderOptions): Promise<RenderResult> {
   registerShutdown();
+  await acquire();
+  try {
+    // Don't let a close fire while we're queued/launching: the timer is only
+    // (re)armed once this render is done, and the idle check also looks at
+    // inFlight, but clearing it here keeps the window tight.
+    clearIdleTimer();
+    return await renderSlideInner(opts);
+  } finally {
+    release();
+    armIdleTimer();
+  }
+}
+
+async function renderSlideInner(opts: RenderOptions): Promise<RenderResult> {
   const start = Date.now();
   const viewport = opts.viewport ?? { width: 1920, height: 1080 };
   const readyTimeout = opts.ready_timeout_ms ?? 12000;
@@ -101,7 +207,6 @@ export async function renderSlide(opts: RenderOptions): Promise<RenderResult> {
 
   const browser = await getBrowser();
   const page: Page = await browser.newPage();
-  await page.setViewport({ width: viewport.width, height: viewport.height, deviceScaleFactor: 1 });
 
   const report: RenderReport = {
     js_errors: [],
@@ -112,24 +217,28 @@ export async function renderSlide(opts: RenderOptions): Promise<RenderResult> {
     failed_requests: [],
   };
 
-  page.on('pageerror', (err: unknown) => {
-    if (err instanceof Error) {
-      report.js_errors.push({ message: err.message, stack: err.stack });
-    } else {
-      report.js_errors.push({ message: String(err) });
-    }
-  });
-  page.on('console', (msg) => {
-    const type = msg.type();
-    if (type === 'error' || type === 'warn') {
-      report.console_errors.push({ level: type as 'error' | 'warn', text: msg.text() });
-    }
-  });
-  page.on('requestfailed', (req) => {
-    report.failed_requests.push({ url: req.url(), reason: req.failure()?.errorText ?? 'unknown' });
-  });
-
+  // Everything past newPage() lives inside the try so the page is closed on
+  // every path — a throw from setViewport used to leak the tab.
   try {
+    await page.setViewport({ width: viewport.width, height: viewport.height, deviceScaleFactor: 1 });
+
+    page.on('pageerror', (err: unknown) => {
+      if (err instanceof Error) {
+        report.js_errors.push({ message: err.message, stack: err.stack });
+      } else {
+        report.js_errors.push({ message: String(err) });
+      }
+    });
+    page.on('console', (msg) => {
+      const type = msg.type();
+      if (type === 'error' || type === 'warn') {
+        report.console_errors.push({ level: type as 'error' | 'warn', text: msg.text() });
+      }
+    });
+    page.on('requestfailed', (req) => {
+      report.failed_requests.push({ url: req.url(), reason: req.failure()?.errorText ?? 'unknown' });
+    });
+
     await page.goto(opts.url, { waitUntil: 'domcontentloaded', timeout: readyTimeout });
     await page.waitForFunction(
       () => document.documentElement.getAttribute('data-ready') === 'true',
